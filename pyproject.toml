@@ -30,10 +30,8 @@ classifiers = [
 ipython = ["ipython>=7.23.1"]
 
 [project.urls]
-Homepage = "https://github.com/escreven/liveimport"
-Repository = "https://github.com/escreven/liveimport"
-Documentation = "https://liveimport.readthedocs.io"
-Issues = "https://github.com/escreven/liveimport/issues"
+Homepage = "https://github.com/escreven/gvdot"
+Repository = "https://github.com/escreven/gvdot"
 
 [tool.setuptools]
 package-dir = { "" = "src" }
