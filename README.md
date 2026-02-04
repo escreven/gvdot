@@ -12,7 +12,8 @@ also interactively display dot objects in notebooks.
 Suppose we want to generate diagrams of non-deterministic finite automata
 like this
 
-![Example NFA](readme-example.svg "Optional title")
+![Example
+NFA](https://github.com/escreven/gvdot-work/blob/work/readme-example.svg)
 
 represented as instances of
 
@@ -96,5 +97,7 @@ In a notebook, we can directly show the diagram from a cell containing
 nfa_diagram(example,"Example NFA").show()
 ```
 
-You can find this [NFA example](examples/nfa.ipynb)
-and others in the [examples](examples) directory.
+You can find this [NFA
+example](https://github.com/escreven/gvdot/blob/main/examples/nfa.ipynb) and
+others in the [examples](https://github.com/escreven/gvdot/tree/main/examples)
+directory.
