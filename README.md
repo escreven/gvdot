@@ -13,7 +13,7 @@ Suppose we want to generate diagrams of non-deterministic finite automata
 like this
 
 ![Example
-NFA](https://github.com/escreven/gvdot-work/blob/work/readme-example.svg)
+NFA](https://raw.githubusercontent.com/escreven/gvdot/main/readme-example.svg)
 
 represented as instances of
 
