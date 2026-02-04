@@ -27,6 +27,11 @@ except ImportError:
     Image    = None
     DisplayHandle = None
 
+def _missing_ipython():
+    raise RuntimeError(
+        "IPython is required to show dot objects. "
+        "Install with: pip install gvdot[ipython]")
+
 #
 # See the discussion in the class Dot docstring.
 #
@@ -980,6 +985,39 @@ class Dot:
 
         return '\n'.join(lines)
 
+    def _run_program(self, text:bool, program:str,
+                     directory:str|PathLike|None, timeout:float|None,
+                     t_arg:str, graph_attrs:Mapping[str,ID]|None,
+                     node_attrs:Mapping[str,ID]|None,
+                     edge_attrs:Mapping[str,ID]|None) -> str|bytes:
+        """
+        Run a Graphviz program.
+        """
+        input = str(self)
+
+        if not text:
+            input = input.encode()
+
+        if directory is not None:
+            program = str(PurePath(directory,program))
+
+        command = [ program, t_arg,
+                    *_attr_args(graph_attrs, node_attrs, edge_attrs) ]
+
+        try:
+            completed = subprocess.run(
+                command, input=input, capture_output=True,
+                text=text, timeout=timeout, check=True)
+        except BaseException as ex:
+            if isinstance(ex,CalledProcessError):
+                raise
+            elif isinstance(ex,TimeoutExpired):
+                raise
+            else:
+                raise InvocationException(program) from ex
+
+        return completed.stdout
+
     def to_svg(self, program="dot", *, timeout:float|None=None,
                directory:str|PathLike|None=None, inline=False,
                graph_attrs:Mapping[str,ID]|None=None,
@@ -1029,28 +1067,14 @@ class Dot:
             dot.edge("c","a",label="SVG")
             display(SVG(dot.to_svg()))
         """
+        t_arg = "-Tsvg_inline" if inline else "-Tsvg"
 
-        input = str(self)
+        stdout = self._run_program(True, program, directory, timeout, t_arg,
+                                   graph_attrs, node_attrs, edge_attrs)
 
-        if directory is not None:
-            program = str(PurePath(directory,program))
+        assert type(stdout) is str
 
-        command = [ program, "-Tsvg_inline" if inline else "-Tsvg",
-                    *_attr_args(graph_attrs, node_attrs, edge_attrs) ]
-
-        try:
-            completed = subprocess.run(
-                command, input=input, capture_output=True,
-                text=True, timeout=timeout, check=True)
-        except BaseException as ex:
-            if isinstance(ex,CalledProcessError):
-                raise
-            elif isinstance(ex,TimeoutExpired):
-                raise
-            else:
-                raise InvocationException(program) from ex
-
-        return completed.stdout
+        return stdout
 
     def to_rendered(self, program="dot", *, timeout:float|None=None,
                     directory:str|PathLike|None=None, format="png",
@@ -1103,56 +1127,111 @@ class Dot:
             with open("example.png","wb") as f:
                 f.write(dot.to_rendered())
         """
+        t_arg = f"-T{format}"
 
-        input = str(self).encode()
+        stdout = self._run_program(False, program, directory, timeout, t_arg,
+                                   graph_attrs, node_attrs, edge_attrs)
 
-        if directory is not None:
-            program = str(PurePath(directory,program))
+        assert type(stdout) is bytes
 
-        command = [ program, f"-T{format}",
-                    *_attr_args(graph_attrs, node_attrs, edge_attrs) ]
+        return stdout
 
-        try:
-            completed = subprocess.run(
-                command, input=input, capture_output=True,
-                text=False, timeout=timeout, check=True)
-        except BaseException as ex:
-            if isinstance(ex,CalledProcessError):
-                raise
-            elif isinstance(ex,TimeoutExpired):
-                raise
-            else:
-                raise InvocationException(program) from ex
-
-        return completed.stdout
-
-    def show(self, *, source=False, format:str|None="svg",
+    def show(self, *, format:str="svg",
              program="dot", timeout:float|None=None,
              directory:str|PathLike|None=None,
-             size:str|None=None):
+             size:str|None=None,
+             graph_attrs:Mapping[str,ID]|None=None,
+             node_attrs:Mapping[str,ID]|None=None,
+             edge_attrs:Mapping[str,ID]|None=None) -> None:
         """
-        Display the dot object in a Jupyter notebook.
+        Display the dot object in a Jupyter notebook as an SVG or Image object.
+        `show()` generates the SVG or Image data by invoking a Graphviz program
+        through the subprocess module.
+
+        :param program: Which Graphviz program to use (dot by default).
+
+        :param directory: Where to find the program executable.  If not
+            specified, the program must be found on the process's `PATH`.
+
+        :param timeout: Limit the program execution time to this many seconds.
+
+        :param format: The output format desired (svg by default).  If the
+            format is "svg" (upper, lower, or mixed case), `show()` will
+            generate SVG and display a `IPython.display.SVG` object.
+            Otherwise, `show()` will generate image data and display a
+            `IPython.display.Image` object.
+
+        :param size: Add a size attribute to the graph before rendering.  A
+            value such as `"5,5"` can help ensure the graph visually fits in
+            the notebook.
+
+        :param graph_attrs: Additional graph attribute values to pass to the
+            program on the command line via the `-G` option.  If parameter
+            `size` is also specified, and `graph_attrs` contains a `size`
+            entry, that entry is overwritten with the `size` parameter value.
+
+        :param node_attrs: Additional node attribute values to pass to the
+            program on the command line via the `-N` option.
+
+        :param edge_attrs: Additional edge attribute values to pass to the
+            program on the command line via the `-E` option.
+
+        :raises ShowException: `show()` could not complete because the program
+            could not be invoked, it timed out, or it exited with a non-zero
+            status code.  When `show()` raises `ShowException`, it also
+            displays a Markdown block explaining why it could not complete.
+
+        :raises RuntimeError: IPython is not installed.
         """
         if display and Markdown and SVG and Image:
-            ret = None
-            graph_attrs = None
             if size is not None:
-                graph_attrs = {'size': size}
-            if source:
-                ret = display(Markdown(f"```console\n{self}\n```"))
-            if format is not None and format.lower() == 'svg':
-                ret = display(SVG(self.to_svg(
-                    program=program, timeout=timeout, directory=directory,
-                    graph_attrs=graph_attrs))) #type:ignore
-            elif format is not None:
-                ret = display(Image(self.to_rendered(
-                    program=program, timeout=timeout, directory=directory,
-                    graph_attrs=graph_attrs))) #type:ignore
-            return ret
+                d = dict()
+                if graph_attrs is not None: d.update(graph_attrs)
+                d['size'] = size
+                graph_attrs = d
+            try:
+                if format is not None and format.lower() == 'svg':
+                    display(SVG(self.to_svg(
+                        program=program, timeout=timeout, directory=directory,
+                        graph_attrs=graph_attrs, node_attrs=node_attrs,
+                        edge_attrs=edge_attrs)))
+                elif format is not None:
+                    display(Image(self.to_rendered(
+                        program=program, timeout=timeout, directory=directory,
+                        graph_attrs=graph_attrs, node_attrs=node_attrs,
+                        edge_attrs=edge_attrs)))
+            except InvocationException as ex:
+                cause = ex.__cause__
+                assert cause
+                display(Markdown(_SHOW_BAD_INVOKE_MD.format(
+                    program=program, excl=cause.__class__.__name__,
+                    exmsg=str(cause))))
+                raise ShowException() from None
+            except CalledProcessError as ex:
+                stderr = ex.stderr
+                if type(stderr) is bytes:
+                    stderr = stderr.decode()
+                display(Markdown(_SHOW_BAD_EXIT_MD.format(
+                    program=program, status=ex.returncode,
+                    stderr="".join('> ' + line for line in
+                                   stderr.splitlines()))))
+                raise ShowException() from None
+            except TimeoutExpired as ex:
+                display(Markdown(_SHOW_TIMEOUT_MD.format(
+                    program=program, timeout=timeout)))
+                raise ShowException() from None
         else:
-            raise RuntimeError(
-                "IPython is required to show dot objects. "
-                "Install with: pip install gvdot[ipython]")
+            _missing_ipython()
+
+    def show_source(self) -> None:
+        """
+        Display the dot object's DOT language representation in a Jupyter
+        notebook as a `IPython.display.Markdown` object.
+        """
+        if display and Markdown and SVG and Image:
+            display(Markdown(f"```graphviz\n{self}\n```"))
+        else:
+            _missing_ipython()
 
 
 class InvocationException(BaseException):
@@ -1169,4 +1248,49 @@ class InvocationException(BaseException):
         self.program = program
 
     def __str__(self):
-        return f"Could not run " + self.program
+        return f"Could not run program " + self.program
+
+
+class ShowException(BaseException):
+    def __init__(self):
+        pass
+
+    def __str__(self):
+        return "show() could not complete"
+
+
+
+_SHOW_BAD_INVOKE_MD = """
+<br/>
+
+> **ERROR**: `show()` could not complete.
+>
+> The program `{program}` could not be invoked.
+>
+> {excl}: {exmsg}
+
+<br/>
+"""
+
+_SHOW_BAD_EXIT_MD = """
+<br/>
+
+>**ERROR**: `show()` could not complete.
+>
+>The program `{program}` exited with status {status}.
+>```
+{stderr}
+>```
+
+<br/>
+"""
+
+_SHOW_TIMEOUT_MD = """
+<br/>
+
+>**ERROR**: `show()` could not complete.
+>
+>The program `{program}` timed out after {timeout} seconds.
+
+<br/>
+"""
