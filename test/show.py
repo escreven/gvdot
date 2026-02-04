@@ -1,7 +1,7 @@
 import re
 from subprocess import TimeoutExpired
 from typing import Any
-from gvdot import Dot, InvocationException
+from gvdot import Dot, ShowException
 import gvdot
 from utility import expect_ex, image_format, likely_full_svg, tmpdir
 
@@ -92,46 +92,72 @@ def test_show():
         dot = Dot().graph(fontsize=32)
         dot.edge("a","b").edge("b","c").edge("c","d")
 
-        dot.show(source=False, format=None)
-        assert not mock.take()
-
-        dot.show(source=True, format=None)
+        dot.show_source()
         displayed = mock.take()
         assert len(displayed) == 1
         assert displayed[0][0] == "Markdown"
         assert "graph" in displayed[0][1]
 
-        dot.show(source=True, format="SVG")
+        dot.show(format="svG")
         displayed = mock.take()
-        assert len(displayed) == 2
-        assert displayed[0][0] == "Markdown"
-        assert "graph" in displayed[0][1]
-        assert displayed[1][0] == "SVG"
-        assert likely_full_svg(displayed[1][1])
+        assert len(displayed) == 1
+        assert displayed[0][0] == "SVG"
+        assert likely_full_svg(displayed[0][1])
 
-        dot.show(source=False, format="png")
+        dot.show(format="png")
         displayed = mock.take()
         assert len(displayed) == 1
         assert displayed[0][0] == "Image"
         assert image_format(displayed[0][1]) == "PNG"
 
-        ex = expect_ex(InvocationException, lambda: dot.show(
+        ex = expect_ex(ShowException, lambda: dot.show(
             program="doesnotexist", format="svg"))
-        assert "doesnotexist" in str(ex)
+        displayed = mock.take()
+        assert len(displayed) == 1
+        assert displayed[0][0] == "Markdown"
+        assert "could not be invoked" in displayed[0][1]
+        assert "could not complete" in str(ex)
 
-        ex = expect_ex(InvocationException, lambda: dot.show(
+        expect_ex(ShowException, lambda: dot.show(
             program="doesnotexist", format="png"))
-        assert "doesnotexist" in str(ex)
+        displayed = mock.take()
+        assert len(displayed) == 1
+        assert displayed[0][0] == "Markdown"
+        assert "could not be invoked" in displayed[0][1]
 
-        expect_ex(TimeoutExpired,lambda: dot.show(
+        expect_ex(ShowException,lambda: dot.show(
             format="svg", directory=tmpdir(),
             program="dotsleep", timeout=0.1))
+        displayed = mock.take()
+        assert len(displayed) == 1
+        assert displayed[0][0] == "Markdown"
+        assert "timed out" in displayed[0][1]
 
-        expect_ex(TimeoutExpired,lambda: dot.show(
+        expect_ex(ShowException,lambda: dot.show(
             format="png", directory=tmpdir(),
             program="dotsleep", timeout=0.1))
+        displayed = mock.take()
+        assert len(displayed) == 1
+        assert displayed[0][0] == "Markdown"
+        assert "timed out" in displayed[0][1]
 
-        dot.show(source=False, format="SVG", size="1,1")
+        expect_ex(ShowException,lambda: dot.show(
+            format="svg", directory=tmpdir(),
+            program="doterror"))
+        displayed = mock.take()
+        assert len(displayed) == 1
+        assert displayed[0][0] == "Markdown"
+        assert "exited with status" in displayed[0][1]
+
+        expect_ex(ShowException,lambda: dot.show(
+            format="png", directory=tmpdir(),
+            program="doterror"))
+        displayed = mock.take()
+        assert len(displayed) == 1
+        assert displayed[0][0] == "Markdown"
+        assert "exited with status" in displayed[0][1]
+
+        dot.show(format="SVG", size="1,1")
         displayed = mock.take()
         assert len(displayed) == 1
         assert displayed[0][0] == "SVG"
@@ -140,10 +166,11 @@ def test_show():
     with _NoIPython():
         try:
             Dot().show()
-            raise AssertionError(
-                "show() without IPython did not raise exception")
+            assert False
         except RuntimeError as ex:
             assert re.search("IPython.*install", str(ex))
-
-
-
+        try:
+            Dot().show_source()
+            assert False
+        except RuntimeError as ex:
+            assert re.search("IPython.*install", str(ex))
