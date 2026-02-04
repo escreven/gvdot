@@ -12,7 +12,7 @@ from subprocess import CalledProcessError, TimeoutExpired
 from typing import Any, Mapping
 import re
 
-__version__ = "0.9.0"
+__version__ = "0.9.1"
 
 #
 # Optional notebook support.
