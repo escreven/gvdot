@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gvdot"
+version = "0.9.0dev1"
+description = "Generate and render optionally themed GraphViz diagrams with simple, easy to maintain code."
+readme = "README.md"
+authors = [{ name = "Edward Screven" }]
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = [ ]
+keywords = [ "graphviz", "dot", "dot-language",
+             "graphs", "graph", "visualization",
+             "rendering", "svg", "png" ]
+classifiers = [
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+
+[project.optional-dependencies]
+ipython = ["ipython>=7.23.1"]
+
+[project.urls]
+Homepage = "https://github.com/escreven/liveimport"
+Repository = "https://github.com/escreven/liveimport"
+Documentation = "https://liveimport.readthedocs.io"
+Issues = "https://github.com/escreven/liveimport/issues"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = false
