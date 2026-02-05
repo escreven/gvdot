@@ -1,21 +1,21 @@
 
-Generate and render optionally themed Graphviz diagrams with clear,
-maintainable code.
+Generate and render Graphviz diagrams with clear, maintainable code by
+separating presentation from structure.
 
-The heart of gvdot is class `Dot`, a DOT language graph expression.
+The heart of gvdot is the class `Dot`, a DOT language graph expression.
 Applications create diagrams using dot object methods, then either convert the
-object to a DOT language string or render it as SVG or an image.  Users can
-also interactively display dot objects in notebooks.
+object to DOT language text or render it as SVG or an image.  Users can also
+interactively display dot objects in notebooks.
 
 ### Example
 
-Suppose we want to generate diagrams of non-deterministic finite automata
-like this
+Suppose we want to generate diagrams of nondeterministic finite automata like
+this:
 
 ![Example
 NFA](https://raw.githubusercontent.com/escreven/gvdot/main/readme-example.svg)
 
-represented be instances of
+represented by instances of
 
 ```python
 @dataclass
@@ -29,8 +29,8 @@ class NFA:
 where `delta["q"][i]` is the list of states reached from $q$ by the
 $i^\text{th}$ input alphabet symbol.
 
-We start by defining a theme, a normal dot object from which other dot objects
-can inherit graph attributes, default attributes, and roles.
+We start by defining a theme, a normal `Dot` object from which other dot
+objects can inherit graph attributes, default attributes, and roles.
 
 ```python
 nfa_theme = (Dot()
@@ -41,8 +41,8 @@ nfa_theme = (Dot()
     .graph(rankdir="LR", labelloc="t", fontsize=16))
 ```
 
-The theme defines two gvdot roles, collections Graphviz attribute values that
-applications can assign to diagram elements by name.
+The theme defines two gvdot roles, collections of Graphviz attribute values
+that applications can assign to diagram elements by name.
 
 Having isolated presentation attributes in a theme, our generation code is
 straightforward.

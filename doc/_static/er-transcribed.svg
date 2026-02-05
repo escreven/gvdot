@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="294pt" height="360pt" viewBox="0.00 0.00 294.30 360.00">
+<g id="graph0" class="graph" transform="scale(0.815212 0.815212) rotate(0) translate(4 437.6)">
+<polygon fill="white" stroke="none" points="-4,4 -4,-437.6 357.01,-437.6 357.01,4 -4,4"/>
+<text text-anchor="middle" x="176.51" y="-27" font-family="Helvetica,Arial,sans-serif" font-size="20.00">Entity Relation Diagram</text>
+<text text-anchor="middle" x="176.51" y="-6" font-family="Helvetica,Arial,sans-serif" font-size="20.00">drawn by NEATO</text>
+<!-- course -->
+<g id="node1" class="node">
+<title>course</title>
+<polygon fill="none" stroke="black" points="127.61,-294.69 71.11,-294.69 71.11,-258.69 127.61,-258.69 127.61,-294.69"/>
+<text text-anchor="middle" x="99.36" y="-270.89" font-family="Helvetica,Arial,sans-serif" font-size="14.00">course</text>
+</g>
+<!-- C&#45;I -->
+<g id="node10" class="node">
+<title>C-I</title>
+<polygon fill="lightgrey" stroke="lightgrey" points="145.09,-365.85 113.84,-347.85 145.09,-329.85 176.34,-347.85 145.09,-365.85"/>
+<text text-anchor="middle" x="145.09" y="-342.05" font-family="Helvetica,Arial,sans-serif" font-size="14.00">C-I</text>
+</g>
+<!-- course&#45;&#45;C&#45;I -->
+<g id="edge3" class="edge">
+<title>course--C-I</title>
+<path fill="none" stroke="black" d="M111.14,-295.01C119.08,-307.37 129.37,-323.38 136.53,-334.53"/>
+<text text-anchor="middle" x="120.08" y="-316.47" font-family="Helvetica,Arial,sans-serif" font-size="14.00">n</text>
+</g>
+<!-- institute -->
+<g id="node2" class="node">
+<title>institute</title>
+<polygon fill="none" stroke="black" points="258.73,-365.33 196.23,-365.33 196.23,-329.33 258.73,-329.33 258.73,-365.33"/>
+<text text-anchor="middle" x="227.48" y="-341.53" font-family="Helvetica,Arial,sans-serif" font-size="14.00">institute</text>
+</g>
+<!-- name1 -->
+<g id="node5" class="node">
+<title>name1</title>
+<ellipse fill="none" stroke="black" cx="266.7" cy="-415.6" rx="32.82" ry="18"/>
+<text text-anchor="middle" x="266.7" y="-409.8" font-family="Helvetica,Arial,sans-serif" font-size="14.00">name</text>
+</g>
+<!-- institute&#45;&#45;name1 -->
+<g id="edge5" class="edge">
+<title>institute--name1</title>
+<path fill="none" stroke="black" d="M237.99,-365.63C243.8,-375.74 250.98,-388.23 256.7,-398.2"/>
+</g>
+<!-- S&#45;I -->
+<g id="node12" class="node">
+<title>S-I</title>
+<polygon fill="lightgrey" stroke="lightgrey" points="263.84,-291.69 233.28,-273.69 263.84,-255.69 294.4,-273.69 263.84,-291.69"/>
+<text text-anchor="middle" x="263.84" y="-267.89" font-family="Helvetica,Arial,sans-serif" font-size="14.00">S-I</text>
+</g>
+<!-- institute&#45;&#45;S&#45;I -->
+<g id="edge6" class="edge">
+<title>institute--S-I</title>
+<path fill="none" stroke="black" d="M236.47,-329.13C242.78,-316.35 251.09,-299.51 256.89,-287.76"/>
+<text text-anchor="middle" x="242.93" y="-310.14" font-family="Helvetica,Arial,sans-serif" font-size="14.00">1</text>
+</g>
+<!-- student -->
+<g id="node3" class="node">
+<title>student</title>
+<polygon fill="none" stroke="black" points="266.73,-211.41 206.48,-211.41 206.48,-175.41 266.73,-175.41 266.73,-211.41"/>
+<text text-anchor="middle" x="236.61" y="-187.61" font-family="Helvetica,Arial,sans-serif" font-size="14.00">student</text>
+</g>
+<!-- name2 -->
+<g id="node6" class="node">
+<title>name2</title>
+<ellipse fill="none" stroke="black" cx="320.19" cy="-191.31" rx="32.82" ry="18"/>
+<text text-anchor="middle" x="320.19" y="-185.51" font-family="Helvetica,Arial,sans-serif" font-size="14.00">name</text>
+</g>
+<!-- student&#45;&#45;name2 -->
+<g id="edge9" class="edge">
+<title>student--name2</title>
+<path fill="none" stroke="black" d="M266.78,-192.65C273.33,-192.49 280.29,-192.31 286.95,-192.15"/>
+</g>
+<!-- grade -->
+<g id="node8" class="node">
+<title>grade</title>
+<ellipse fill="none" stroke="black" cx="280.29" cy="-125.59" rx="32.82" ry="18"/>
+<text text-anchor="middle" x="280.29" y="-119.79" font-family="Helvetica,Arial,sans-serif" font-size="14.00">grade</text>
+</g>
+<!-- student&#45;&#45;grade -->
+<g id="edge8" class="edge">
+<title>student--grade</title>
+<path fill="none" stroke="black" d="M248.31,-175.24C254.78,-165.19 262.78,-152.78 269.16,-142.88"/>
+</g>
+<!-- number -->
+<g id="node9" class="node">
+<title>number</title>
+<ellipse fill="none" stroke="black" cx="204.71" cy="-116" rx="40.62" ry="18"/>
+<text text-anchor="middle" x="204.71" y="-110.2" font-family="Helvetica,Arial,sans-serif" font-size="14.00">number</text>
+</g>
+<!-- student&#45;&#45;number -->
+<g id="edge10" class="edge">
+<title>student--number</title>
+<path fill="none" stroke="black" d="M229.05,-175.07C223.93,-162.64 217.19,-146.29 212.11,-133.95"/>
+</g>
+<!-- S&#45;C -->
+<g id="node11" class="node">
+<title>S-C</title>
+<polygon fill="lightgrey" stroke="lightgrey" points="154.21,-231.32 118.13,-213.32 154.21,-195.32 190.29,-213.32 154.21,-231.32"/>
+<text text-anchor="middle" x="154.21" y="-207.52" font-family="Helvetica,Arial,sans-serif" font-size="14.00">S-C</text>
+</g>
+<!-- student&#45;&#45;S&#45;C -->
+<g id="edge11" class="edge">
+<title>student--S-C</title>
+<path fill="none" stroke="black" d="M206.39,-200.71C197.39,-202.89 187.63,-205.25 179.02,-207.33"/>
+<text text-anchor="middle" x="198.71" y="-205.72" font-family="Helvetica,Arial,sans-serif" font-size="14.00">m</text>
+</g>
+<!-- name0 -->
+<g id="node4" class="node">
+<title>name0</title>
+<ellipse fill="none" stroke="black" cx="35.43" cy="-325.96" rx="32.82" ry="18"/>
+<text text-anchor="middle" x="35.43" y="-320.16" font-family="Helvetica,Arial,sans-serif" font-size="14.00">name</text>
+</g>
+<!-- name0&#45;&#45;course -->
+<g id="edge1" class="edge">
+<title>name0--course</title>
+<path fill="none" stroke="black" d="M54.61,-311.18C61.23,-306.08 68.73,-300.3 75.67,-294.95"/>
+</g>
+<!-- code -->
+<g id="node7" class="node">
+<title>code</title>
+<ellipse fill="none" stroke="black" cx="29.41" cy="-234.09" rx="29.41" ry="18"/>
+<text text-anchor="middle" x="29.41" y="-228.29" font-family="Helvetica,Arial,sans-serif" font-size="14.00">code</text>
+</g>
+<!-- code&#45;&#45;course -->
+<g id="edge2" class="edge">
+<title>code--course</title>
+<path fill="none" stroke="black" d="M50.4,-246.87C56.76,-250.74 63.85,-255.06 70.63,-259.19"/>
+</g>
+<!-- C&#45;I&#45;&#45;institute -->
+<g id="edge4" class="edge">
+<title>C-I--institute</title>
+<path fill="none" stroke="black" d="M176.71,-347.65C182.97,-347.61 189.55,-347.57 195.81,-347.53"/>
+<text text-anchor="middle" x="182.51" y="-349.29" font-family="Helvetica,Arial,sans-serif" font-size="14.00">1</text>
+</g>
+<!-- S&#45;C&#45;&#45;course -->
+<g id="edge12" class="edge">
+<title>S-C--course</title>
+<path fill="none" stroke="black" d="M143.11,-226.14C135.1,-235.4 124.16,-248.04 115.23,-258.36"/>
+<text text-anchor="middle" x="125.42" y="-243.95" font-family="Helvetica,Arial,sans-serif" font-size="14.00">n</text>
+</g>
+<!-- S&#45;I&#45;&#45;student -->
+<g id="edge7" class="edge">
+<title>S-I--student</title>
+<path fill="none" stroke="black" d="M258.59,-258.21C254.08,-244.91 247.56,-225.7 242.8,-211.65"/>
+<text text-anchor="middle" x="246.94" y="-236.63" font-family="Helvetica,Arial,sans-serif" font-size="14.00">n</text>
+</g>
+</g>
+</svg>
