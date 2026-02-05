@@ -1,5 +1,5 @@
-LiveImport API
-==============
+API
+===
 
 .. autofunction:: liveimport.register
 

@@ -1,56 +1,111 @@
-.. currentmodule:: liveimport
+.. currentmodule:: gvdot
 
-LiveImport
-==========
+gvdot
+=====
 
-LiveImport reliably and automatically reloads Python modules in Jupyter
-notebooks.  LiveImport reloads are well-defined, deterministic operations that
-follow the semantics of a developer's import statements exactly.  It maintains
-consistency between modules by automatically reloading dependent modules as
-needed, ensuring up-to-date references across a notebook and its modules.
+Package gvdot makes it easy to generate and render optionally themed Graphviz
+diagrams with clear, maintainable code.
 
-LiveImport is designed for developers who interactively build Jupyter notebooks
-together with external Python code, and who want predictable reloading with
-minimal mystery.
+The heart of gvdot is class :class:`Dot`, a DOT language graph expression.
+Applications create diagrams using dot object methods, then either convert the
+object to a DOT language string or render it as SVG or an image.  Users can
+also interactively display dot objects in notebooks.
 
-Given a cell like
+Example
+~~~~~~~
 
-.. code-block:: python
+Suppose we want to generate diagrams of non-deterministic finite automata
+like this
 
-    %%liveimport
-    from common import *
-    from nets import ConvNet, ResidualNet as ResNet
-    import hyperparam as hp
+.. image:: _static/nfa.svg
+    :align: center
+    :width: 90%
+    :alt: Example NFA diagram
 
-LiveImport will execute the import statements, then automatically reload
-``common``, ``nets``, or ``hyperparam`` whenever their source files change.
-When LiveImport reloads, it will rebind names in the notebook as described by
-the import statements.  If ``nets`` imports from ``hyperparam``, then when
-``hyperparam`` is modified, LiveImport will automatically reload ``nets`` after
-``hyperparam``.
+represented by instances of
 
-To make the cell above transparent to IDEs like Visual Studio Code, you can
-hide the cell magic:
+.. code:: python
 
-.. code-block:: python
+    @dataclass
+    class NFA:
+        alphabet : str
+        delta    : dict[str, list[list[str]]]
+        final    : list[str]
+        start    : str
 
-    #_%%liveimport
-    from common import *
-    from nets import ConvNet, ResidualNet as ResNet
-    import hyperparam as hp
+where ``delta["q"][i]`` is the list of states reached from :math:`q` by the
+:math:`i^\text{th}` input alphabet symbol.
 
-Hidden cell magic is a user experience feature tailored for modern notebook
-development.  Others include tracking indirectly imported modules, protection
-against reloading in the middle of multi-cell runs, and optional reload
-notification.
+We start by defining a theme, a normal dot object from which other dot objects
+can inherit graph attributes, default attributes, and roles.
 
-The :doc:`User Guide <userguide>` describes how to use LiveImport in notebooks,
-and the :doc:`API Reference <api>` provides more details.  If you currently use
-autoreload, you might consider the :doc:`Comparison with Autoreload
-<comparison>`.
+.. code:: python
 
-See :doc:`Installation <installation>` to get started.
+    nfa_theme = (Dot()
+        .all_default(fontsize=12)
+        .node_default(shape="circle", style="filled", fillcolor="khaki")
+        .node_role("init", label="", shape="none", width=0, height=0)
+        .node_role("final", shape="doublecircle", penwidth=1.25)
+        .graph(rankdir="LR", labelloc="t", fontsize=16))
 
+The theme defines two gvdot roles, collections of Graphviz attribute values
+that applications can assign to diagram elements by name.
+
+Having isolated presentation attributes in a theme, our generation code is
+straightforward.
+
+.. code:: python
+
+    def nfa_diagram(nfa:NFA, title:str):
+
+        dot = Dot(directed=True).use_theme(nfa_theme)
+        dot.graph(label=Markup(f"<b>{title}<br/></b>"))
+
+        dot.node("_init_", role="init")
+        dot.edge("_init_", nfa.start)
+
+        for state in nfa.final:
+            dot.node(state, role="final")
+
+        for state, transitions in nfa.delta.items():
+            merged = defaultdict(list)
+            for index, targets in enumerate(transitions):
+                for target in targets:
+                    merged[target].append(
+                        nfa.alphabet[index-1] if index > 0 else '&epsilon;')
+            for target, symbols in merged.items():
+                dot.edge(state, target, label=", ".join(symbols))
+
+        return dot
+
+We can render and save the diagram above with
+
+.. code:: python
+
+    example = NFA("01", {
+        "s0": [["q0", "r0"], [], []],
+        "q0": [[], ["q1"], ["q0"]],
+        "q1": [[], ["q1"], ["q2"]],
+        "q2": [[], ["q3"], ["q0"]],
+        "q3": [[], ["q1"], ["q4"]],
+        "q4": [[], ["q4"], ["q4"]],
+        "r0": [[], ["r0"], ["r1"]],
+        "r1": [[], ["r0"], ["r2"]],
+        "r2": [[], ["r3"], ["r1"]],
+        "r3": [[], ["r3"], ["r3"]],
+    }, ["q4","r0","r1","r2"], "s0")
+
+    with open("example.svg","w") as f:
+        print(nfa_diagram(example,"Example NFA").to_svg(), file=f)
+
+In a notebook, we can directly display the diagram from a cell containing
+
+.. code:: python
+
+    nfa_diagram(example,"Example NFA").show()
+
+The :doc:`User Guide <userguide>` and :doc:`API Reference <api>` describe how
+to use gvdot.  See :doc:`Installation <installation>` to get started.
 
 .. toctree::
     :maxdepth: 2
@@ -59,7 +114,6 @@ See :doc:`Installation <installation>` to get started.
 
     userguide
     api
-    comparison
+    examples
     installation
     resources
-    tips

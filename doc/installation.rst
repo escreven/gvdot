@@ -3,11 +3,17 @@
 Installation
 ------------
 
-You can install LiveImport from PyPI with
+You can install gvdot from PyPI with
 
 .. code:: console
 
-    $ pip install liveimport
+    $ pip install gvdot
+
+To ensure the optional notebook support is enabled, use
+
+.. code:: console
+
+    $ pip install gvdot[ipython]
 
 You can also clone the repo and install it directly.
 
@@ -17,4 +23,5 @@ You can also clone the repo and install it directly.
     $ cd liveimport
     $ pip install .
 
-LiveImport requires Python 3.10 or greater and IPython 7.23.1 or greater.
+Package gvdot requires Python 3.12 or greater and IPython 7.23.1 or greater.
+

@@ -1,6 +1,6 @@
 
-Generate and render optionally themed GraphViz diagrams with simple, easy to
-maintain code.
+Generate and render optionally themed Graphviz diagrams with clear,
+maintainable code.
 
 The heart of gvdot is class `Dot`, a DOT language graph expression.
 Applications create diagrams using dot object methods, then either convert the
@@ -15,7 +15,7 @@ like this
 ![Example
 NFA](https://raw.githubusercontent.com/escreven/gvdot/main/readme-example.svg)
 
-represented as instances of
+represented be instances of
 
 ```python
 @dataclass
@@ -41,11 +41,11 @@ nfa_theme = (Dot()
     .graph(rankdir="LR", labelloc="t", fontsize=16))
 ```
 
-A gvdot role is a collection Graphviz attribute values applications can assign
-to diagram elements by name.
+The theme defines two gvdot roles, collections Graphviz attribute values that
+applications can assign to diagram elements by name.
 
 Having isolated presentation attributes in a theme, our generation code is
-clean and easy to maintain.
+straightforward.
 
 ```python
 def nfa_diagram(nfa:NFA, title:str):
@@ -91,7 +91,7 @@ with open("example.svg","w") as f:
     print(nfa_diagram(example,"Example NFA").to_svg(), file=f)
 ```
 
-In a notebook, we can directly show the diagram from a cell containing
+In a notebook, we can directly display the diagram from a cell containing
 
 ```python
 nfa_diagram(example,"Example NFA").show()

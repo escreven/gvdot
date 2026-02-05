@@ -34,15 +34,22 @@ class _MockIPython:
         assert type(data) is bytes
         return "Image", data
 
+    def Code(self, data:bytes, language:str):
+        assert type(data) is str
+        assert language == "graphviz"
+        return "Code", data
+
     def __enter__(self):
         self.old_display = gvdot.display
         self.old_Markdown = gvdot.Markdown
         self.old_SVG = gvdot.SVG
         self.old_Image = gvdot.Image
+        self.old_Code = gvdot.Code
         gvdot.display = self.display
         gvdot.Markdown = self.Markdown
         gvdot.SVG = self.SVG
         gvdot.Image = self.Image
+        gvdot.Code = self.Code
         return self
 
     def __exit__(self, exc_type, exc, tb):
@@ -50,6 +57,7 @@ class _MockIPython:
         gvdot.Markdown = self.old_Markdown
         gvdot.SVG = self.old_SVG
         gvdot.Image = self.old_Image
+        gvdot.Code = self.old_Code
         return False
 
 
@@ -60,10 +68,12 @@ class _NoIPython:
         self.old_Markdown = gvdot.Markdown
         self.old_SVG = gvdot.SVG
         self.old_Image = gvdot.Image
+        self.old_Code = gvdot.Code
         gvdot.display = None
         gvdot.Markdown = None
         gvdot.SVG = None
         gvdot.Image = None
+        gvdot.Code = None
         return self
 
     def __exit__(self, exc_type, exc, tb):
@@ -71,6 +81,7 @@ class _NoIPython:
         gvdot.Markdown = self.old_Markdown
         gvdot.SVG = self.old_SVG
         gvdot.Image = self.old_Image
+        gvdot.Code = self.old_Code
         return False
 
 
@@ -95,7 +106,7 @@ def test_show():
         dot.show_source()
         displayed = mock.take()
         assert len(displayed) == 1
-        assert displayed[0][0] == "Markdown"
+        assert displayed[0][0] == "Code"
         assert "graph" in displayed[0][1]
 
         dot.show(format="svG")

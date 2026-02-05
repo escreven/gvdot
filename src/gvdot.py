@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import defaultdict
 import copy
 from dataclasses import dataclass
+from html import escape as html_escape
 from os import PathLike
 from pathlib import PurePath
 import subprocess
@@ -14,18 +15,20 @@ import re
 
 __version__ = "0.9.2dev1"
 
+__all__ = "Markup", "Port", "Dot", "InvocationException", "ShowException"
+
 #
 # Optional notebook support.
 #
 
 try:
-    from IPython.display import display, Markdown, SVG, Image, DisplayHandle
+    from IPython.display import display, Markdown, SVG, Image, Code
 except ImportError:
     display  = None
     Markdown = None
     SVG      = None
     Image    = None
-    DisplayHandle = None
+    Code     = None
 
 def _missing_ipython():
     raise RuntimeError(
@@ -1203,22 +1206,24 @@ class Dot:
             except InvocationException as ex:
                 cause = ex.__cause__
                 assert cause
-                display(Markdown(_SHOW_BAD_INVOKE_MD.format(
-                    program=program, excl=cause.__class__.__name__,
-                    exmsg=str(cause))))
+                display(Markdown(_SHOW_BAD_INVOKE_HTML.format(
+                    program=html_escape(program),
+                    excl=html_escape(cause.__class__.__name__),
+                    exmsg=html_escape(str(cause)))))
                 raise ShowException() from None
             except CalledProcessError as ex:
                 stderr = ex.stderr
                 if type(stderr) is bytes:
                     stderr = stderr.decode()
-                display(Markdown(_SHOW_BAD_EXIT_MD.format(
-                    program=program, status=ex.returncode,
-                    stderr="".join('> ' + line for line in
-                                   stderr.splitlines()))))
+                display(Markdown(s := _SHOW_BAD_EXIT_HTML.format(
+                    program=html_escape(program),
+                    status=html_escape(str(ex.returncode)),
+                    stderr=html_escape(stderr))))
                 raise ShowException() from None
             except TimeoutExpired as ex:
-                display(Markdown(_SHOW_TIMEOUT_MD.format(
-                    program=program, timeout=timeout)))
+                display(Markdown(_SHOW_TIMEOUT_HTML.format(
+                    program=html_escape(program),
+                    timeout=html_escape(str(timeout)))))
                 raise ShowException() from None
         else:
             _missing_ipython()
@@ -1226,10 +1231,10 @@ class Dot:
     def show_source(self) -> None:
         """
         Display the dot object's DOT language representation in a Jupyter
-        notebook as a `IPython.display.Markdown` object.
+        notebook as a `IPython.display.Code` object.
         """
-        if display and Markdown and SVG and Image:
-            display(Markdown(f"```graphviz\n{self}\n```"))
+        if display and Code:
+            display(Code(str(self),language="graphviz"))
         else:
             _missing_ipython()
 
@@ -1259,38 +1264,32 @@ class ShowException(BaseException):
         return "show() could not complete"
 
 
+#
+# HTML blocks for show() errors.  These are displayed in Markdown objects --
+# not HTML objects -- because we want to inherit the notebook's markdown
+# styling.  Using HTML instead of templated markdown text both gives us more
+# control and makes escaping easier.  <pre> tags also mean we need do nothing
+# special to handle multiline stderr.
+#
 
-_SHOW_BAD_INVOKE_MD = """
-<br/>
-
-> **ERROR**: `show()` could not complete.
->
-> The program `{program}` could not be invoked.
->
-> {excl}: {exmsg}
-
-<br/>
+_SHOW_BAD_INVOKE_HTML = """
+<div style="margin-top:1.2em; font-size:140%">
+The program <code>{program}</code> could not be invoked:
+<pre style="margin-left:4ex; font-size:75%">
+{excl}: {exmsg}
+</pre></div>
 """
 
-_SHOW_BAD_EXIT_MD = """
-<br/>
-
->**ERROR**: `show()` could not complete.
->
->The program `{program}` exited with status {status}.
->```
+_SHOW_BAD_EXIT_HTML = """
+<div style="margin-top:1.2em; font-size:140%">
+The program <code>{program}</code> exited with status <code>{status}</code>:
+<pre style="margin-left:4ex; font-size:75%">
 {stderr}
->```
-
-<br/>
+</pre></div>
 """
 
-_SHOW_TIMEOUT_MD = """
-<br/>
-
->**ERROR**: `show()` could not complete.
->
->The program `{program}` timed out after {timeout} seconds.
-
-<br/>
+_SHOW_TIMEOUT_HTML = """
+<div style="margin-top:1.2em; font-size:140%">
+The program <code>{program}</code> timed out after {timeout} seconds.
+</div>
 """

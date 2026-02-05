@@ -5,8 +5,8 @@ sys.path.insert(0, os.path.abspath('../src'))
 import re
 from liveimport import __version__
 
-project = 'LiveImport'
-copyright = '2025, Edward Screven'
+project = 'gvdot'
+copyright = '2026, Edward Screven'
 author = 'Edward Screven'
 
 version = re.match(r"\d+\.\d+",__version__)[0]  #type:ignore
@@ -18,9 +18,9 @@ extensions = [
     'sphinx_rtd_theme',
 ]
 
-# No templates or static elements for now.
+# No templates for now.
 # templates_path = ['_templates']
-# html_static_path = ['_static']
+html_static_path = ['_static']
 
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
