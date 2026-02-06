@@ -1,4 +1,4 @@
-.. currentmodule:: liveimport
+.. currentmodule:: gvdot
 
 Examples
 ========

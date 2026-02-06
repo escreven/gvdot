@@ -1,3 +1,7 @@
+[![PyPI Version](https://img.shields.io/pypi/v/gvdot.svg)](https://pypi.org/project/gvdot/)
+[![Read the Docs Status](https://readthedocs.org/projects/gvdot/badge/?version=latest)](https://gvdot.readthedocs.io)
+[![View on GitHub](https://img.shields.io/badge/Source-GitHub-blue?logo=github)](https://github.com/escreven/gvdot)
+
 
 Generate and render Graphviz diagrams with clear, maintainable code by
 separating presentation from structure.
@@ -26,8 +30,9 @@ class NFA:
     start    : str
 ```
 
-where `delta["q"][i]` is the list of states reached from $q$ by the
-$i^\text{th}$ input alphabet symbol.
+where `delta["q"][0]` is the list of states reached from $q$ by epsilon
+transitions, and `delta["q"][i]` is the list of states reached from $q$ by
+symbol `alphabet[i-1]`.
 
 We start by defining a theme, a normal `Dot` object from which other dot
 objects can inherit graph attributes, default attributes, and roles.
@@ -101,3 +106,32 @@ You can find this [NFA
 example](https://github.com/escreven/gvdot/blob/main/examples/nfa.ipynb) and
 others in the [examples](https://github.com/escreven/gvdot/tree/main/examples)
 directory.
+
+## Documentation
+
+See [gvdot.readthedocs.io](https://gvdot.readthedocs.io) for an overview and
+API reference.
+
+## Installation
+
+You can install gvdot from PyPI with
+
+```sh
+$ pip install gvdot
+```
+
+To ensure the optional notebook support is enabled, use
+
+```sh
+    $ pip install gvdot[ipython]
+```
+
+You can also clone the repository and install it directly.
+
+```sh
+$ git clone https://github.com/escreven/gvdot.git
+$ cd gvdot
+$ pip install .
+```
+
+gvdot requires Python 3.12 or greater and IPython 7.23.1 or greater.

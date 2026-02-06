@@ -33,8 +33,9 @@ represented by instances of
         final    : list[str]
         start    : str
 
-where ``delta["q"][i]`` is the list of states reached from :math:`q` by the
-:math:`i^\text{th}` input alphabet symbol.
+where ``delta["q"][0]`` is the list of states reached from :math:`q` by epsilon
+transitions, and ``delta["q"][i]`` is the list of states reached from :math:`q`
+by symbol ``alphabet[i-1]``.
 
 We start by defining a theme, a normal :class:`Dot` object from which other dot
 objects can inherit graph attributes, default attributes, and roles.

@@ -1,9 +1,9 @@
 #
 # Verify README.md is a deployable state.
 #
-# PyPI incorporates the README into the pypi.org liveimport package description
-# page as-is.  It doesn't correct relative GitHub links, so links in README.md
-# must be absolute.
+# PyPI incorporates the README into the pypi.org gvdot package description page
+# as-is.  It doesn't correct relative GitHub links, so links in README.md must
+# be absolute.
 #
 # op.sh runs this script before declaring a release or deploying to [Test]PyPI.
 #
