@@ -3,7 +3,7 @@ import os
 sys.path.insert(0, os.path.abspath('../src'))
 
 import re
-from liveimport import __version__
+from gvdot import __version__
 
 project = 'gvdot'
 copyright = '2026, Edward Screven'
@@ -32,3 +32,6 @@ html_show_sourcelink = False
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
 }
+
+add_module_names = False
+autodoc_member_order = 'bysource'

@@ -35,11 +35,22 @@ def _missing_ipython():
         "IPython is required to show dot objects. "
         "Install with: pip install gvdot[ipython]")
 
-#
-# See the discussion in the class Dot docstring.
-#
 
 type ID = str|int|float|bool|Markup
+"""
+    Values corresponding to the DOT language non-terminal *ID* used for both
+    entity identifiers and attribute values.  Consistent with the grammar,
+
+    - using an int ``x`` as an :type:`ID` is equivalent to using ``str(x)``
+    - using a float ``x`` as an :type:`ID` is equivalent to using ``str(x)``
+    - using ``Markup(x)`` as an :type:`ID` is different that using ``x``
+
+    For convenience, given that Graphviz uses ``true`` and ``false`` for
+    boolean values,
+
+    - using ``True`` as an :type:`ID` is equivalent to using ``"true"``
+    - using ``False`` as an :type:`ID` is equivalent to using ``"false"``
+"""
 
 #
 # Make sure the purported ID is in fact an ID and return its normalized
@@ -198,14 +209,16 @@ class _Nonce:
 type _NormDisc = str | _Nonce | None
 
 #
-# Identify nodes and edges internally. Node keys are normalized IDs.  Edge keys
-# are normalized (node1,node2,discriminant) triples.  For non-directed graphs,
-# node1 <= node2.
+# Identify nodes, edges, and subgraphs internally.  Node keys and subgraph keys
+# are normalized IDs.  Edge keys are normalized (node1,node2,discriminant)
+# triples.  For non-directed graphs, node1 <= node2.
 #
 
 type _NodeKey = str
 
 type _EdgeKey = tuple[_NodeKey,_NodeKey,_NormDisc]
+
+type _SubgraphKey = str
 
 #
 # Edges have port specifications and attributes, and can be directed.
@@ -256,10 +269,9 @@ class Markup:
     """
     A Graphviz DOT language markup string.
 
-    Graphviz supports what it calls HTML strings delineated with angle
-    brackets, such as `<x<sub>1</sub>>`.  Because in DOT language
-    `"<x<sub>1</sub>>"` (note the quotes) is an ordinary non-markup ID, this
-    package uses `Markup` instances to delineate DOT markup.
+    Graphviz supports what it calls HTML strings such as ``<x<sub>1</sub>>``.
+    Because in DOT language ``"<x<sub>1</sub>>"`` (note the quotes) is an
+    ordinary non-HTML ID, gvdot uses :class:`Markup` to delineate HTML strings.
 
     :param markup: The DOT language markup text excluding the opening and
         closing angle brackets.
@@ -341,145 +353,23 @@ class Dot:
 
     :param directed: The graph is a directed graph.
 
-    :param strict: The graph declaration will include the `strict` keyword.
+    :param strict: The graph declaration will include the ``strict`` keyword.
         This argument is present for completeness.  It's unlikely to be useful
-        with dot objects since `Dot` guarantees edge uniqueness for
+        with dot objects since :class:`Dot` guarantees edge uniqueness for
         non-multigraphs.
 
     :param multigraph: Support multiple edges between the same node pair
         (ordered pair in the directed case.)  This parameter affects the
-        behavior of methods :method:`edge()`, :method:`edge_define()`, and
-        :method:`edge_update()` but does not change the DOT language produced
-        from the dot object.
+        behavior of methods :meth:`edge`, :meth:`edge_define`, and
+        :meth:`edge_update` but does not change the DOT language produced from
+        the dot object.
 
     :param id: The graph identifier.
 
-    :param comment: Possibly multiline text prepended as a // style comment.
+    :param comment: Possibly multiline text prepended as a ``//`` style
+        comment.
 
-    :raises ValueError: If both `strict` and `multigraph` are requested.
-
-    The string representation of a dot object is DOT language text:
-
-    .. code-block:: python
-        dot = Dot(directed=true).graph(label="Example")
-        dot.node("a",color="green")
-        dot.node("b",label=Markup("b<sub>0"))
-        dot.edge("a","b",label="apply")
-        dot.edge(Port("a",cp="w"),Port("b",cp="w"),label="undo")
-        print(dot)
-
-    produces
-
-    .. code-block:: graphviz
-        digraph {
-            a [color=green]
-            b [label=<b<sub>0>]
-            a -> b [label="apply"]
-            b:w -> a:w [label="undo"]
-            label="Example"
-        }
-
-    The DOT language representation elements have the following order.
-
-    - Comment lines
-    - The graph header and opening bracket (Example: "graph mygraph {")
-    - Graph default attributes statement
-    - Node default attributes statement
-    - Edge default attributes statement
-    - All graph attributes excluding "label"
-    - Node statements including all node specific attributes
-    - Edge statements including all edge specific attributes
-    - Subgraphs
-    - The graph "label" attribute
-    - The graph closing bracket
-
-    (The reason for the graph label special case is that graph labels are
-    inherited by subgraphs that follow it -- unlikely to be desired.)
-
-    `Dot` takes steps to produce readable DOT language representations: indent
-    reasonably, avoid unnecessary *ID* quoting (see below), and separate
-    sections with blank lines unless there are few statements.
-
-    Graphviz IDs
-    ------------
-
-    The DOT language grammar uses non-terminal *ID* for both entity identifiers
-    and attribute values.  Lexically, *ID*s can be unquoted character sequences
-    that look like numbers or programming language identifiers, quoted strings,
-    and markup strings (see :class:`Markup`).  Regardless of how they
-    appear, there is no type differentiation between non-markup *ID*s: in DOT
-    language, `1.23` and `"1.23"` are two ways to write the same thing.
-
-    To be consistent with the DOT grammar, this module defines type `ID` used
-    by dot object methods for identifiers and attribute values.  Dot methods
-    normalize `ID` values to strings, so that the `edge()` call of
-
-    .. code-block:: python
-        dot.node(100)
-        dot.node(101)
-        dot.edge("100","101")
-
-    creates an edge between the two defined nodes.  Markup *ID*s are distinct
-    from non-markup *ID*s.  So, Python values `"the end"` and `Markup("the
-    end")` normalize to two distinct strings: `'"the end"'` and `'<the end>'`.
-
-    As a convenience, because some Graphiz attributes have boolean values
-    specified as `true` or `false`, Python bool `ID` values are normalized to
-    those lowercase forms.
-
-    Graphviz Attributes
-    -------------------
-
-    Applications specify graph, node, and edge attributes as keyword arguments
-    to dot object methods.  Each keyword should be a Graphviz attribute name
-    (this is not checked) and each value should be an `ID` or `None`.  Value
-    `None` deletes the attribute from the target entity if it was previously
-    specified, and is ignored if not.
-
-    Methods that accept attribute keyword arguments use positional-only
-    arguments for everything else.  That way, if Graphviz ever adds an
-    attribute conflicting with those other argument names, applications can
-    still provide a value for the conflicting attribute.
-
-    One Graphviz attribute, `class`, is also a Python reserved name.  To enable
-    applications to specify a value for `class` and any future conflicting
-    attribute, `Dot` strips one trailing underscore character from attribute
-    keywords if present.  Example:
-
-    .. code-block: python
-        dot.node("a", class_="important", shape_="circle")
-
-    Node `a` will have SVG element class `"important"` and shape `"circle"`.
-    The underscore is required for class, and superfluous for shape.
-
-    Roles
-    -----
-
-    A role is a named collection of attribute values similar to default node or
-    edge attributes.  Using the attribute `role`, applications may assign a
-    role to a node, edge, or graph, causing that entity to inherit the role's
-    attribute values.  For example,
-
-    .. code-block:: python
-        dot.node_role("highlighted", fillcolor="yellow")
-        dot.node("node12", role="highlighted", label="Node 12")
-
-    results in the DOT language statement
-
-    ..code-block:: graphviz
-        node12 [ fillcolor=yellow label="Node 12"]
-
-    Roles are not a DOT language feature, and other than the effect they have
-    on entity attributes do not appear in the DOT language representation.  The
-    attribute name `role` is reserved by `Dot`.  Only graphs, nodes, and edges
-    can have attribute `role`.
-
-    A role need not be defined before it is assigned.  However, `Dot` raises an
-    exception if an assigned role is not defined when the application creates a
-    DOT language representation.
-
-    Method Chaining
-    ---------------
+    :raises ValueError: If both ``strict`` and ``multigraph`` are requested.
 
     Except as otherwise described, dot object methods return self to enable
     chained method invocations.
@@ -488,8 +378,8 @@ class Dot:
         "directed", "strict", "multigraph", "graphid",
         "comment", "d_grapha", "d_nodea", "d_edgea",
         "grapha", "noderoles", "edgeroles", "graphroles",
-        "nodemap", "edgemap", "nodes", "edges",
-        "subgraphs", "_parent",
+        "nodemap", "edgemap", "subgraphmap", "nodes",
+        "edges", "subgraphs", "_parent",
     )
     def __init__(self, *, directed:bool=False, strict:bool=False,
                  multigraph:bool=False, id:ID|None=None,
@@ -513,6 +403,7 @@ class Dot:
         self.edgeroles:dict[str,_Attrs] = defaultdict(dict)
         self.nodemap:dict[_NodeKey,_Attrs] = defaultdict(dict)
         self.edgemap:dict[_EdgeKey,_Edge] = dict()
+        self.subgraphmap:dict[_SubgraphKey,Dot] = dict()
         self.nodes:list[_NodeKey] = []
         self.edges:list[_Edge] = []
         self.subgraphs:list[Dot] = []
@@ -575,7 +466,7 @@ class Dot:
 
     def node_define(self, id:ID, /, **attrs:ID|None) -> Dot:
         """
-        Same as method :method:`node`, except require the node to be undefined.
+        Same as method :meth:`node`, except require the node to be undefined.
 
         :raises RuntimeError: The node is already defined.
         """
@@ -588,7 +479,7 @@ class Dot:
 
     def node_update(self, id:ID, /, **attrs:ID|None) -> Dot:
         """
-        Same as method :method:`node`, except require the node to be defined.
+        Same as method :meth:`node`, except require the node to be defined.
 
         :raises RuntimeError: The node is not defined.
         """
@@ -685,27 +576,28 @@ class Dot:
         :param point2: The second edge endpoint, either a node identifier or a
             port.  In the directed case, this is the destination of the arc.
 
-        :discriminant: A value allowing the application to refer to specific
-            edges created in a multigraph.  A discriminant may only be provided
-            for multigraphs, but are not required for multigraphs.  If
+        :param discriminant: A value allowing the application to refer to
+            specific edges created in a multigraph.  A discriminant may only be
+            provided for multigraphs, but are not required for multigraphs.  If
             provided, discriminants need only be unique among edges of their
             associated node pair.  Discriminants do not appear in the DOT
             language representation.
 
         :param attrs: New or amending attribute value assignments.
 
-        Consistent with the DOT language, only the `id` portion of a
+        Consistent with the DOT language, only the ``id`` portion of a
         :class:`Port` is relevant to edge identification.  In the code below,
         the first statement defines an edge, and the second amends the same
         edge's attributes.
 
         .. code-block:: python
+
             dot = Dot()
             dot.edge(Port("a",cp="n"), Port("b","output","s"), color="blue")
             dot.edge("a","b",style="dashed")
 
-        The outcome of calling `edge()` with the endpoint node IDs of an
-        already defined edge depends on the constructor `multigraph` parameter
+        The outcome of calling :meth:`edge` with the endpoint node IDs of an
+        already defined edge depends on the constructor ``multigraph`` parameter
         and whether or not a discriminant is specified.
 
         - Non-multigraph: the defined edge is amended.
@@ -718,15 +610,17 @@ class Dot:
         For example, the DOT representation of
 
         .. code-block:: python
+
             dot = Dot()
             dot.edge(Port("a", cp="s"), Port("b", cp="s"))
             dot.edge(Port("a", cp="n"), "b")
 
-        includes the edge `a:n -- b:s`.
+        includes the edge ``a:n -- b:s``.
 
         As in DOT, edge endpoint nodes need not be defined.  The output of
 
         .. code-block:: python
+
             dot = Dot()
             dot.edge("a","b",label="An example edge")
             print(dot,file=output_file)
@@ -738,7 +632,7 @@ class Dot:
     def edge_define(self, point1:ID|Port, point2:ID|Port,
                     discriminant:ID|None=None, /, **attrs:ID|None) -> Dot:
         """
-        Same as method :method:`edge`, except require the edge to be undefined.
+        Same as method :meth:`edge`, except require the edge to be undefined.
 
         :raises RuntimeError: The edge is already defined.
         """
@@ -747,7 +641,7 @@ class Dot:
     def edge_update(self, point1:ID|Port, point2:ID|Port,
                     discriminant:ID|None=None, /, **attrs:ID|None) -> Dot:
         """
-        Same as method :method:`edge`, except require the edge to be defined.
+        Same as method :meth:`edge`, except require the edge to be defined.
 
         :raises RuntimeError: The edge is not defined.
         """
@@ -763,14 +657,14 @@ class Dot:
 
     def subgraph(self, id:ID|None=None) -> Dot:
         """
-        Define a subgraph.
+        Define or prepare to amend a subgraph.
 
         :param id: The subgraph identifier.
 
-        :return: A new child dot object.  Graph attributes, attribute defaults,
-            and nodes and edges defined through the child will appear within a
-            subgraph statement of the root dot object's DOT language
-            representation.
+        :return: A new or existing child dot object.  Graph attributes,
+            attribute defaults, and nodes and edges defined through the child
+            will appear within a subgraph statement of the root dot object's
+            DOT language representation.
 
         :raises ValueError: A subgraph with that identity is already defined.
 
@@ -782,12 +676,29 @@ class Dot:
         Roles are similarly scoped to the root graph.  Role specifications or
         amendments made through a subgraph dot object are visible throughout
         the graph.
+
+        Subgraphs, on the other hand, are scoped to their parent.  So, the
+        assertions below all hold.
+
+        .. code:: python
+
+            dot = Dot()
+            sub1 = dot.subgraph(id="sub1")
+            sub1_sub2 = sub1.subgraph(id="sub2")
+            assert dot.subgraph(id="sub1") is sub1
+            assert sub1.subgraph(id="sub2") is sub1_sub2
+            assert dot.subgraph(id="sub2") is not sub1_sub2
         """
+        if id is not None:
+            key = _normalize(id, "Subgraph identifier")
+            if (subdot := self.subgraphmap.get(key)) is not None:
+                return subdot
         #
         # Here we have a Python weakness on display: no multiple constructors
         # means no clean way to have the child constructed differently.  We
         # choose to perform surgery on the child after construction rather than
-        # pollute Dot's public constructor.
+        # pollute Dot's public constructor.  Note we do not replace
+        # subgraphmap, since subgraphs are scoped to their parent.
         #
         subdot = Dot(directed=self.directed, strict=self.strict,
                      multigraph=self.multigraph, id=id)
@@ -798,15 +709,48 @@ class Dot:
         subdot.graphroles = self.graphroles
         subdot._parent = self
         self.subgraphs.append(subdot)
+        if id is not None:
+            self.subgraphmap[key] = subdot
         return subdot
+
+    def subgraph_define(self, id:ID) -> Dot:
+        """
+        Same as :meth:`subgraph`, except require the subgraph to be
+        undefined.
+
+        :raises RuntimeError: The subgraph is already defined.
+        """
+        key = _normalize(id,"Subgraph identifier")
+        if key in self.subgraphmap:
+            raise RuntimeError(f"Subgraph {key} already defined")
+        return self.subgraph(id)
+
+    def subgraph_update(self, id:ID) -> Dot:
+        """
+        Same as :meth:`subgraph`, except require the subgraph to be
+        defined.
+
+        :raises RuntimeError: The subgraph is not defined.
+        """
+        key = _normalize(id,"Subgraph identifier")
+        if key not in self.subgraphmap:
+            raise RuntimeError(f"Subgraph {key} not defined")
+        return self.subgraph(id)
+
+    def subgraph_is_defined(self, id:ID) -> bool:
+        """
+        Return True iff the identified subgraph is defined.
+        """
+        return _normalize(id,"Subgraph identifier") in self.subgraphmap
 
     def all_default(self, **attrs:ID|None) -> Dot:
         """
         Specify or amend default graph, node, and edge attributes all at once.
 
-        Executing `dot.all_default(**attrs)` has the same effect as executing
+        Executing ``dot.all_default(**attrs)`` has the same effect as executing
 
         .. code-block:: python
+
             dot.graph_default(**attrs)
             dot.node_default(**attrs)
             dot.edge_default(**attrs)
@@ -821,10 +765,11 @@ class Dot:
         Define or amend the attributes of same-named graph, node, and edge
         roles all at once.
 
-        Executing `dot.all_role(role, **attrs)` has the same effect as
+        Executing ``dot.all_role(role, **attrs)`` has the same effect as
         executing
 
         .. code-block:: python
+
             dot.graph_role(role, **attrs)
             dot.node_role(role, **attrs)
             dot.edge_role(role, **attrs)
@@ -866,7 +811,7 @@ class Dot:
 
         :param source: The attribute source.
 
-        If an attribute in `source` already has a value in this graph, this
+        If an attribute in ``source`` already has a value in this graph, this
         graph's value prevails.
         """
         def incorporate_attrs(target:_Attrs, source:_Attrs):
@@ -1021,8 +966,9 @@ class Dot:
 
         return completed.stdout
 
-    def to_svg(self, program="dot", *, timeout:float|None=None,
-               directory:str|PathLike|None=None, inline=False,
+    def to_svg(self, program="dot", *, inline=False,
+               directory:str|PathLike|None=None,
+               timeout:float|None=None,
                graph_attrs:Mapping[str,ID]|None=None,
                node_attrs:Mapping[str,ID]|None=None,
                edge_attrs:Mapping[str,ID]|None=None) -> str:
@@ -1032,21 +978,21 @@ class Dot:
 
         :param program: Which Graphviz program to use (dot by default).
 
+        :param inline: Generate SVG without an XML header.
+
         :param directory: Where to find the program executable.  If not
-            specified, the program must be found on the process's `PATH`.
+            specified, the program must be found on the process's ``PATH``.
 
         :param timeout: Limit the program execution time to this many seconds.
 
-        :param inline: Generate SVG without an XML header.
-
         :param graph_attrs: Additional graph attribute values to pass to the
-            program on the command line via the `-G` option.
+            program on the command line via the ``-G`` option.
 
         :param node_attrs: Additional node attribute values to pass to the
-            program on the command line via the `-N` option.
+            program on the command line via the ``-N`` option.
 
         :param edge_attrs: Additional edge attribute values to pass to the
-            program on the command line via the `-E` option.
+            program on the command line via the ``-E`` option.
 
         :return: An SVG string.
 
@@ -1054,15 +1000,17 @@ class Dot:
             because it wasn't found.
 
         :raises subprocess.CalledProcessError: The invoked program exited with
-            a non-zero status code.  `CalledProcessError` objects include the
-            status code, stdout, and stderr of the program as properties.
+            a non-zero status code.  :class:`~subprocess.CalledProcessError`
+            objects include the status code, stdout, and stderr of the program
+            as properties.
 
         :raises subprocess.TimeoutExpired: The invoked program took longer than
-            `timeout` seconds to run and was killed.
+            ``timeout`` seconds to run and was killed.
 
         Example:
 
         .. code-block:: python
+
             from IPython.display import display, SVG
             dot = Dot()
             dot.edge("a","b",label="Render")
@@ -1079,8 +1027,9 @@ class Dot:
 
         return stdout
 
-    def to_rendered(self, program="dot", *, timeout:float|None=None,
-                    directory:str|PathLike|None=None, format="png",
+    def to_rendered(self, program="dot", *, format="png",
+                    timeout:float|None=None,
+                    directory:str|PathLike|None=None,
                     graph_attrs:Mapping[str,ID]|None=None,
                     node_attrs:Mapping[str,ID]|None=None,
                     edge_attrs:Mapping[str,ID]|None=None) -> bytes:
@@ -1090,23 +1039,23 @@ class Dot:
 
         :param program: Which Graphviz program to use (dot by default).
 
+        :param format: The output format desired (png by default).
+            :meth:`to_rendered` uses the value of ``format`` to form the ``-T``
+            argument to the specified program.
+
         :param directory: Where to find the program executable.  If not
-            specified, the program must be found on the process's `PATH`.
+            specified, the program must be found on the process's ``PATH``.
 
         :param timeout: Limit the program execution time to this many seconds.
 
-        :param format: The output format desired (png by default).
-            `to_rendered()` uses the value of `format` to form the `-T`
-            argument to the specified program.
-
         :param graph_attrs: Additional graph attribute values to pass to the
-            program on the command line via the `-G` option.
+            program on the command line via the ``-G`` option.
 
         :param node_attrs: Additional node attribute values to pass to the
-            program on the command line via the `-N` option.
+            program on the command line via the ``-N`` option.
 
         :param edge_attrs: Additional edge attribute values to pass to the
-            program on the command line via the `-E` option.
+            program on the command line via the ``-E`` option.
 
         :return: The output bytes of the specified program.
 
@@ -1114,15 +1063,17 @@ class Dot:
             because it wasn't found.
 
         :raises subprocess.CalledProcessError: The invoked program exited with
-            a non-zero status code.  `CalledProcessError` objects include the
-            status code, stdout, and stderr of the program as properties.
+            a non-zero status code.  :class:`~subprocess.CalledProcessError`
+            objects include the status code, stdout, and stderr of the program
+            as properties.
 
         :raises subprocess.TimeoutExpired: The invoked program took longer than
-            `timeout` seconds to run and was killed.
+            ``timeout`` seconds to run and was killed.
 
         Example:
 
         .. code-block:: python
+
             dot = Dot().graph(dpi=300)
             dot.edge("a","b",label="Render")
             dot.edge("b","c",label="as")
@@ -1139,50 +1090,51 @@ class Dot:
 
         return stdout
 
-    def show(self, *, format:str="svg",
-             program="dot", timeout:float|None=None,
+    def show(self, program="dot", *,
+             format:str="svg", size:str|None=None,
              directory:str|PathLike|None=None,
-             size:str|None=None,
+             timeout:float|None=None,
              graph_attrs:Mapping[str,ID]|None=None,
              node_attrs:Mapping[str,ID]|None=None,
              edge_attrs:Mapping[str,ID]|None=None) -> None:
         """
         Display the dot object in a Jupyter notebook as an SVG or Image object.
-        `show()` generates the SVG or Image data by invoking a Graphviz program
+        :meth:`show` generates the SVG or Image data by invoking a Graphviz program
         through the subprocess module.
 
         :param program: Which Graphviz program to use (dot by default).
 
+        :param format: The output format desired (svg by default).  If the
+            format is "svg" (upper, lower, or mixed case), :meth:`show` will
+            generate SVG and display a ``IPython.display.SVG`` object.
+            Otherwise, :meth:`show` will generate image data and display a
+            ``IPython.display.Image`` object.
+
+        :param size: Add a size attribute to the graph before rendering.  A
+            value such as ``"5,5"`` can help ensure the graph visually fits in
+            the notebook.
+
         :param directory: Where to find the program executable.  If not
-            specified, the program must be found on the process's `PATH`.
+            specified, the program must be found on the process's ``PATH``.
 
         :param timeout: Limit the program execution time to this many seconds.
 
-        :param format: The output format desired (svg by default).  If the
-            format is "svg" (upper, lower, or mixed case), `show()` will
-            generate SVG and display a `IPython.display.SVG` object.
-            Otherwise, `show()` will generate image data and display a
-            `IPython.display.Image` object.
-
-        :param size: Add a size attribute to the graph before rendering.  A
-            value such as `"5,5"` can help ensure the graph visually fits in
-            the notebook.
-
         :param graph_attrs: Additional graph attribute values to pass to the
-            program on the command line via the `-G` option.  If parameter
-            `size` is also specified, and `graph_attrs` contains a `size`
-            entry, that entry is overwritten with the `size` parameter value.
+            program on the command line via the ``-G`` option.  If parameter
+            ``size`` is also specified, and ``graph_attrs`` contains a ``size``
+            entry, that entry is overwritten with the ``size`` parameter value.
 
         :param node_attrs: Additional node attribute values to pass to the
-            program on the command line via the `-N` option.
+            program on the command line via the ``-N`` option.
 
         :param edge_attrs: Additional edge attribute values to pass to the
-            program on the command line via the `-E` option.
+            program on the command line via the ``-E`` option.
 
-        :raises ShowException: `show()` could not complete because the program
-            could not be invoked, it timed out, or it exited with a non-zero
-            status code.  When `show()` raises `ShowException`, it also
-            displays a Markdown block explaining why it could not complete.
+        :raises ShowException: :meth:`show()` could not complete because the
+            program could not be invoked, it timed out, or it exited with a
+            non-zero status code.  When :meth:`show()` raises
+            :class:`ShowException`, it also displays a Markdown block
+            explaining why it could not complete.
 
         :raises RuntimeError: IPython is not installed.
         """
@@ -1231,7 +1183,7 @@ class Dot:
     def show_source(self) -> None:
         """
         Display the dot object's DOT language representation in a Jupyter
-        notebook as a `IPython.display.Code` object.
+        notebook as a ``IPython.display.Code`` object.
         """
         if display and Code:
             display(Code(str(self),language="graphviz"))
@@ -1257,6 +1209,9 @@ class InvocationException(BaseException):
 
 
 class ShowException(BaseException):
+    """
+    :meth:`Dot.show` could not complete.
+    """
     def __init__(self):
         pass
 

@@ -110,6 +110,8 @@ def test_statement_order():
     subdot.edge_default(color="red")
     subdot.node_default(shape="circle")
     subdot.graph_default(dpi=300)
+    subdot.subgraph(id="Subgraph1Sub")
+    dot.subgraph("Subgraph2")
     dot.edge("a","b")
     dot.node("a")
     dot.graph(labelloc="t")
@@ -133,7 +135,11 @@ def test_statement_order():
             rankdir = LTR
             c
             c -- d
+            subgraph Subgraph1Sub {
+            }
             label = "SubLabel1"
+        }
+        subgraph Subgraph2 {
         }
         label = "Label"
     }
@@ -393,6 +399,18 @@ def test_disc_for_mg_only():
     Discriminants may not be specified for non-multigraphs.
     """
     expect_ex(ValueError,lambda: Dot().edge("a","b","x"))
+
+
+def test_subgraph_identity():
+    """
+    Subgraph identity is scoped to parents.
+    """
+    dot = Dot()
+    sub1 = dot.subgraph(id="sub1")
+    sub1_sub2 = sub1.subgraph(id="sub2")
+    assert dot.subgraph(id="sub1") is sub1
+    assert sub1.subgraph(id="sub2") is sub1_sub2
+    assert dot.subgraph(id="sub2") is not sub1_sub2
 
 
 def test_subgraph_scoping():
