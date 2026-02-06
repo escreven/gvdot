@@ -1,18 +1,22 @@
+.. currentmodule:: gvdot
+
 API
 ===
 
-.. autofunction:: liveimport.register
+.. autotype:: ID
 
-.. autofunction:: liveimport.sync
+.. autoclass:: Markup
+    :members:
 
-.. autofunction:: liveimport.workspace
+.. autoclass:: Port
+    :members:
 
-.. autofunction:: liveimport.hidden_cell_magic
+.. autoclass:: Dot
+    :members:
 
-.. autofunction:: liveimport.auto_sync
+.. autoexception:: InvocationException
+    :members:
 
-.. autoclass:: liveimport.ReloadEvent
-    :no-members:
+.. autoexception:: ShowException
+    :members:
 
-.. autoexception:: liveimport.ModuleError
-    :no-members:
