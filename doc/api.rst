@@ -17,6 +17,12 @@ API
 .. autoexception:: InvocationException
     :members:
 
+.. autoexception:: ProcessException
+    :members:
+
+.. autoexception:: TimeoutException
+    :members:
+
 .. autoexception:: ShowException
     :members:
 

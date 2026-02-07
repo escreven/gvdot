@@ -35,8 +35,7 @@ and
 
 .. code-block:: python
 
-    with open("rollback.svg", "w") as f:
-        print(dot.to_svg(),file=f)
+    dot.save("rollback.svg")
 
 renders that DOT language text as the SVG file
 
@@ -268,6 +267,8 @@ in a notebook, we see
 .. image:: _static/overview/theme-image2.*
     :align: center
     :alt: Vertically compact task diagram
+
+|br|
 
 Edge Identity
 -------------

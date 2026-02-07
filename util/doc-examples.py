@@ -192,8 +192,7 @@ def nfa_example() -> list[_Artifact]:
             "r3": [[], ["r3"], ["r3"]],
         }, ["q4","r0","r1","r2"], "s0")
 
-        #+with open("example.svg","w") as f:
-        #+    print(nfa_diagram(example,"Example NFA").to_svg(), file=f)
+        #+ nfa_diagram(example,"Example NFA").save("example.svg")
 
         return example
 

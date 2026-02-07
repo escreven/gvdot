@@ -92,8 +92,7 @@ example = NFA("01", {
     "r3": [[], ["r3"], ["r3"]],
 }, ["q4","r0","r1","r2"], "s0")
 
-with open("example.svg","w") as f:
-    print(nfa_diagram(example,"Example NFA").to_svg(), file=f)
+nfa_diagram(example,"Example NFA").save("example.svg")
 ```
 
 In a notebook, we can directly display the diagram from a cell containing
@@ -123,7 +122,7 @@ $ pip install gvdot
 To ensure the optional notebook support is enabled, use
 
 ```sh
-    $ pip install gvdot[ipython]
+$ pip install gvdot[ipython]
 ```
 
 You can also clone the repository and install it directly.
@@ -134,4 +133,4 @@ $ cd gvdot
 $ pip install .
 ```
 
-gvdot requires Python 3.12 or greater and IPython 7.23.1 or greater.
+gvdot requires Python 3.12 or greater.

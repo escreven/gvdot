@@ -7,7 +7,7 @@ import copy
 from dataclasses import dataclass
 from html import escape as html_escape
 from os import PathLike
-from pathlib import PurePath
+from pathlib import Path, PurePath
 import subprocess
 from subprocess import CalledProcessError, TimeoutExpired
 from typing import Any, Mapping
@@ -933,100 +933,6 @@ class Dot:
 
         return '\n'.join(lines)
 
-    def _run_program(self, text:bool, program:str,
-                     directory:str|PathLike|None, timeout:float|None,
-                     t_arg:str, graph_attrs:Mapping[str,ID]|None,
-                     node_attrs:Mapping[str,ID]|None,
-                     edge_attrs:Mapping[str,ID]|None) -> str|bytes:
-        """
-        Run a Graphviz program.
-        """
-        input = str(self)
-
-        if not text:
-            input = input.encode()
-
-        if directory is not None:
-            program = str(PurePath(directory,program))
-
-        command = [ program, t_arg,
-                    *_attr_args(graph_attrs, node_attrs, edge_attrs) ]
-
-        try:
-            completed = subprocess.run(
-                command, input=input, capture_output=True,
-                text=text, timeout=timeout, check=True)
-        except BaseException as ex:
-            if isinstance(ex,CalledProcessError):
-                raise
-            elif isinstance(ex,TimeoutExpired):
-                raise
-            else:
-                raise InvocationException(program) from ex
-
-        return completed.stdout
-
-    def to_svg(self, program="dot", *, inline=False,
-               directory:str|PathLike|None=None,
-               timeout:float|None=None,
-               graph_attrs:Mapping[str,ID]|None=None,
-               node_attrs:Mapping[str,ID]|None=None,
-               edge_attrs:Mapping[str,ID]|None=None) -> str:
-        """
-        Convert the dot object to an SVG string by invoking a Graphviz program
-        through the subprocess module.
-
-        :param program: Which Graphviz program to use (dot by default).
-
-        :param inline: Generate SVG without an XML header.
-
-        :param directory: Where to find the program executable.  If not
-            specified, the program must be found on the process's ``PATH``.
-
-        :param timeout: Limit the program execution time to this many seconds.
-
-        :param graph_attrs: Additional graph attribute values to pass to the
-            program on the command line via the ``-G`` option.
-
-        :param node_attrs: Additional node attribute values to pass to the
-            program on the command line via the ``-N`` option.
-
-        :param edge_attrs: Additional edge attribute values to pass to the
-            program on the command line via the ``-E`` option.
-
-        :return: An SVG string.
-
-        :raises InvocationException: Could not invoke the program, likely
-            because it wasn't found.
-
-        :raises subprocess.CalledProcessError: The invoked program exited with
-            a non-zero status code.  :class:`~subprocess.CalledProcessError`
-            objects include the status code, stdout, and stderr of the program
-            as properties.
-
-        :raises subprocess.TimeoutExpired: The invoked program took longer than
-            ``timeout`` seconds to run and was killed.
-
-        Example:
-
-        .. code-block:: python
-
-            from IPython.display import display, SVG
-            dot = Dot()
-            dot.edge("a","b",label="Render")
-            dot.edge("b","c",label="as")
-            dot.edge("c","a",label="SVG")
-            display(SVG(dot.to_svg()))
-        """
-        t_arg = "-Tsvg_inline" if inline else "-Tsvg"
-
-        stdout = self._run_program(True, program, directory, timeout, t_arg,
-                                   graph_attrs, node_attrs, edge_attrs)
-
-        assert type(stdout) is str
-
-        return stdout
-
     def to_rendered(self, program="dot", *, format="png",
                     timeout:float|None=None,
                     directory:str|PathLike|None=None,
@@ -1034,14 +940,14 @@ class Dot:
                     node_attrs:Mapping[str,ID]|None=None,
                     edge_attrs:Mapping[str,ID]|None=None) -> bytes:
         """
-        Render the dot object by invoking a Graphviz program through the
-        subprocess module.
+        Render the dot object by invoking a Graphviz program.
 
         :param program: Which Graphviz program to use (dot by default).
 
         :param format: The output format desired (png by default).
-            :meth:`to_rendered` uses the value of ``format`` to form the ``-T``
-            argument to the specified program.
+            :meth:`to_rendered` converts the specified value to lowercase if it
+            isn't already, then uses it to form the ``-T`` argument to the
+            specified program.
 
         :param directory: Where to find the program executable.  If not
             specified, the program must be found on the process's ``PATH``.
@@ -1062,12 +968,11 @@ class Dot:
         :raises InvocationException: Could not invoke the program, likely
             because it wasn't found.
 
-        :raises subprocess.CalledProcessError: The invoked program exited with
-            a non-zero status code.  :class:`~subprocess.CalledProcessError`
-            objects include the status code, stdout, and stderr of the program
-            as properties.
+        :raises ProcessException: The invoked program exited with a non-zero
+            status code.  :class:`ProcessException` objects include the status
+            code and stderr of the program as properties.
 
-        :raises subprocess.TimeoutExpired: The invoked program took longer than
+        :raises TimeoutException: The invoked program took longer than
             ``timeout`` seconds to run and was killed.
 
         Example:
@@ -1081,14 +986,124 @@ class Dot:
             with open("example.png","wb") as f:
                 f.write(dot.to_rendered())
         """
-        t_arg = f"-T{format}"
+        t_arg = f"-T{format.lower()}"
 
-        stdout = self._run_program(False, program, directory, timeout, t_arg,
-                                   graph_attrs, node_attrs, edge_attrs)
+        input = str(self).encode()
 
-        assert type(stdout) is bytes
+        if directory is not None:
+            program = str(PurePath(directory,program))
 
-        return stdout
+        command = [ program, t_arg,
+                    *_attr_args(graph_attrs, node_attrs, edge_attrs) ]
+
+        try:
+            completed = subprocess.run(
+                command, input=input, capture_output=True,
+                text=False, timeout=timeout, check=True)
+        except CalledProcessError as ex:
+            raise ProcessException(
+                program, ex.returncode, ex.stderr) from None
+        except TimeoutExpired as ex:
+            assert timeout
+            raise TimeoutException(
+                program, timeout, "" if ex.stderr is None
+                else ex.stderr) from None
+        except BaseException as ex:
+            raise InvocationException(program) from ex
+
+        return completed.stdout
+
+    def to_svg(self, program="dot", *, inline=False,
+               directory:str|PathLike|None=None,
+               timeout:float|None=None,
+               graph_attrs:Mapping[str,ID]|None=None,
+               node_attrs:Mapping[str,ID]|None=None,
+               edge_attrs:Mapping[str,ID]|None=None) -> str:
+        """
+        Convert the dot object to an SVG string by invoking a Graphviz program.
+
+        :param inline: Generate SVG without an XML header.
+
+        For the remaining parameters, and for the exceptions raised, see
+        :meth:`to_rendered`.
+
+        Example:
+
+        .. code-block:: python
+
+            from IPython.display import display, SVG
+            dot = Dot()
+            dot.edge("a","b",label="Render")
+            dot.edge("b","c",label="as")
+            dot.edge("c","a",label="SVG")
+            display(SVG(dot.to_svg()))
+        """
+        format = "svg_inline" if inline else "svg"
+
+        data = self.to_rendered(
+            program=program, format=format, timeout=timeout,
+            directory=directory, graph_attrs=graph_attrs,
+            node_attrs=node_attrs, edge_attrs=edge_attrs)
+
+        return data.decode()
+
+    def save(self, filename:str|PathLike, program="dot", *,
+             exclusive:bool=False, format:str|None=None,
+             directory:str|PathLike|None=None,
+             timeout:float|None=None,
+             graph_attrs:Mapping[str,ID]|None=None,
+             node_attrs:Mapping[str,ID]|None=None,
+             edge_attrs:Mapping[str,ID]|None=None) -> None:
+        """
+        Save a rendition of the dot object to a file.  :meth:`show` generates
+        the file data by invoking a Graphviz program.
+
+        :param filename: The name of the file to write.
+
+        :param exclusive: Fail if the file already exists.
+
+        :param format: The output format desired.  If not specified,
+            :meth:`save` attempts to infer the format from the file extension.
+            Otherwise, format is processed as described by :meth:`to_rendered`.
+
+        :raises ValueError: The format was not specified and could not be
+            inferred from the file extension.
+
+        :raises FileExistsError: The file already exists and option
+            ``exclusive`` is true.
+
+        For the remaining parameters, and for additional exceptions raised, see
+        :meth:`to_rendered`.
+
+        The file extensions for which :meth:`save` infers formats by case
+        insensitive comparison are svg, png, jpg, jpeg, gif, tif, tiff, and
+        pdf.
+        """
+        filepath = Path(filename)
+
+        if format is None:
+            extension = filepath.suffix.removeprefix(".")
+
+            if extension in ('svg','png','jpg','jpeg','gif',
+                             'tif','tiff','pdf'):
+                format = extension
+            else:
+                raise ValueError(f"Cannot infer format from {filename}")
+
+        #
+        # We choose to pull the data back to Python for writing to the file in
+        # order to have more predictable error handling.
+        #
+
+        data = self.to_rendered(
+            program=program, format=format, timeout=timeout,
+            directory=directory, graph_attrs=graph_attrs,
+            node_attrs=node_attrs, edge_attrs=edge_attrs)
+
+        mode = "xb" if exclusive else "wb"
+
+        with open(filepath,mode) as f:
+            f.write(data)
 
     def show(self, program="dot", *,
              format:str="svg", size:str|None=None,
@@ -1099,36 +1114,22 @@ class Dot:
              edge_attrs:Mapping[str,ID]|None=None) -> None:
         """
         Display the dot object in a Jupyter notebook as an SVG or Image object.
-        :meth:`show` generates the SVG or Image data by invoking a Graphviz program
-        through the subprocess module.
+        :meth:`show` generates the SVG or Image data by invoking a Graphviz
+        program.
 
-        :param program: Which Graphviz program to use (dot by default).
-
-        :param format: The output format desired (svg by default).  If the
-            format is "svg" (upper, lower, or mixed case), :meth:`show` will
-            generate SVG and display a ``IPython.display.SVG`` object.
-            Otherwise, :meth:`show` will generate image data and display a
+        :param format: The output format desired (SVG by default).  If the
+            format is "svg" (case insensitive), :meth:`show` will generate SVG
+            and display a ``IPython.display.SVG`` object.  Otherwise,
+            :meth:`show` will generate image data and display a
             ``IPython.display.Image`` object.
 
         :param size: Add a size attribute to the graph before rendering.  A
             value such as ``"5,5"`` can help ensure the graph visually fits in
-            the notebook.
+            the notebook.   If both ``size`` and ``graph_attrs`` are specified,
+            and there is a ``size`` entry in ``graph_attrs``, the value of the
+            parameter ``size`` has precedence.
 
-        :param directory: Where to find the program executable.  If not
-            specified, the program must be found on the process's ``PATH``.
-
-        :param timeout: Limit the program execution time to this many seconds.
-
-        :param graph_attrs: Additional graph attribute values to pass to the
-            program on the command line via the ``-G`` option.  If parameter
-            ``size`` is also specified, and ``graph_attrs`` contains a ``size``
-            entry, that entry is overwritten with the ``size`` parameter value.
-
-        :param node_attrs: Additional node attribute values to pass to the
-            program on the command line via the ``-N`` option.
-
-        :param edge_attrs: Additional edge attribute values to pass to the
-            program on the command line via the ``-E`` option.
+        For the remaining parameters, see :meth:`to_rendered`.
 
         :raises ShowException: :meth:`show()` could not complete because the
             program could not be invoked, it timed out, or it exited with a
@@ -1145,16 +1146,15 @@ class Dot:
                 d['size'] = size
                 graph_attrs = d
             try:
-                if format is not None and format.lower() == 'svg':
-                    display(SVG(self.to_svg(
-                        program=program, timeout=timeout, directory=directory,
-                        graph_attrs=graph_attrs, node_attrs=node_attrs,
-                        edge_attrs=edge_attrs)))
-                elif format is not None:
-                    display(Image(self.to_rendered(
-                        program=program, timeout=timeout, directory=directory,
-                        graph_attrs=graph_attrs, node_attrs=node_attrs,
-                        edge_attrs=edge_attrs)))
+                format = format.lower()
+                data = self.to_rendered(
+                    program=program, format=format, timeout=timeout,
+                    directory=directory, graph_attrs=graph_attrs,
+                    node_attrs=node_attrs, edge_attrs=edge_attrs)
+                if format == 'svg':
+                    display(SVG(data))
+                else:
+                    display(Image(data))
             except InvocationException as ex:
                 cause = ex.__cause__
                 assert cause
@@ -1163,16 +1163,13 @@ class Dot:
                     excl=html_escape(cause.__class__.__name__),
                     exmsg=html_escape(str(cause)))))
                 raise ShowException() from None
-            except CalledProcessError as ex:
-                stderr = ex.stderr
-                if type(stderr) is bytes:
-                    stderr = stderr.decode()
+            except ProcessException as ex:
                 display(Markdown(s := _SHOW_BAD_EXIT_HTML.format(
                     program=html_escape(program),
-                    status=html_escape(str(ex.returncode)),
-                    stderr=html_escape(stderr))))
+                    status=html_escape(str(ex.status)),
+                    stderr=html_escape(ex.stderr))))
                 raise ShowException() from None
-            except TimeoutExpired as ex:
+            except TimeoutException as ex:
                 display(Markdown(_SHOW_TIMEOUT_HTML.format(
                     program=html_escape(program),
                     timeout=html_escape(str(timeout)))))
@@ -1205,7 +1202,71 @@ class InvocationException(BaseException):
         self.program = program
 
     def __str__(self):
-        return f"Could not run program " + self.program
+        return "Could not run program " + self.program
+
+
+class ProcessException(BaseException):
+    """
+    A Graphviz program exited with a non-zero status code.
+
+    .. attribute:: program
+        :type: str
+
+        The program that could not be run.
+
+    .. attribute:: status
+        :type: int
+
+        The program's non-zero exit status code.
+
+    .. attribute:: stderr
+        :type: str
+
+        Text the program wrote to stderr.
+    """
+    program : str
+    status  : int
+    stderr  : str
+    def __init__(self, program:str, status:int, stderr:str|bytes):
+        self.program = program
+        self.status  = status
+        self.stderr  = (stderr.decode(errors='replace')
+                        if type(stderr) is bytes else stderr) #type:ignore
+
+    def __str__(self):
+        return f"Program {self.program} exited with status {self.status}"
+
+
+class TimeoutException(BaseException):
+    """
+    A Graphviz program timed out.
+
+    .. attribute:: program
+        :type: str
+
+        The program that timed out.
+
+    .. attribute:: timeout
+        :type: float
+
+        The timeout value.
+
+    .. attribute:: stderr
+        :type: str
+
+        Text the program wrote to stderr before timing out.
+    """
+    program : str
+    timeout : float
+    stderr  : str
+    def __init__(self, program:str, timeout:float, stderr:str|bytes):
+        self.program = program
+        self.timeout = timeout
+        self.stderr  = (stderr.decode(errors='replace')
+                        if type(stderr) is bytes else stderr) #type:ignore
+
+    def __str__(self):
+        return f"Program {self.program} timed out after {self.timeout} seconds"
 
 
 class ShowException(BaseException):

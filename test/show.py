@@ -26,8 +26,9 @@ class _MockIPython:
         assert type(data) is str
         return "Markdown", data
 
-    def SVG(self, data:str):
-        assert type(data) is str
+    def SVG(self, data:str|bytes):
+        if type(data) is bytes:
+            data = data.decode()
         return "SVG", data
 
     def Image(self, data:bytes):

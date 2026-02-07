@@ -166,6 +166,10 @@ def _main():
         cases = [ case for case in cases
                   if re.search(pattern,case[0]) ]
 
+    if not cases:
+        print("No tests match the pattern.")
+        return
+
     if args.reverse:
         cases = list(reversed(cases))
 

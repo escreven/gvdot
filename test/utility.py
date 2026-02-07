@@ -153,6 +153,9 @@ def likely_svg(text:str):
 def image_format(data:bytes):
     return Image.open(io.BytesIO(data)).format
 
+def image_file_format(filename:str):
+    return Image.open(filename).format
+
 #
 # Create fake Graphviz programs for testing timeouts and non-zero exit status.
 # The context value is the temporary directory of the fakes.

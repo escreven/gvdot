@@ -1,71 +1,8 @@
 import os
 import shutil
-from subprocess import CalledProcessError, TimeoutExpired
-from gvdot import Dot, InvocationException
+from gvdot import Dot, InvocationException, ProcessException, TimeoutException
 from utility import expect_ex, image_format, likely_full_svg, likely_svg
-from utility import tmpdir
-
-
-def test_to_svg():
-    """
-    Method to_svg() should invoke the specified graphviz program to render the
-    dot object as SVG.  If the program isn't found, it should raise an
-    InvocationError.  If the program exits with a non-zero status, it should
-    raise a CalledProcessError.  If a timeout is specified, and the program
-    times out, it should raise a TimeoutExpired exception.
-    """
-    dot = Dot().edge("a","b")
-
-    svg = dot.to_svg()
-    assert likely_full_svg(svg)
-    svg_len = len(svg)
-
-    svg = dot.to_svg(inline=True)
-    assert likely_svg(svg) and not likely_full_svg(svg)
-
-    svg = dot.to_svg("neato")
-    assert likely_full_svg(svg)
-
-    ex = expect_ex(InvocationException, lambda: dot.to_svg("doesnotexist"))
-    assert "doesnotexist" in str(ex)
-
-    path = shutil.which('dot')
-
-    if path is None:
-        raise RuntimeError("Could not find path to dot program")
-
-    pathdir = os.path.dirname(path)
-
-    svg = dot.to_svg(program="dot",directory=pathdir)
-    assert likely_full_svg(svg)
-
-    expect_ex(TimeoutExpired,lambda: dot.to_svg(
-        directory=tmpdir(), program="dotsleep", timeout=0.1))
-
-    ex = expect_ex(CalledProcessError,lambda: dot.to_svg(
-        directory=tmpdir(), program="doterror"))
-
-    assert ex.returncode == 1 and "ErrorText" in ex.stderr
-
-    #
-    # The rendered output should be smaller after applying the attributes below
-    # on the command line since the title is gone and the nodes and edges are
-    # invisible.
-    #
-
-    graph_attrs = { 'label': ''}
-    node_attrs  = { 'style': 'invisible'}
-    edge_attrs  = { 'style': 'invisible'}
-
-    data = dot.to_svg(graph_attrs=graph_attrs,
-                      node_attrs=node_attrs,
-                      edge_attrs=edge_attrs)
-
-    assert likely_full_svg(data)
-    assert len(data) < svg_len
-
-    bad_attrs = { 'not legal': 42 }
-    ex = expect_ex(ValueError, lambda:dot.to_svg(graph_attrs=bad_attrs))
+from utility import tmpdir, image_file_format
 
 
 def test_to_rendered():
@@ -101,13 +38,16 @@ def test_to_rendered():
     data = dot.to_rendered(program="dot",directory=pathdir)
     assert image_format(data) == 'PNG'
 
-    expect_ex(TimeoutExpired,lambda: dot.to_rendered(
+    ex = expect_ex(TimeoutException,lambda: dot.to_rendered(
         directory=tmpdir(), program="dotsleep", timeout=0.1))
 
-    ex = expect_ex(CalledProcessError,lambda: dot.to_rendered(
+    assert "timed out" in str(ex)
+
+    ex = expect_ex(ProcessException,lambda: dot.to_rendered(
         directory=tmpdir(), program="doterror"))
 
-    assert ex.returncode == 1 and b"ErrorText" in ex.stderr
+    assert "exited with status" in str(ex)
+    assert ex.status == 1 and "ErrorText" in ex.stderr
 
     #
     # The rendered output should be smaller after applying the attributes below
@@ -127,3 +67,146 @@ def test_to_rendered():
 
     bad_attrs = { 'not legal': 42 }
     ex = expect_ex(ValueError, lambda:dot.to_rendered(graph_attrs=bad_attrs))
+
+
+
+
+def test_to_svg():
+    """
+    Method to_svg() should invoke the specified graphviz program to render the
+    dot object as SVG.  If the program isn't found, it should raise an
+    InvocationError.  If the program exits with a non-zero status, it should
+    raise a CalledProcessError.  If a timeout is specified, and the program
+    times out, it should raise a TimeoutExpired exception.
+    """
+    dot = Dot().edge("a","b")
+
+    svg = dot.to_svg()
+    assert likely_full_svg(svg)
+    svg_len = len(svg)
+
+    svg = dot.to_svg(inline=True)
+    assert likely_svg(svg) and not likely_full_svg(svg)
+
+    svg = dot.to_svg("neato")
+    assert likely_full_svg(svg)
+
+    ex = expect_ex(InvocationException, lambda: dot.to_svg("doesnotexist"))
+    assert "doesnotexist" in str(ex)
+
+    path = shutil.which('dot')
+
+    if path is None:
+        raise RuntimeError("Could not find path to dot program")
+
+    pathdir = os.path.dirname(path)
+
+    svg = dot.to_svg(program="dot",directory=pathdir)
+    assert likely_full_svg(svg)
+
+    expect_ex(TimeoutException,lambda: dot.to_svg(
+        directory=tmpdir(), program="dotsleep", timeout=0.1))
+
+    ex = expect_ex(ProcessException,lambda: dot.to_svg(
+        directory=tmpdir(), program="doterror"))
+
+    assert ex.status == 1 and "ErrorText" in ex.stderr
+
+    #
+    # The rendered output should be smaller after applying the attributes below
+    # on the command line since the title is gone and the nodes and edges are
+    # invisible.
+    #
+
+    graph_attrs = { 'label': ''}
+    node_attrs  = { 'style': 'invisible'}
+    edge_attrs  = { 'style': 'invisible'}
+
+    data = dot.to_svg(graph_attrs=graph_attrs,
+                      node_attrs=node_attrs,
+                      edge_attrs=edge_attrs)
+
+    assert likely_full_svg(data)
+    assert len(data) < svg_len
+
+    bad_attrs = { 'not legal': 42 }
+    ex = expect_ex(ValueError, lambda:dot.to_svg(graph_attrs=bad_attrs))
+
+
+def test_save():
+    """
+    Method save() should invoke the specified graphviz program to save the dot
+    object as bytes.  It should infer the format from the file extension if not
+    given, if given the format should take precedence over the extension.  If
+    the program isn't found, it should raise an InvocationError.  If the
+    program exits with a non-zero status, it should raise a CalledProcessError.
+    If a timeout is specified, and the program times out, it should raise a
+    TimeoutExpired exception.
+    """
+
+    dir = tmpdir()
+
+    test_png = f"{dir}/test.png"
+    test_jpg = f"{dir}/test.jpg"
+
+    dot = Dot().edge("a","b").graph(label="Title")
+
+    dot.save(test_png)
+    assert image_file_format(test_png) == 'PNG'
+    png_len = os.path.getsize(test_png)
+
+    dot.save(test_jpg)
+    assert image_file_format(test_jpg) == 'JPEG'
+
+    dot.save(test_png, format='jpg')
+    assert image_file_format(test_png) == 'JPEG'
+
+    expect_ex(ValueError, lambda: dot.save(f"{dir}/test.unknown"))
+    expect_ex(ValueError, lambda: dot.save(f"{dir}/test"))
+    expect_ex(FileExistsError, lambda: dot.save(test_png,exclusive=True))
+
+    dot.save(test_png,"neato")
+    assert image_file_format(test_png) == 'PNG'
+
+    ex = expect_ex(InvocationException, lambda:
+                   dot.save(test_png,"doesnotexist"))
+    assert "doesnotexist" in str(ex)
+
+    path = shutil.which('dot')
+
+    if path is None:
+        raise RuntimeError("Could not find path to dot program")
+
+    pathdir = os.path.dirname(path)
+
+    data = dot.save(test_png, program="dot", directory=pathdir)
+    assert image_file_format(test_png) == 'PNG'
+
+    expect_ex(TimeoutException,lambda: dot.save(test_png,
+        directory=tmpdir(), program="dotsleep", timeout=0.1))
+
+    ex = expect_ex(ProcessException,lambda: dot.save(test_png,
+        directory=tmpdir(), program="doterror"))
+
+    assert ex.status == 1 and "ErrorText" in ex.stderr
+
+    #
+    # The rendered output should be smaller after applying the attributes below
+    # on the command line (since everything is white).
+    #
+
+    graph_attrs = { 'label': ''}
+    node_attrs  = { 'style': 'invisible'}
+    edge_attrs  = { 'style': 'invisible'}
+
+    data = dot.save(test_png,
+                    graph_attrs=graph_attrs,
+                    node_attrs=node_attrs,
+                    edge_attrs=edge_attrs)
+
+    assert image_file_format(test_png) == 'PNG'
+    assert os.path.getsize(test_png) < png_len
+
+    bad_attrs = { 'not legal': 42 }
+    ex = expect_ex(ValueError, lambda:dot.to_rendered(graph_attrs=bad_attrs))
+

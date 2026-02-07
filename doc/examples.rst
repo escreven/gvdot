@@ -265,8 +265,7 @@ Let's save this one.
 
 .. code:: python
 
-    with open("er-diagram.svg","w") as f:
-        print(diagram.to_svg(), file=f)
+    diagram.save("er-diagram.svg")
 
 
 NFA Diagram
