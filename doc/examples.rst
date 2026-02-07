@@ -58,7 +58,7 @@ between the original DOT file and the transcription is that the DOT file
 restates node defaults three times to reduce explicit attribute value
 assignments, while the code uses gvdot roles.
 
-.. figure:: _static/er-transcribed.svg
+.. figure:: _static/examples/er-transcribed.svg
     :align: center
     :width: 60%
     :alt: Transcribed ER-Diagram
@@ -177,7 +177,7 @@ that role has no attributes values specified as part of the theme.  That
 practice means we can later style attribute-entity edges without having to
 modify the generating code.
 
-.. figure:: _static/er-generated-bw.svg
+.. figure:: _static/examples/er-generated-bw.svg
     :align: center
     :width: 60%
     :alt: Generated Black and White ER-Diagram
@@ -254,7 +254,7 @@ diagram.
     diagram.show(size="5,5")
 
 
-.. figure:: _static/er-generated-color.svg
+.. figure:: _static/examples/er-generated-color.svg
     :align: center
     :width: 60%
     :alt: Generated Color ER-Diagram

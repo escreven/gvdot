@@ -246,8 +246,9 @@ def test_all_default():
 
 def test_def_vs_update():
     """
-    Nodes and edges can be specifically defined and updated.  The general API
-    forms do both.  The defined status of nodes and edges can be tested.
+    Nodes, edges, and subgraphs can be specifically defined and updated.  The
+    general API forms do both.  The defined status of nodes and edges can be
+    tested.
     """
     dot = Dot()
     assert not dot.node_is_defined("a")
@@ -306,6 +307,39 @@ def test_def_vs_update():
         a -- b [color=red]
     }
     """)
+
+    dot = Dot()
+    assert not dot.subgraph_is_defined("sub1")
+    expect_ex(RuntimeError, lambda: dot.subgraph_update("sub1"))
+    sub1 = dot.subgraph_define("sub1")
+    expect_ex(RuntimeError, lambda: dot.subgraph_define("sub1"))
+    sub1.node("a")
+    assert dot.subgraph_update("sub1") is sub1
+    assert dot.subgraph("sub1") is sub1
+    sub2 = dot.subgraph("sub2")
+    sub2.node("a")
+    assert sub2 is not sub1
+    sub3 = dot.subgraph()
+    sub3.node("a")
+    assert sub3 not in (sub1, sub2)
+    sub4 = dot.subgraph()
+    sub4.node("a")
+    assert sub4 not in (sub1, sub2, sub3)
+    expect_str(dot,
+    """
+    graph {
+        subgraph sub1 {
+            a
+        }
+        subgraph sub2 {
+        }
+        subgraph {
+        }
+        subgraph {
+        }
+    }
+    """)
+
 
 
 def test_edge_identity():
