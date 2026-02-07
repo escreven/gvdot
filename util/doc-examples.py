@@ -84,9 +84,9 @@ class _Image(_Artifact):
     def save(self, dir:PurePath):
         name = self.name
         dot = self.dot
-        with open(dir / f"{name}.svg", "w") as f:
+        with open(dir / f"_static/{name}.svg", "w") as f:
             print(dot.to_svg(), file=f)
-        with open(dir / f"{name}.png", "wb") as f:
+        with open(dir / f"_static/{name}.png", "wb") as f:
             f.write(dot.to_rendered(graph_attrs={'dpi':300}))
 
 @dataclass
@@ -94,7 +94,7 @@ class _DotCode(_Artifact):
     dot : Dot
 
     def save(self, dir:PurePath):
-        with open(dir / f"{self.name}.dot.rst", "w") as f:
+        with open(dir / f"_code/{self.name}.dot.rst", "w") as f:
             print(_code_block("graphviz",str(self.dot)), file=f, end="")
 
 @dataclass
@@ -112,13 +112,13 @@ class _PythonCode(_Artifact):
             print(f"Unexpected source for {self.code}")
             sys.exit(1)
 
-        with open(dir / f"{self.name}.py.rst", "w") as f:
+        with open(dir / f"_code/{self.name}.py.rst", "w") as f:
             print(_code_block("python",match[1]), file=f, end="")
 
 
 def _save_artifacts(artifacts:list[_Artifact]):
 
-    dir = PurePath(__file__).parent.parent.joinpath("doc","_static")
+    dir = PurePath(__file__).parent.parent.joinpath("doc")
 
     for artifact in artifacts:
         artifact.save(dir)

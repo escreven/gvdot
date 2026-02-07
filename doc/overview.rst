@@ -25,11 +25,11 @@ dot objects in Jupyter notebooks.
 The string representation of a dot object is DOT language text, the same text
 used when rendering the dot object.  For example,
 
-.. include:: _static/overview/rollback.py.rst
+.. include:: _code/overview/rollback.py.rst
 
 produces
 
-.. include:: _static/overview/rollback.dot.rst
+.. include:: _code/overview/rollback.dot.rst
 
 and
 
@@ -135,7 +135,7 @@ Applications specify graph, subgraph, node, and edge attributes as keyword
 arguments to dot object methods defining or amending those entities, defining
 roles for those entities, or setting defaults for those entity types.
 
-.. include:: _static/overview/attrs.py.rst
+.. include:: _code/overview/attrs.py.rst
 
 Through a combination of gvdot functionality and Graphviz built-in behavior,
 the attributes values assigned above are merged together to render the diagram
@@ -148,7 +148,7 @@ as
 |br|
 The DOT language representation of that dot object is
 
-.. include:: _static/overview/attrs.dot.rst
+.. include:: _code/overview/attrs.dot.rst
 
 Each keyword argument name except for ``role`` should be a Graphviz attribute
 name and each value should be an :type:`ID` or ``None``.  Value ``None``
@@ -157,7 +157,7 @@ it was previously specified, and is ignored if not.
 
 Running the following as a cell in a notebook
 
-.. include:: _static/overview/change-mind.py.rst
+.. include:: _code/overview/change-mind.py.rst
 
 displays two images:
 
@@ -209,11 +209,11 @@ edge attributes.  Using the special attribute ```role```, applications may
 assign a role to a node, edge, or graph, causing that entity to inherit the
 role's attribute values.  Suppose we are modeling projects with
 
-.. include:: _static/overview/tasks-model.py.rst
+.. include:: _code/overview/tasks-model.py.rst
 
 We can generate a project task diagram with
 
-.. include:: _static/overview/tasks-gen.py.rst
+.. include:: _code/overview/tasks-gen.py.rst
 
 We assign a role to task nodes based on (and in this case with the same name
 as) the task's status.  The presentation attributes of the node are captured by
@@ -245,23 +245,23 @@ by the theme.
 We can improve our task diagrammer above by pulling all presentation attributes
 out of ``task_diagram()`` into a theme.
 
-.. include:: _static/overview/theme-theme1.py.rst
+.. include:: _code/overview/theme-theme1.py.rst
 
 This simplifies our generator to
 
-.. include:: _static/overview/theme-code1.py.rst
+.. include:: _code/overview/theme-code1.py.rst
 
 Function ``task_diagram()`` generates the same diagram, but it allows the
 caller to entirely specify the presentation via a theme.  Suppose that
 sometimes we want to present project status in a vertically compact way.  All
 we need is a new theme.
 
-.. include:: _static/overview/theme-theme2.py.rst
+.. include:: _code/overview/theme-theme2.py.rst
 
 We only needed to specify what differs because the compact theme inherited from
 the base theme.  If we run
 
-.. include:: _static/overview/theme-code2.py.rst
+.. include:: _code/overview/theme-code2.py.rst
 
 in a notebook, we see
 

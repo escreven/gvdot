@@ -24,7 +24,7 @@ like this:
 
 represented by instances of
 
-.. include:: _static/index/nfa-model.py.rst
+.. include:: _code/index/nfa-model.py.rst
 
 where ``delta["q"][0]`` is the list of states reached from :math:`q` by epsilon
 transitions, and ``delta["q"][i]`` is the list of states reached from :math:`q`
@@ -33,7 +33,7 @@ by symbol ``alphabet[i-1]``.
 We start by defining a theme, a normal :class:`Dot` object from which other dot
 objects can inherit graph attributes, default attributes, and roles.
 
-.. include:: _static/index/nfa-theme.py.rst
+.. include:: _code/index/nfa-theme.py.rst
 
 The theme defines two gvdot roles, collections of Graphviz attribute values
 that applications can assign to diagram elements by name.
@@ -41,11 +41,11 @@ that applications can assign to diagram elements by name.
 Having isolated presentation attributes in a theme, our generation code is
 straightforward.
 
-.. include:: _static/index/nfa-diagram.py.rst
+.. include:: _code/index/nfa-diagram.py.rst
 
 We can render and save the diagram above with
 
-.. include:: _static/index/nfa-generate.py.rst
+.. include:: _code/index/nfa-generate.py.rst
 
 In a notebook, we can directly display the diagram from a cell containing
 
