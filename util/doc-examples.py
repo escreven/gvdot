@@ -233,87 +233,6 @@ def rollback_example() -> list[_Artifact]:
     ]
 
 
-def change_mind_example() -> list[_Artifact]:
-
-    dot1 : Dot
-
-    def code():
-        nonlocal dot1 #-
-        dot = Dot(directed=True)
-        dot.graph(rankdir="LR")
-        dot.all_default(color="limegreen")
-        dot.edge("a", "b", color="blue", style="dashed")
-        #+ dot.show()
-        dot1 = dot.copy() #-
-
-        # That edge looks terrible.  Let's just use the default.
-        dot.edge("a", "b", color=None)
-        #+ dot.show()
-        return dot
-
-    dot2 = code()
-    assert dot1  #type:ignore
-
-    return [
-        _PythonCode("overview/change-mind",code),
-        _Image("overview/change-mind-1", dot1),
-        _Image("overview/change-mind-2", dot2),
-    ]
-
-
-def tasks_example() -> list[_Artifact]:
-
-    def model():
-        @dataclass
-        class Task:
-            id       : str
-            name     : str
-            requires : tuple[str, ...] = ()
-            status   : str = "normal"
-
-        @dataclass
-        class Project:
-            tasks: dict[str,Task]
-            def __init__(self, tasklist:list[Task]):
-                self.tasks = { task.id: task for task in tasklist }
-
-        return Task, Project
-
-    Task, Project = model()
-
-    example = Project([
-        Task("T3", "Build dev env", ()),
-        Task("T4", "Implement core", ("T3",)),
-        Task("T5", "Implement UI", ("T3",), 'atrisk'),
-        Task("T6", "Write system tests", ("T4",)),
-        Task("T7", "Integrate", ("T4", "T5"), 'atrisk'),
-        Task("T8", "Run system tests", ("T6", "T7"), 'critical'),
-    ])
-
-    def code():
-        def task_diagram(project:Project):
-            dot = Dot(directed=True)
-            dot.node_default(shape="box", margin=0.1, style="filled",
-                            fontsize=10, fontname="sans-serif",
-                            width=0, height=0)
-            dot.node_role("normal", color="#10a010")
-            dot.node_role("atrisk", color="#ffbf00")
-            dot.node_role("critical", color="#c00000", fontcolor="#e8e8e8")
-            for id, task in project.tasks.items():
-                dot.node(id, label=task.name,
-                        role=task.status)
-                for other in task.requires:
-                    dot.edge(other, id)
-            return dot
-        return task_diagram(example)
-
-    return [
-        _PythonCode("overview/tasks-model", model),
-        _PythonCode("overview/tasks-gen", code),
-        _Image("overview/tasks-gen", code()),
-    ]
-
-
 def attrs_example() -> list[_Artifact]:
 
     def code():
@@ -345,7 +264,39 @@ def attrs_example() -> list[_Artifact]:
     ]
 
 
-def theme_example() -> list[_Artifact]:
+def change_mind_example() -> list[_Artifact]:
+
+    dot1 : Dot
+
+    def code():
+        nonlocal dot1 #-
+        dot = Dot(directed=True)
+        dot.graph(rankdir="LR")
+        dot.all_default(color="limegreen")
+        dot.edge("a", "b", color="blue", style="dashed")
+        #+ dot.show()
+        dot1 = dot.copy() #-
+
+        # That edge looks terrible.  Let's just use the default.
+        dot.edge("a", "b", color=None)
+        #+ dot.show()
+        return dot
+
+    dot2 = code()
+    assert dot1  #type:ignore
+
+    return [
+        _PythonCode("overview/change-mind",code),
+        _Image("overview/change-mind-1", dot1),
+        _Image("overview/change-mind-2", dot2),
+    ]
+
+
+#
+# Generates artifacts used in both Roles and Themes.
+#
+
+def project_example() -> list[_Artifact]:
 
     def model():
         @dataclass
@@ -374,6 +325,37 @@ def theme_example() -> list[_Artifact]:
         Task("T8", "Run system tests", ("T6", "T7"), 'critical'),
     ])
 
+    #
+    # Use in Roles section.
+    #
+
+    def roles_code():
+        def task_diagram(project:Project):
+            dot = Dot(directed=True)
+            dot.node_default(shape="box", margin=0.1, style="filled",
+                             fontsize=10, fontname="sans-serif",
+                             width=0, height=0)
+            dot.node_role("normal", color="#10a010")
+            dot.node_role("atrisk", color="#ffbf00")
+            dot.node_role("critical", color="#c00000", fontcolor="#e8e8e8")
+            for id, task in project.tasks.items():
+                dot.node(id, label=task.name,
+                        role=task.status)
+                for other in task.requires:
+                    dot.edge(other, id)
+            return dot
+        return task_diagram(example)
+
+    artifacts = [
+        _PythonCode("overview/project-model", model),
+        _PythonCode("overview/project-roles-code", roles_code),
+        _Image(     "overview/project-roles-image", roles_code()),
+    ]
+
+    #
+    # Use in Themes section.
+    #
+
     def theme1():
         project_theme = (Dot()
             .node_default(shape="box", margin=0.1, style="filled",
@@ -386,18 +368,18 @@ def theme_example() -> list[_Artifact]:
 
     project_theme = theme1()
 
-    def code1():
+    def themes_code1():
         def task_diagram(project:Project, theme:Dot=project_theme):
             dot = Dot(directed=True).use_theme(theme)
             for id, task in project.tasks.items():
                 dot.node(id, label=task.name,
-                        role=task.status)
+                         role=task.status)
                 for other in task.requires:
                     dot.edge(other, id)
             return dot
         return task_diagram
 
-    task_diagram = code1()
+    task_diagram = themes_code1()
 
     dot1 = task_diagram(example)
 
@@ -411,20 +393,23 @@ def theme_example() -> list[_Artifact]:
 
     compact_project_theme = theme2()
 
-    def code2():
+    def themes_code2():
         #+ task_diagram(example, compact_project_theme).show()
         return task_diagram(example, compact_project_theme)
 
-    dot2 = code2()
+    dot2 = themes_code2()
 
-    return [
-        _PythonCode("overview/theme-theme1", theme1),
-        _PythonCode("overview/theme-code1", code1),
-        _Image("overview/theme-image1", dot1),
-        _PythonCode("overview/theme-theme2", theme2),
-        _PythonCode("overview/theme-code2", code2),
-        _Image("overview/theme-image2", dot2),
-    ]
+    artifacts.extend([
+        _PythonCode("overview/project-themes-theme1", theme1),
+        _PythonCode("overview/project-themes-code1", themes_code1),
+        _Image(     "overview/project-themes-image1", dot1),
+        _PythonCode("overview/project-themes-theme2", theme2),
+        _PythonCode("overview/project-themes-code2", themes_code2),
+        _Image(     "overview/project-themes-image2", dot2),
+    ])
+
+    return artifacts
+
 
 # ============================================================================
 #                                  MAIN
@@ -436,9 +421,8 @@ if __name__ == "__main__":
         *nfa_example(),
         *rollback_example(),
         *change_mind_example(),
-        *tasks_example(),
+        *project_example(),
         *attrs_example(),
-        *theme_example()
     ]
 
     _save_artifacts(artifacts)

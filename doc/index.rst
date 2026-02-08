@@ -53,8 +53,8 @@ In a notebook, we can directly display the diagram from a cell containing
 
     nfa_diagram(example,"Example NFA").show()
 
-The :doc:`Overview <overview>` and :doc:`API Reference <api>` describe how
-to use gvdot.  See :doc:`Installation <installation>` to get started.
+The :doc:`Overview <overview>` and :doc:`Reference <reference>` describe how to
+use gvdot.  See :doc:`Installation <installation>` to get started.
 
 .. toctree::
     :maxdepth: 2
@@ -62,7 +62,7 @@ to use gvdot.  See :doc:`Installation <installation>` to get started.
     :caption: Contents:
 
     overview
-    api
+    reference
     examples
     installation
     resources

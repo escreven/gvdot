@@ -1,4 +1,5 @@
 from __future__ import annotations
+from copy import deepcopy
 from gvdot import Dot, Port
 from utility import expect_str, expect_ex
 
@@ -534,7 +535,7 @@ def test_subgraph_scoping():
 def test_copy():
     """
     Copies should be faithful, and should allow the graph and comment to be
-    changed.
+    changed.  A copy should have the identical theme as the original.
     """
     dot = Dot(id="Original", comment="V1")
     dot.graph_default(dpi=72)
@@ -602,6 +603,18 @@ def test_copy():
     assert dot.is_multigraph()
     assert dot.copy().is_multigraph()
 
+    theme = Dot()
+    dot = Dot()
+    dot.use_theme(theme)
+    other = dot.copy()
+    theme.node_default(x=1)
+    expect_str(dot,"""
+    graph {
+        node [x=1]
+    }
+    """)
+    assert str(dot) == str(other)
+
 
 def test_parent():
     """
@@ -619,16 +632,30 @@ def test_chaining():
     """
     dot = Dot()
     assert dot is dot.graph_default()
-    assert dot is dot.node_default()
-    assert dot is dot.edge_default()
     assert dot is dot.graph_role("test")
-    assert dot is dot.node_role("test")
-    assert dot is dot.edge_role("test")
     assert dot is dot.graph()
+    assert dot is dot.node_default()
+    assert dot is dot.node_role("test")
     assert dot is dot.node("a")
     assert dot is dot.node_define("b")
     assert dot is dot.node_update("a")
+    assert dot is dot.edge_default()
+    assert dot is dot.edge_role("test")
     assert dot is dot.edge("a","b")
     assert dot is dot.edge_define("a","c")
     assert dot is dot.edge_update("a","c")
-    assert dot is dot.use_theme(dot)
+    assert dot is dot.use_theme(Dot())
+    assert dot is dot.all_default()
+    assert dot is dot.all_role("test")
+
+
+def test_deepcopy():
+    """
+    Deep copy of a container referencing dot objects should maintain reference
+    aliases.
+    """
+    dot = Dot(id="Canary")
+    subject = [ dot, dot ]
+    other = deepcopy(subject)
+    assert other[0] is other[1]
+    assert other[0] is not subject[0]

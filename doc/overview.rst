@@ -54,7 +54,9 @@ methods are called.
 - At most one edge default attributes statement.
 - All graph attribute assignments, excluding "label".
 - One node statement per defined node.
-- One (non-multigraph) or more (multigraph) edge statements per defined edge.
+- One (non-multigraph) or more (multigraph) edge statements per node pair
+  between which there is a defined edge.  Those node pairs are ordered for
+  directed graphs and unordered otherwise.
 - Subgraphs.  Each subgraph consists of multiple lines following the same
   order as this list, except that subgraphs do not have comments and begin
   with a subgraph header.
@@ -137,7 +139,7 @@ roles for those entities, or setting defaults for those entity types.
 .. include:: _code/overview/attrs.py.rst
 
 Through a combination of gvdot functionality and Graphviz built-in behavior,
-the attributes values assigned above are merged together to render the diagram
+the attribute values assigned above are merged together to render the diagram
 as
 
 .. image:: _static/overview/attrs.*
@@ -208,17 +210,17 @@ edge attributes.  Using the special attribute ```role```, applications may
 assign a role to a node, edge, or graph, causing that entity to inherit the
 role's attribute values.  Suppose we are modeling projects with
 
-.. include:: _code/overview/tasks-model.py.rst
+.. include:: _code/overview/project-model.py.rst
 
 We can generate a project task diagram with
 
-.. include:: _code/overview/tasks-gen.py.rst
+.. include:: _code/overview/project-roles-code.py.rst
 
 We assign a role to task nodes based on (and in this case with the same name
 as) the task's status.  The presentation attributes of the node are captured by
 the role.  The resulting diagram might look like
 
-.. image:: _static/overview/tasks-gen.*
+.. image:: _static/overview/project-roles-image.*
     :align: center
     :alt: Task diagram with normal, at-risk, and critical tasks
 
@@ -239,74 +241,138 @@ Themes
 A theme is a normal :class:`Dot` object from which other dot objects inherit
 graph attributes, default attributes, and roles.  While a theme can have nodes,
 edges, and subgraphs, those elements are ignored by :class:`Dot` objects styled
-by the theme.
+by the theme.  Also, whether or not a theme is directed, is a multigraph, or is
+strict is irrelevant.
 
 We can improve our task diagrammer above by pulling all presentation attributes
 out of ``task_diagram()`` into a theme.
 
-.. include:: _code/overview/theme-theme1.py.rst
+.. include:: _code/overview/project-themes-theme1.py.rst
 
 This simplifies our generator to
 
-.. include:: _code/overview/theme-code1.py.rst
+.. include:: _code/overview/project-themes-code1.py.rst
 
 Function ``task_diagram()`` generates the same diagram, but it allows the
 caller to entirely specify the presentation via a theme.  Suppose that
 sometimes we want to present project status in a vertically compact way.  All
 we need is a new theme.
 
-.. include:: _code/overview/theme-theme2.py.rst
+.. include:: _code/overview/project-themes-theme2.py.rst
 
 We only needed to specify what differs because the compact theme inherited from
 the base theme.  If we run
 
-.. include:: _code/overview/theme-code2.py.rst
+.. include:: _code/overview/project-themes-code2.py.rst
 
 in a notebook, we see
 
-.. image:: _static/overview/theme-image2.*
+.. image:: _static/overview/project-themes-image2.*
     :align: center
     :alt: Vertically compact task diagram
 
 |br|
 
-Edge Identity
--------------
+Defining and Amending
+---------------------
 
-Consistent with the DOT language, only the `id` portion of a
-:class:`Port` is relevant to edge identification.  In the code below,
-the first statement defines an edge, and the second amends the same
-edge's attributes.
+The terms "define", "establish", and "amend" are used throughout the
+:ref:`reference-doc`, sometimes together as "define or amend" or "establish or
+amend".  In the context of gvdot method descriptions,
+
+- `define` means create a node, edge, subgraph, or role and assign initial
+  attribute values for nodes, edges, and roles.  Defined nodes, edges, and
+  subgraphs will appear as statements in the DOT language representation.
+  Defined roles are recorded for resolution in that representation.
+
+- `establish` means assign initial graph, default graph, default node, or
+  default edge attribute values.
+
+- `amend` means make additional attribute value assignments to already defined
+  or established entities, roles, and defaults, overwriting existing
+  assignments with the same attribute names.  In the case of edges, amend also
+  means potentially changing an endpoint's :class:`port specification <Port>`.
+  In the case of subgraphs, the phrase "prepare to amend" is used because the
+  relevant methods return a reference through which the application may modify
+  the subgraph.
+
+The core :class:`Dot` methods for building out the structure of a diagram are
+:meth:`~Dot.node`, :meth:`~Dot.edge`, and :meth:`~Dot.subgraph`.  These methods
+are "define or amend" --- they define an entity if it doesn't exist, and amend
+the it when it does.  :class:`Dot` also has variants :meth:`~Dot.node_define`,
+:meth:`~Dot.edge_define`, and :meth:`~Dot.subgraph_edge` which raise exceptions
+if the entity is already defined and :meth:`~Dot.node_update`,
+:meth:`~Dot.edge_update`, and :meth:`~Dot.subgraph_update` which raise
+exceptions it isn't.  The former have the advantage of giving code a clean,
+declarative feel.  The latter can make buggy code fail faster.
+
+
+Scopes
+------
+
+A :class:`Dot` object created by the :class:`Dot` constructor with descendant
+:class:`Dot` instances created through methods :meth:`subgraph` or
+:meth:`subgraph_define` form a tree mirrored by the ``subgraph`` statement
+hierarchy of the DOT language representation of the root dot object.  DOT
+language semantics with respect to that hierarchy combined with the gvdot
+design lead to the scope related effects described next.
+
+Nodes and edges have dot object tree wide scope.  They may be defined once in
+the tree, and then amended through any dot object in the tree.  The dot object
+through which a node or edge is defined determines where it will appear in
+subgraph hierarchy and, therefore, the set of default attributes which apply to
+the node or edge.
 
 .. code-block:: python
 
-    dot = Dot()
-    dot.edge(Port("a",cp="n"), Port("b","output","s"), color="blue")
-    dot.edge("a","b",style="dashed")
+    dot = Dot(id="Root")
+    sub = dot.subgraph(id="Sub")
+    subsub = sub.subgraph(id="SubSub")
+    dot.node("a")
+    dot.edge("a","b")
+    subsub.node("b")
+    subsub.edge("b","c")
+    dot.node_default(fontsize=10).edge_default(fontsize=10)
+    sub.node_default(color="green").edge_default(color="green")
+    subsub.node_default(penwidth=2).edge_default(penwidth=2)
 
-The outcome of calling `edge()` with the endpoint node IDs of an
-already defined edge depends on the constructor `multigraph` parameter
-and whether or not a discriminant is specified.
+The :class:`Dot` instance defined above has the DOT representation
 
-- Non-multigraph: the defined edge is amended.
-- Multigraph, no discriminant: a new edge is defined
-- Multigraph, distinct discriminant: a new edge is defined
-- Multigraph, same discriminant: the defined edge is amended
+.. code-block:: graphviz
 
-Scoping
--------
+    graph Root {
+        node [fontsize=10]
+        edge [fontsize=10]
+        a
+        a -- b
+        subgraph Sub {
+            node [color=green]
+            edge [color=green]
+            subgraph SubSub {
+                node [penwidth=2]
+                edge [penwidth=2]
+                b
+                b -- c
+            }
+        }
+    }
 
-In DOT, node identifiers are scoped to the root graph, so nodes and
-edges cannot be redefined within a child.  Also, nodes and edge
-attributes can be amended through any dot object in the hierarchy,
-regardless of the dot object through which they were defined.
+Node ``a`` and edge ``a -- b`` have ``fontsize`` 10, but default ``color`` and
+``penwidth``, whereas node ``b`` and edge ``b -- c`` have ``fontsize`` 10, and
+also ``color`` green and ``pendwidth`` 2.
 
-Roles are similarly scoped to the root graph.  Role specifications or
-amendments made through a subgraph dot object are visible throughout
-the graph.
+If a subgraph is a cluster, some Graphviz layout engines (including the default
+engine, dot) will place all nodes defined within the subgraph together in the
+layout.  Therefore, the dot object through which a node is defined may
+determine its placement.
 
-Subgraphs, on the other hand, are scoped to their parent.  So, the
-assertions below all hold.
+Roles also have dot object tree scope.  They may be defined and amended through
+any dot object in the tree, but unlike nodes and edges, the object through
+which a role is defined has no consequence.  Roles may be assigned to any
+entity of the associated kind without regard to the dot object through which
+either was defined.
+
+Subgraphs are scoped to their parent.  So, the assertions below all hold.
 
 .. code:: python
 
@@ -316,9 +382,3 @@ assertions below all hold.
     assert dot.subgraph(id="sub1") is sub1
     assert sub1.subgraph(id="sub2") is sub1_sub2
     assert dot.subgraph(id="sub2") is not sub1_sub2
-
-Rendering
----------
-
-`_define` and `_update`
------------------------

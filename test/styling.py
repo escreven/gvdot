@@ -128,7 +128,7 @@ def test_roles_must_be_defined():
     str(dot3)
 
 
-def test_themes():
+def test_theme_precedence():
     """
     Using the theme of another dot object should apply its default attributes,
     graph attributes, and roles, but not its nodes, edges, and subgraphs.
@@ -179,6 +179,119 @@ def test_themes():
         a -- b [ a=target_6 ]
         x -- y [ a=target_9 b=theme_9 ]
         subgraph TargetSub {
+        }
+    }
+    """)
+
+
+def test_theme_dynamics():
+    """
+    Using themes shouldn't modify the base object.  Switching themes should
+    cause the DOT language representation to shift to the new theme.
+    Modifications to a theme should be immediately reflected in all dot objects
+    inheriting from the theme.
+    """
+    theme1 = Dot().node_default(a=1,b=1,c=1)
+    theme2 = Dot().node_default(b=2,c=2)
+    theme3 = Dot().node_default(c=3)
+
+    dot = Dot()
+
+    dot.use_theme(theme1)
+    expect_str(dot,"""
+    graph {
+        node [ a=1 b=1 c=1 ]
+    }
+    """)
+
+    dot.use_theme(theme2)
+    expect_str(dot,"""
+    graph {
+        node [ b=2 c=2 ]
+    }
+    """)
+
+    dot = dot.use_theme(theme3)
+    expect_str(dot,"""
+    graph {
+        node [ c=3 ]
+    }
+    """)
+
+    theme2.use_theme(theme1)
+    theme3.use_theme(theme2)
+
+    expect_str(dot,"""
+    graph {
+        node [ a=1 b=2 c=3 ]
+    }
+    """)
+
+    dot.use_theme(theme2)
+    expect_str(dot,"""
+    graph {
+        node [ a=1 b=2 c=2 ]
+    }
+    """)
+
+    theme1.node_default(a=100, d=100)
+    expect_str(dot,"""
+    graph {
+        node [ a=100 b=2 c=2 d=100 ]
+    }
+    """)
+
+    dot.use_theme(None)
+    expect_str(dot,"""
+    graph {
+    }
+    """)
+
+
+def test_theme_errors():
+    """
+    Attempting to form a theme cycle should raise an exception.  Themes and the
+    dot objects that use them must be root objects.
+    """
+    theme1 = Dot().node_role("test",a=1,b=1,c=1)
+    theme2 = Dot().node_role("test",b=2,c=2)
+    theme3 = Dot().node_role("test",c=3)
+
+    expect_ex(ValueError, lambda: theme1.use_theme(theme1))
+
+    theme2.use_theme(theme1)
+    expect_ex(ValueError, lambda: theme1.use_theme(theme2))
+
+    theme3.use_theme(theme2)
+    expect_ex(ValueError, lambda: theme1.use_theme(theme3))
+
+    dot1 = Dot()
+    sub1 = dot1.subgraph()
+
+    dot2 = Dot()
+    sub2 = dot2.subgraph()
+
+    expect_ex(ValueError, lambda: dot1.use_theme(sub2))
+    expect_ex(RuntimeError, lambda: sub1.use_theme(dot2))
+
+
+def test_subgraphs_see_theme_roles():
+    """
+    Inherited roles should be assignable to entities defined through subgraph
+    dot objects.
+    """
+    theme = Dot().all_role("test",x=1)
+    dot = Dot().use_theme(theme)
+    subdot = dot.subgraph()
+    subdot.graph(role="test")
+    subdot.node("a",role="test")
+    subdot.edge("a","b",role="test")
+    expect_str(dot,"""
+    graph {
+        subgraph {
+            x=1
+            a [x=1]
+            a -- b [x=1]
         }
     }
     """)

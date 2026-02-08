@@ -267,12 +267,3 @@ Let's save this one.
 
     diagram.save("er-diagram.svg")
 
-
-NFA Diagram
------------
-
-
-
-Red-Black Trees
----------------
-
