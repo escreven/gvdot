@@ -175,15 +175,20 @@ def fakedots():
     try:
         dotsleep = os.path.join(_tmpdir, "dotsleep")
         doterror = os.path.join(_tmpdir, "doterror")
+        dotecho = os.path.join(_tmpdir, "dotecho")
 
         with open(dotsleep, "w", newline="\n") as f:
-            f.write("#!/bin/sh\nsleep 10\n")
+            f.write('#!/bin/sh\nsleep 10\n')
 
         with open(doterror, "w", newline="\n") as f:
-            f.write("#!/bin/sh\necho ErrorText >&2\nexit 1\n")
+            f.write('#!/bin/sh\necho ErrorText >&2\nexit 1\n')
+
+        with open(dotecho, "w", newline="\n") as f:
+            f.write('#!/bin/sh\necho "$@"\n')
 
         os.chmod(dotsleep, 0o755)
         os.chmod(doterror, 0o755)
+        os.chmod(dotecho, 0o755)
 
         yield
 

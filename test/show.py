@@ -169,7 +169,7 @@ def test_show():
         assert displayed[0][0] == "Markdown"
         assert "exited with status" in displayed[0][1]
 
-        dot.show(format="SVG", size="1,1")
+        dot.show(format="SVG", size="1, 1")
         displayed = mock.take()
         assert len(displayed) == 1
         assert displayed[0][0] == "SVG"

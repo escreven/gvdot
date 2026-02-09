@@ -10,12 +10,15 @@ from os import PathLike
 from pathlib import Path, PurePath
 import subprocess
 from subprocess import CalledProcessError, TimeoutExpired
-from typing import Any, Mapping
+from typing import Any
 import re
 
 __version__ = "0.9.2dev1"
 
-__all__ = "Markup", "Port", "Dot", "InvocationException", "ShowException"
+__all__ = (
+    "Markup", "Port", "Dot", "InvocationException", "ProcessException",
+    "TimeoutException", "ShowException",
+)
 
 #
 # Optional notebook support.
@@ -34,6 +37,21 @@ def _missing_ipython():
     raise RuntimeError(
         "IPython is required to show dot objects. "
         "Install with: pip install gvdot[ipython]")
+
+
+@dataclass(slots=True)
+class Markup:
+    """
+    A Graphviz DOT language markup string.
+
+    Graphviz supports what it calls HTML strings such as ``<x<sub>1</sub>>``.
+    Because in DOT language ``"<x<sub>1</sub>>"`` (note the quotes) is an
+    ordinary non-HTML ID, gvdot uses :class:`Markup` to delineate HTML strings.
+
+    :param markup: The DOT language markup text excluding the opening and
+        closing angle brackets.
+    """
+    markup : str
 
 
 type ID = str|int|float|bool|Markup
@@ -56,6 +74,9 @@ type ID = str|int|float|bool|Markup
 # Make sure the purported ID is in fact an ID and return its normalized
 # representation (a string).  We do extra work to avoid quoting when we can, in
 # the hope this aids readability of the DOT language generated.
+# _normalize_unquoted is the same as _normalize except it doesn't add
+# surrounding quotes.  This required for passing attribute values on the
+# command line.
 #
 
 _SIMPLE_ID_RE = re.compile(
@@ -112,28 +133,6 @@ def _set_attrs(target:_Attrs, attrargs:dict[str,Any], permit_role=False):
             target.pop(name,None)
         else:
             target[name] = _normalize(value,f"Attribute {name} value")
-
-#
-# Graphviz programs allow additional attributes to be specified on the command
-# line.  Convert attrs into a list of -G, -N, and -E command line arguments.
-#
-
-def _attr_args(graph_attrs:Mapping[str,ID]|None=None,
-               node_attrs:Mapping[str,ID]|None=None,
-               edge_attrs:Mapping[str,ID]|None=None) -> list[str]:
-
-    def add(kind:str, attrs:Mapping[str,ID]):
-        for name, value in attrs.items():
-            if not re.fullmatch(r"[a-zA-Z_][a-zA-Z0-9_]*",name):
-                raise ValueError(
-                    f"Bad invocation attribute name: {repr(name)}")
-            args.append(f"-{kind}{name}={value}")
-
-    args = []
-    if graph_attrs: add("G",graph_attrs)
-    if node_attrs: add("N",node_attrs)
-    if edge_attrs: add("E",edge_attrs)
-    return args
 
 #
 # Return the flattened attributes of the possibly role-bearing object.
@@ -306,10 +305,22 @@ class _Edge:
         self.attrs:_Attrs = dict()
 
     def update_ports(self, otherport1:_NormPort, otherport2:_NormPort):
-        if not otherport1.implicit:
-            self.normport1 = otherport1
-        if not otherport2.implicit:
-            self.normport2 = otherport2
+
+        normport1 = self.normport1
+        normport2 = self.normport2
+
+        if otherport1.node != normport1.node:
+            normport1, normport2 = normport2, normport1
+            assert not self.directed
+
+        assert otherport1.node == normport1.node
+        assert otherport2.node == normport2.node
+
+        if not otherport1.implicit: normport1 = otherport1
+        if not otherport2.implicit: normport2 = otherport2
+
+        self.normport1 = normport1
+        self.normport2 = normport2
 
     def __repr__(self):
         return (f"_Edge<{self}>")
@@ -332,21 +343,6 @@ class _Edge:
         if self.normdisc is not None:
             s += " / " + str(self.normdisc)
         return s
-
-
-@dataclass(slots=True)
-class Markup:
-    """
-    A Graphviz DOT language markup string.
-
-    Graphviz supports what it calls HTML strings such as ``<x<sub>1</sub>>``.
-    Because in DOT language ``"<x<sub>1</sub>>"`` (note the quotes) is an
-    ordinary non-HTML ID, gvdot uses :class:`Markup` to delineate HTML strings.
-
-    :param markup: The DOT language markup text excluding the opening and
-        closing angle brackets.
-    """
-    markup : str
 
 
 _COMPASS_PT = { "n", "ne", "e", "se", "s", "sw", "w", "nw", "c" }
@@ -572,7 +568,7 @@ class Dot:
         _set_attrs(self.d_nodea,attrs)
         return self
 
-    def node_role(self, role:ID, /, **attrs:ID|None) -> Dot:
+    def node_role(self, role:str, /, **attrs:ID|None) -> Dot:
         """
         Define a node role or amend its attributes.
 
@@ -710,7 +706,7 @@ class Dot:
     def edge(self, point1:ID|Port, point2:ID|Port,
              discriminant:ID|None=None, /, **attrs:ID|None) -> Dot:
         """
-        Define an edge or amend its attributes and port specifications.
+        Define an edge or amend its attributes and endpoints.
 
         :param point1: The first edge endpoint, either a node identifier or a
             port.  In the directed case, this is the tail of the arc.
@@ -738,11 +734,12 @@ class Dot:
             dot.edge(Port("a",cp="n"), Port("b","output","s"), color="blue")
             dot.edge("a","b",style="dashed")
 
-        The outcome of calling :meth:`edge` with the endpoint node IDs of an
-        already defined edge depends on the constructor ``multigraph``
-        parameter and whether or not a discriminant is specified.
+        The outcome of calling :meth:`edge` with endpoint node IDs between
+        which there is an existing edge depends on the constructor
+        ``multigraph`` parameter and whether or not a discriminant is
+        specified.
 
-        - Non-multigraph: the defined edge is amended.  Discriminants are not
+        - Non-multigraph: the existing edge is amended.  Discriminants are not
           relevant in this case because they are not permitted.
         - Multigraph, no discriminant: a new edge is defined.  The implication
           is that unless a discriminant is provided when a multigraph edge is
@@ -761,6 +758,23 @@ class Dot:
             dot.edge(Port("a", cp="n"), "b")
 
         includes the edge ``a:n -- b:s``.
+
+        For non-directed graphs, amending an edge updates the edge's endpoint
+        order if the given order differs.
+
+        .. code-block:: python
+
+            dot = Dot()
+            dot.edge("a","b")   # Define a non-directed edge between a and b.
+            dot.edge("b","a")   # Amend the edge
+
+        Has the DOT language representation
+
+        .. code-block:: graphviz
+
+            graph {
+                b -- a
+            }
 
         As in DOT, edge endpoint nodes need not be defined.  The output of
 
@@ -820,6 +834,26 @@ class Dot:
             attribute defaults, and nodes and edges defined through the child
             will appear within a subgraph statement of the root dot object's
             DOT language representation.
+
+        Subgraph identities are scoped to parent graphs or subgraphs, so
+
+        .. code-block:: python
+
+            dot = Dot(id="Name")
+            dot.subgraph("Name").subgraph("Name").subgraph("Name")
+
+        raises no exceptions and has the DOT language representation
+
+        .. code-block:: graphviz
+
+            graph Name {
+                subgraph Name {
+                    subgraph Name {
+                        subgraph Name {
+                        }
+                    }
+                }
+            }
         """
         if id is not None:
             key = _normalize(id, "Subgraph identifier")
@@ -1094,35 +1128,38 @@ class Dot:
 
         return '\n'.join(lines)
 
-    def to_rendered(self, program="dot", *, format="png",
-                    timeout:float|None=None,
-                    directory:str|PathLike|None=None,
-                    graph_attrs:Mapping[str,ID]|None=None,
-                    node_attrs:Mapping[str,ID]|None=None,
-                    edge_attrs:Mapping[str,ID]|None=None) -> bytes:
+    def to_rendered(self, program:str|PathLike="dot", *, format="png",
+                    dpi:float|None=None, size:int|float|str|None=None,
+                    ratio:float|str|None=None, timeout:float|None=None,
+                    directory:str|PathLike|None=None) -> bytes:
         """
         Render the dot object by invoking a Graphviz program.
 
         :param program: Which Graphviz program to use (dot by default).
+            ``program`` should either be the name of the program or a path to
+            the program.
 
         :param format: The output format desired (png by default).
             :meth:`to_rendered` converts the specified value to lowercase if it
             isn't already, then uses it to form the ``-T`` argument to the
             specified program.
 
-        :param directory: Where to find the program executable.  If not
-            specified, the program must be found on the process's ``PATH``.
+        :param dpi: Render with this many pixels per inch.  This can be used to
+            create higher resolution images than Graphviz's default 96dpi.  See
+            the Graphviz `dpi <https://graphviz.org/docs/attrs/dpi/>`_
+            attribute documentation.
+
+        :param size: Specify a maximum or minimum size.  See the Graphviz
+            `size <https://graphviz.org/docs/attrs/size/>`_ attribute
+            documentation.
+
+        :param ratio: Set the aspect ratio.  See the Graphviz `ratio
+            <https://graphviz.org/docs/attrs/ratio/>`_ attribute documentation.
 
         :param timeout: Limit the program execution time to this many seconds.
 
-        :param graph_attrs: Additional graph attribute values to pass to the
-            program on the command line via the ``-G`` option.
-
-        :param node_attrs: Additional node attribute values to pass to the
-            program on the command line via the ``-N`` option.
-
-        :param edge_attrs: Additional edge attribute values to pass to the
-            program on the command line via the ``-E`` option.
+        :param directory: If specified, ``program`` is interpreted as a path
+            relative to ``directory``.
 
         :return: The output bytes of the specified program.
 
@@ -1136,26 +1173,42 @@ class Dot:
         :raises TimeoutException: The invoked program took longer than
             ``timeout`` seconds to run and was killed.
 
-        Example:
+        If the process's ``PATH`` includes directory ``/opt/graphviz/bin``
+        and that is the only directory of ``PATH`` including Graphviz
+        executables, the following :meth:`to_rendered` calls are equivalent:
 
         .. code-block:: python
 
-            dot = Dot().graph(dpi=300)
-            dot.edge("a","b",label="Render")
-            dot.edge("b","c",label="as")
-            dot.edge("c","a",label="image")
-            with open("example.png","wb") as f:
-                f.write(dot.to_rendered())
+            data = dot.to_rendered(program="circo")
+
+            data = dot.to_rendered(program="/opt/graphviz/bin/circo")
+
+            data = dot.to_rendered(program="circo",
+                                   directory="/opt/graphviz/bin")
+
+            data = dot.to_rendered(program="graphviz/bin/circo",
+                                   directory="/opt")
+
         """
         t_arg = f"-T{format.lower()}"
 
         input = str(self).encode()
 
         if directory is not None:
-            program = str(PurePath(directory,program))
+            program = PurePath(directory,program)
 
-        command = [ program, t_arg,
-                    *_attr_args(graph_attrs, node_attrs, edge_attrs) ]
+        program = str(program)
+
+        command = [ program, t_arg ]
+
+        if dpi is not None:
+            command.append(f"-Gdpi={dpi}")
+
+        if size is not None:
+            command.append(f"-Gsize={size}")
+
+        if ratio is not None:
+            command.append(f"-Gratio={ratio}")
 
         try:
             completed = subprocess.run(
@@ -1165,21 +1218,19 @@ class Dot:
             raise ProcessException(
                 program, ex.returncode, ex.stderr) from None
         except TimeoutExpired as ex:
-            assert timeout
+            assert timeout is not None
             raise TimeoutException(
                 program, timeout, "" if ex.stderr is None
                 else ex.stderr) from None
-        except BaseException as ex:
+        except Exception as ex:
             raise InvocationException(program) from ex
 
         return completed.stdout
 
     def to_svg(self, program="dot", *, inline=False,
-               directory:str|PathLike|None=None,
-               timeout:float|None=None,
-               graph_attrs:Mapping[str,ID]|None=None,
-               node_attrs:Mapping[str,ID]|None=None,
-               edge_attrs:Mapping[str,ID]|None=None) -> str:
+               dpi:float|None=None, size:int|float|str|None=None,
+               ratio:float|str|None=None, timeout:float|None=None,
+               directory:str|PathLike|None=None) -> str:
         """
         Convert the dot object to an SVG string by invoking a Graphviz program.
 
@@ -1187,34 +1238,20 @@ class Dot:
 
         For the remaining parameters, and for the exceptions raised, see
         :meth:`to_rendered`.
-
-        Example:
-
-        .. code-block:: python
-
-            from IPython.display import display, SVG
-            dot = Dot()
-            dot.edge("a","b",label="Render")
-            dot.edge("b","c",label="as")
-            dot.edge("c","a",label="SVG")
-            display(SVG(dot.to_svg()))
         """
         format = "svg_inline" if inline else "svg"
 
         data = self.to_rendered(
-            program=program, format=format, timeout=timeout,
-            directory=directory, graph_attrs=graph_attrs,
-            node_attrs=node_attrs, edge_attrs=edge_attrs)
+            program=program, format=format, dpi=dpi, size=size,
+            ratio=ratio, timeout=timeout, directory=directory)
 
         return data.decode()
 
     def save(self, filename:str|PathLike, program="dot", *,
              exclusive:bool=False, format:str|None=None,
-             directory:str|PathLike|None=None,
-             timeout:float|None=None,
-             graph_attrs:Mapping[str,ID]|None=None,
-             node_attrs:Mapping[str,ID]|None=None,
-             edge_attrs:Mapping[str,ID]|None=None) -> None:
+             dpi:float|None=None, size:int|float|str|None=None,
+             ratio:float|str|None=None, timeout:float|None=None,
+             directory:str|PathLike|None=None) -> None:
         """
         Save a rendering of the dot object to a file.  :meth:`show` generates
         the file data by invoking a Graphviz program.
@@ -1222,10 +1259,6 @@ class Dot:
         :param filename: The name of the file to write.
 
         :param exclusive: Fail if the file already exists.
-
-        :param format: The output format desired.  If not specified,
-            :meth:`save` attempts to infer the format from the file extension.
-            Otherwise, format is processed as described by :meth:`to_rendered`.
 
         :raises ValueError: The format was not specified and could not be
             inferred from the file extension.
@@ -1236,14 +1269,15 @@ class Dot:
         For the remaining parameters, and for additional exceptions raised, see
         :meth:`to_rendered`.
 
-        The file extensions for which :meth:`save` infers formats by case
-        insensitive comparison are svg, png, jpg, jpeg, gif, tif, tiff, and
-        pdf.
+        Parameter ``format`` is optional.  If not given, :meth:`save` attempts
+        to infer the format from the file extension.  The file extensions for
+        which :meth:`save` infers formats by case insensitive comparison are
+        svg, png, jpg, jpeg, gif, tif, tiff, and pdf.
         """
         filepath = Path(filename)
 
         if format is None:
-            extension = filepath.suffix.removeprefix(".")
+            extension = filepath.suffix.removeprefix(".").lower()
 
             if extension in ('svg','png','jpg','jpeg','gif',
                              'tif','tiff','pdf'):
@@ -1257,40 +1291,22 @@ class Dot:
         #
 
         data = self.to_rendered(
-            program=program, format=format, timeout=timeout,
-            directory=directory, graph_attrs=graph_attrs,
-            node_attrs=node_attrs, edge_attrs=edge_attrs)
+            program=program, format=format, dpi=dpi, size=size,
+            ratio=ratio, timeout=timeout, directory=directory)
 
         mode = "xb" if exclusive else "wb"
 
         with open(filepath,mode) as f:
             f.write(data)
 
-    def show(self, program="dot", *,
-             format:str="svg", size:str|None=None,
-             directory:str|PathLike|None=None,
-             timeout:float|None=None,
-             graph_attrs:Mapping[str,ID]|None=None,
-             node_attrs:Mapping[str,ID]|None=None,
-             edge_attrs:Mapping[str,ID]|None=None) -> None:
+    def show(self, program="dot", *, format:str="svg",
+             dpi:float|None=None, size:int|float|str|None=None,
+             ratio:float|str|None=None, timeout:float|None=None,
+             directory:str|PathLike|None=None) -> None:
         """
-        Display the dot object in a Jupyter notebook as an SVG or Image object.
-        :meth:`show` generates the SVG or Image data by invoking a Graphviz
-        program.
-
-        :param format: The output format desired (svg by default).  If the
-            format is "svg" (case insensitive), :meth:`show` will generate SVG
-            and display a ``IPython.display.SVG`` object.  Otherwise,
-            :meth:`show` will generate image data and display a
-            ``IPython.display.Image`` object.
-
-        :param size: Add a size attribute to the graph before rendering.  A
-            value such as ``"5,5"`` can help ensure the graph visually fits in
-            the notebook.   If both ``size`` and ``graph_attrs`` are specified,
-            and there is a ``size`` entry in ``graph_attrs``, the value of the
-            parameter ``size`` has precedence.
-
-        For the remaining parameters, see :meth:`to_rendered`.
+        Display the dot object in a Jupyter notebook as an IPython ``SVG`` or
+        ``Image`` object.  :meth:`show` generates the data required by invoking
+        a Graphviz program.
 
         :raises ShowException: :meth:`show()` could not complete because the
             program could not be invoked, it timed out, or it exited with a
@@ -1299,19 +1315,18 @@ class Dot:
             explaining why it could not complete.
 
         :raises RuntimeError: IPython is not installed.
+
+        For the parameters, see :meth:`to_rendered`.  The ``size`` parameter
+        can be especially useful.   A value such as ``"5,5"`` can help ensure
+        the graph visually fits in the notebook.  Note the default ``format``
+        for :meth:`save` is ``'svg'``.
         """
         if display and Markdown and SVG and Image:
-            if size is not None:
-                d = dict()
-                if graph_attrs is not None: d.update(graph_attrs)
-                d['size'] = size
-                graph_attrs = d
             try:
                 format = format.lower()
                 data = self.to_rendered(
-                    program=program, format=format, timeout=timeout,
-                    directory=directory, graph_attrs=graph_attrs,
-                    node_attrs=node_attrs, edge_attrs=edge_attrs)
+                    program=program, format=format, dpi=dpi, size=size,
+                    ratio=ratio, timeout=timeout, directory=directory)
                 if format == 'svg':
                     display(SVG(data))
                 else:
@@ -1341,7 +1356,9 @@ class Dot:
     def show_source(self) -> None:
         """
         Display the dot object's DOT language representation in a Jupyter
-        notebook as a ``IPython.display.Code`` object.
+        notebook as an IPython ``Code`` object.
+
+        :raises RuntimeError: IPython is not installed.
         """
         if display and Code:
             display(Code(str(self),language="graphviz"))
@@ -1349,7 +1366,7 @@ class Dot:
             _missing_ipython()
 
 
-class InvocationException(BaseException):
+class InvocationException(Exception):
     """
     An attempt to run a Graphviz program failed.
 
@@ -1366,7 +1383,7 @@ class InvocationException(BaseException):
         return "Could not run program " + self.program
 
 
-class ProcessException(BaseException):
+class ProcessException(Exception):
     """
     A Graphviz program exited with a non-zero status code.
 
@@ -1398,7 +1415,7 @@ class ProcessException(BaseException):
         return f"Program {self.program} exited with status {self.status}"
 
 
-class TimeoutException(BaseException):
+class TimeoutException(Exception):
     """
     A Graphviz program timed out.
 
@@ -1430,7 +1447,7 @@ class TimeoutException(BaseException):
         return f"Program {self.program} timed out after {self.timeout} seconds"
 
 
-class ShowException(BaseException):
+class ShowException(Exception):
     """
     :meth:`Dot.show` could not complete.
     """

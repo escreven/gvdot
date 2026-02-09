@@ -11,13 +11,14 @@ def test_to_rendered():
     the dot object as bytes.  If the program isn't found, it should raise an
     InvocationError.  If the program exits with a non-zero status, it should
     raise a CalledProcessError.  If a timeout is specified, and the program
-    times out, it should raise a TimeoutExpired exception.
+    times out, it should raise a TimeoutExpired exception.  The dpi, size, and
+    ratio arguments should be passed as -G options to the program.
     """
     dot = Dot().edge("a","b").graph(label="Title")
 
     data = dot.to_rendered()
     assert image_format(data) == 'PNG'
-    png_len = len(data)
+    base_png_len = len(data)
 
     data = dot.to_rendered(format='jpeg')
     assert image_format(data) == 'JPEG'
@@ -50,25 +51,44 @@ def test_to_rendered():
     assert ex.status == 1 and "ErrorText" in ex.stderr
 
     #
-    # The rendered output should be smaller after applying the attributes below
-    # on the command line (since everything is white).
+    # The rendered output should be smaller if we use a coarse resolution.
     #
 
-    graph_attrs = { 'label': ''}
-    node_attrs  = { 'style': 'invisible'}
-    edge_attrs  = { 'style': 'invisible'}
-
-    data = dot.to_rendered(graph_attrs=graph_attrs,
-                           node_attrs=node_attrs,
-                           edge_attrs=edge_attrs)
-
+    data = dot.to_rendered(dpi=30)
+    coarse_png_len = len(data)
     assert image_format(data) == 'PNG'
-    assert len(data) < png_len
+    assert coarse_png_len < base_png_len
 
-    bad_attrs = { 'not legal': 42 }
-    ex = expect_ex(ValueError, lambda:dot.to_rendered(graph_attrs=bad_attrs))
+    #
+    # And it should be larger again with an extreme extreme aspect ratio.
+    #
 
+    data = dot.to_rendered(dpi=30, ratio=20)
+    tall_png_len = len(data)
+    assert image_format(data) == 'PNG'
+    assert tall_png_len > coarse_png_len
 
+    #
+    # And finally it should be very small with a tiny maximum size.
+    #
+
+    data = dot.to_rendered(dpi=30, ratio=20, size="1,1")
+    tiny_png_len = len(data)
+    assert image_format(data) == 'PNG'
+    assert tiny_png_len < tall_png_len
+
+    #
+    # Check the command line too.
+    #
+
+    # Returned date is the echoed command line
+    data = dot.to_rendered(
+        dpi=30, ratio=20, size="1,1",
+        directory=tmpdir(), program="dotecho").decode()
+
+    assert "-Gdpi=30" in data
+    assert "-Gratio=20" in data
+    assert "-Gsize=1,1" in data
 
 
 def test_to_svg():
@@ -77,13 +97,13 @@ def test_to_svg():
     dot object as SVG.  If the program isn't found, it should raise an
     InvocationError.  If the program exits with a non-zero status, it should
     raise a CalledProcessError.  If a timeout is specified, and the program
-    times out, it should raise a TimeoutExpired exception.
+    times out, it should raise a TimeoutExpired exception.  The dpi, size, and
+    ratio arguments should be passed as -G options to the program.
     """
     dot = Dot().edge("a","b")
 
     svg = dot.to_svg()
     assert likely_full_svg(svg)
-    svg_len = len(svg)
 
     svg = dot.to_svg(inline=True)
     assert likely_svg(svg) and not likely_full_svg(svg)
@@ -112,25 +132,14 @@ def test_to_svg():
 
     assert ex.status == 1 and "ErrorText" in ex.stderr
 
-    #
-    # The rendered output should be smaller after applying the attributes below
-    # on the command line since the title is gone and the nodes and edges are
-    # invisible.
-    #
+    # Returned string is the echoed command line
+    svg = dot.to_svg(
+        dpi=30, ratio=20, size="1,1",
+        directory=tmpdir(), program="dotecho")
 
-    graph_attrs = { 'label': ''}
-    node_attrs  = { 'style': 'invisible'}
-    edge_attrs  = { 'style': 'invisible'}
-
-    data = dot.to_svg(graph_attrs=graph_attrs,
-                      node_attrs=node_attrs,
-                      edge_attrs=edge_attrs)
-
-    assert likely_full_svg(data)
-    assert len(data) < svg_len
-
-    bad_attrs = { 'not legal': 42 }
-    ex = expect_ex(ValueError, lambda:dot.to_svg(graph_attrs=bad_attrs))
+    assert "-Gdpi=30" in svg
+    assert "-Gratio=20" in svg
+    assert "-Gsize=1,1" in svg
 
 
 def test_save():
@@ -143,7 +152,6 @@ def test_save():
     If a timeout is specified, and the program times out, it should raise a
     TimeoutExpired exception.
     """
-
     dir = tmpdir()
 
     test_png = f"{dir}/test.png"
@@ -179,7 +187,7 @@ def test_save():
 
     pathdir = os.path.dirname(path)
 
-    data = dot.save(test_png, program="dot", directory=pathdir)
+    dot.save(test_png, program="dot", directory=pathdir)
     assert image_file_format(test_png) == 'PNG'
 
     expect_ex(TimeoutException,lambda: dot.save(test_png,
@@ -190,23 +198,13 @@ def test_save():
 
     assert ex.status == 1 and "ErrorText" in ex.stderr
 
-    #
-    # The rendered output should be smaller after applying the attributes below
-    # on the command line (since everything is white).
-    #
+    # Written data is the echoed command line
+    dot.save(test_png,
+        dpi=30, ratio=20, size="1,1",
+        directory=tmpdir(), program="dotecho")
 
-    graph_attrs = { 'label': ''}
-    node_attrs  = { 'style': 'invisible'}
-    edge_attrs  = { 'style': 'invisible'}
-
-    data = dot.save(test_png,
-                    graph_attrs=graph_attrs,
-                    node_attrs=node_attrs,
-                    edge_attrs=edge_attrs)
-
-    assert image_file_format(test_png) == 'PNG'
-    assert os.path.getsize(test_png) < png_len
-
-    bad_attrs = { 'not legal': 42 }
-    ex = expect_ex(ValueError, lambda:dot.to_rendered(graph_attrs=bad_attrs))
-
+    with open(test_png, "rb") as f:
+        data = f.read().decode()
+        assert "-Gdpi=30" in data
+        assert "-Gratio=20" in data
+        assert "-Gsize=1,1" in data

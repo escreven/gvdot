@@ -292,46 +292,46 @@ amend".  In the context of gvdot method descriptions,
   or established entities, roles, and defaults, overwriting existing
   assignments with the same attribute names.  In the case of edges, amend also
   means potentially changing an endpoint's :class:`port specification <Port>`.
-  In the case of subgraphs, the phrase "prepare to amend" is used because the
-  relevant methods return a reference through which the application may modify
-  the subgraph.
+  In the case of subgraphs, the :ref:`reference-doc` uses the phrase "prepare
+  to amend" because the relevant methods return a reference through which the
+  application may modify the subgraph.
 
 The core :class:`Dot` methods for building out the structure of a diagram are
 :meth:`~Dot.node`, :meth:`~Dot.edge`, and :meth:`~Dot.subgraph`.  These methods
 are "define or amend" --- they define an entity if it doesn't exist, and amend
-the it when it does.  :class:`Dot` also has variants :meth:`~Dot.node_define`,
+it otherwise.  :class:`Dot` also has variants :meth:`~Dot.node_define`,
 :meth:`~Dot.edge_define`, and :meth:`~Dot.subgraph_edge` which raise exceptions
 if the entity is already defined and :meth:`~Dot.node_update`,
 :meth:`~Dot.edge_update`, and :meth:`~Dot.subgraph_update` which raise
-exceptions it isn't.  The former have the advantage of giving code a clean,
-declarative feel.  The latter can make buggy code fail faster.
+exceptions if it is not.  The "define and amend" version have the advantage of
+giving code a clean, declarative feel.  The ``_define`` and ``_update``
+variants can make buggy code fail faster.
 
-
-Scopes
-------
+Subgraphs
+---------
 
 A :class:`Dot` object created by the :class:`Dot` constructor with descendant
 :class:`Dot` instances created through methods :meth:`subgraph` or
-:meth:`subgraph_define` form a tree mirrored by the ``subgraph`` statement
-hierarchy of the DOT language representation of the root dot object.  DOT
-language semantics with respect to that hierarchy combined with the gvdot
-design lead to the scope related effects described next.
+:meth:`subgraph_define` form a tree.  That tree is mirrored by the ``subgraph``
+statement hierarchy of the DOT language representation of the root.
 
-Nodes and edges have dot object tree wide scope.  They may be defined once in
-the tree, and then amended through any dot object in the tree.  The dot object
-through which a node or edge is defined determines where it will appear in
-subgraph hierarchy and, therefore, the set of default attributes which apply to
-the node or edge.
+Nodes and edges have dot object tree wide scope.  They may only be defined once
+in the tree, but can amended any number of times through any dot object in the
+tree.  The dot object through which a node or edge is defined determines where
+it will appear in the subgraph hierarchy and, therefore, the set of default
+attributes which apply to the node or edge.
 
 .. code-block:: python
 
     dot = Dot(id="Root")
     sub = dot.subgraph(id="Sub")
     subsub = sub.subgraph(id="SubSub")
+
     dot.node("a")
     dot.edge("a","b")
     subsub.node("b")
     subsub.edge("b","c")
+
     dot.node_default(fontsize=10).edge_default(fontsize=10)
     sub.node_default(color="green").edge_default(color="green")
     subsub.node_default(penwidth=2).edge_default(penwidth=2)
@@ -357,9 +357,9 @@ The :class:`Dot` instance defined above has the DOT representation
         }
     }
 
-Node ``a`` and edge ``a -- b`` have ``fontsize`` 10, but default ``color`` and
-``penwidth``, whereas node ``b`` and edge ``b -- c`` have ``fontsize`` 10, and
-also ``color`` green and ``pendwidth`` 2.
+Node ``a`` and edge ``a -- b`` have ``fontsize`` 10 with ``color`` and
+``penwidth`` unspecified, whereas node ``b`` and edge ``b -- c`` have
+``fontsize`` 10, and also ``color`` green and ``pendwidth`` 2.
 
 If a subgraph is a cluster, some Graphviz layout engines (including the default
 engine, dot) will place all nodes defined within the subgraph together in the
@@ -382,3 +382,46 @@ Subgraphs are scoped to their parent.  So, the assertions below all hold.
     assert dot.subgraph(id="sub1") is sub1
     assert sub1.subgraph(id="sub2") is sub1_sub2
     assert dot.subgraph(id="sub2") is not sub1_sub2
+
+Multigraphs
+-----------
+
+Rendering
+---------
+
+Package gvdot executes Graphviz programs to render :class:`Dot` objects.  The
+input to these programs is the DOT language representation you can see with see
+with
+
+.. code-block:: python
+
+    dot = task_diagram(project)
+    print(dot)
+
+or in a notebook
+
+.. code-block:: python
+
+    dot = task_diagram(project)
+    dot.show_source()
+
+Method :meth:`Dot.to_rendered` is the core rendering method.  It accepts
+several optional arguments including the program to run and the output format
+desired.  If the execution succeeds, it returns the raw bytes the program
+writes to stdout.
+
+.. code-block:: python
+
+    dot = task_diagram(project)
+    data = dot.to_rendered(dpi=300)
+    assert type(data) is bytes
+
+Here we ran the default program ``dot`` to render the task diagram into the
+default format ``png``.   We specified the image should be generated with a
+resolution of 300 dots per inch.
+
+:class:`Dot` includes three other rendering methods which all call :meth:`~to_rendered`:
+
+- :meth:`Dot.to_svg` renders to SVG and returns the result as a string.
+- :meth:`Dot.save` renders and saves to a file.
+- :meth:`Dot.show` renders and displays the result in a notebook.

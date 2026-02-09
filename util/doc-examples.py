@@ -84,10 +84,8 @@ class _Image(_Artifact):
     def save(self, dir:PurePath):
         name = self.name
         dot = self.dot
-        with open(dir / f"_static/{name}.svg", "w") as f:
-            print(dot.to_svg(), file=f)
-        with open(dir / f"_static/{name}.png", "wb") as f:
-            f.write(dot.to_rendered(graph_attrs={'dpi':300}))
+        dot.save(dir / f"_static/{name}.svg")
+        dot.save(dir / f"_static/{name}.png", dpi=300)
 
 @dataclass
 class _DotCode(_Artifact):

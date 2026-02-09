@@ -429,6 +429,33 @@ def test_edge_identity():
     """)
 
 
+def test_endpoint_swapping():
+    """
+    When amending an edge, endpoints of an edge can be swapped.
+    """
+    dot = Dot()
+    dot.edge("a","b")
+    dot.edge("c","d")
+    dot.edge("e","f")
+    dot.edge("g","h")
+
+    dot.edge("b", "a")
+    dot.edge(Port("d"), "c")
+    dot.edge("f", Port("e"))
+    dot.edge(Port("h"), Port("g"))
+
+    expect_str(dot,
+    """
+    graph {
+        b -- a
+        d -- c
+        f -- e
+        h -- g
+    }
+    """)
+
+
+
 def test_disc_for_mg_only():
     """
     Discriminants may not be specified for non-multigraphs.
