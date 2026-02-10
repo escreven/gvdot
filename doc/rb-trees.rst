@@ -7,7 +7,7 @@
 Red-Black Trees
 ===============
 
-Suppose we want to produce examples for students learning about Robert
+Our goal is to produce examples for students learning about Robert
 Sedgewick's `Left-leaning Red-Black Trees
 <https://sedgewick.io/wp-content/themes/sedgewick/papers/2008LLRB.pdf>`_.
 
@@ -49,11 +49,12 @@ subgraph and a phantom (invisible) edge.
 
 |br|
 The nodes look nice, but the children of ``2`` are crowded, and we can't
-visually determine if ``3`` is the left or right child of ``4``.  We'll solve
+visually determine if ``3`` is the left or right child of ``4``.  We will solve
 these problems by adding phantom nodes --- every parent will have three
 children, including at least one phantom.
 
-We add a phantom node role to the theme.
+We add a phantom node role to the theme to accompany the existing phantom edge
+role.
 
 .. code-block:: python
 
@@ -91,13 +92,13 @@ and use it in our hand-crafted tree.
 
 .. image:: _static/examples/rb-hand-updated.*
     :align: center
-    :alt: Initial hand-crafted red-black tree
+    :alt: Improved hand-crafted red-black tree
 
 |br|
 Much better looking, but awfully tedious to construct by hand.  Time to
 get programmatic.
 
-We create a simple red-black tree implementation based on Swedgewick's paper.
+We create a simple red-black tree implementation based on Sedgewick's paper.
 
 .. code-block:: python
 

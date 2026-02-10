@@ -13,7 +13,7 @@ from subprocess import CalledProcessError, TimeoutExpired
 from typing import Any
 import re
 
-__version__ = "0.9.2dev1"
+__version__ = "0.9.2"
 
 __all__ = (
     "Markup", "Port", "Dot", "InvocationException", "ProcessException",
@@ -61,7 +61,7 @@ type ID = str|int|float|bool|Markup
 
     - using an int ``x`` as an :type:`ID` is equivalent to using ``str(x)``
     - using a float ``x`` as an :type:`ID` is equivalent to using ``str(x)``
-    - using ``Markup(x)`` as an :type:`ID` is different that using ``x``
+    - using ``Markup(x)`` as an :type:`ID` is different than using ``x``
 
     For convenience, given that Graphviz uses ``true`` and ``false`` for
     boolean values,
@@ -715,11 +715,10 @@ class Dot:
             port.  In the directed case, this is the head of the arc.
 
         :param discriminant: A value allowing the application to refer to
-            specific edges created in a multigraph.  A discriminant may only be
+            specific edges created in a multigraph.  Discriminants may only be
             provided for multigraphs, but are not required for multigraphs.  If
-            provided, discriminants need only be unique among edges of their
-            associated ordered node pair.  Discriminants do not appear in the
-            DOT language representation.
+            provided, discriminants need only be unique for a given node pair.
+            Discriminants do not appear in the DOT language representation.
 
         :param attrs: New or amending attribute value assignments.
 
@@ -794,7 +793,7 @@ class Dot:
         Same as method :meth:`edge`, except require the edge to be undefined.
 
         :param point1: See :meth:`edge`.
-        :param point1: See :meth:`edge`.
+        :param point2: See :meth:`edge`.
         :param discriminant: See :meth:`edge`.
         :raises RuntimeError: The edge is already defined.
         """
@@ -806,7 +805,7 @@ class Dot:
         Same as method :meth:`edge`, except require the edge to be defined.
 
         :param point1: See :meth:`edge`.
-        :param point1: See :meth:`edge`.
+        :param point2: See :meth:`edge`.
         :param discriminant: See :meth:`edge`.
         :raises RuntimeError: The edge is not defined.
         """
@@ -818,7 +817,7 @@ class Dot:
         Return True iff the identified edge is defined.
 
         :param point1: See :meth:`edge`.
-        :param point1: See :meth:`edge`.
+        :param point2: See :meth:`edge`.
         :param discriminant: See :meth:`edge`.
         """
         key, _, _, _ = self._edge_preamble(point1,point2,discriminant)
@@ -999,7 +998,7 @@ class Dot:
         heritable attributes of a theme in the chain is immediately reflected
         in the dot object's DOT language representation.
 
-        :param theme: The attribute inheritence source or None.  If ``theme``
+        :param theme: The attribute inheritance source or None.  If ``theme``
             is None, the dot object does not inherit from any theme.
 
         :raises ValueError: The theme is not a root dot object, or the using
@@ -1173,9 +1172,9 @@ class Dot:
         :raises TimeoutException: The invoked program took longer than
             ``timeout`` seconds to run and was killed.
 
-        If the process's ``PATH`` includes directory ``/opt/graphviz/bin``
-        and that is the only directory of ``PATH`` including Graphviz
-        executables, the following :meth:`to_rendered` calls are equivalent:
+        If the process's ``PATH`` includes directory ``/opt/graphviz/bin`` and
+        that is the only directory in ``PATH`` including Graphviz executables,
+        the following :meth:`to_rendered` calls are equivalent:
 
         .. code-block:: python
 
@@ -1253,7 +1252,7 @@ class Dot:
              ratio:float|str|None=None, timeout:float|None=None,
              directory:str|PathLike|None=None) -> None:
         """
-        Save a rendering of the dot object to a file.  :meth:`show` generates
+        Save a rendering of the dot object to a file.  :meth:`save` generates
         the file data by invoking a Graphviz program.
 
         :param filename: The name of the file to write.
@@ -1320,7 +1319,7 @@ class Dot:
         For the parameters, see :meth:`to_rendered`.  The ``size`` parameter
         can be especially useful: a value such as ``"5,5"`` can help ensure the
         graph visually fits in the notebook.  Note the default format for
-        :meth:`save` is ``'svg'``.
+        :meth:`show` is ``'svg'``.
         """
         if display and Markdown and SVG and Image:
             try:

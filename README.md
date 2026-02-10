@@ -30,7 +30,7 @@ class NFA:
     start    : str
 ```
 
-where `delta["q"][0]` is the list of states reached from $q$ by epsilon
+where `delta["q"][0]` is the list of states reached from state $q$ by epsilon
 transitions, and `delta["q"][i]` is the list of states reached from $q$ by
 symbol `alphabet[i-1]`.
 
@@ -109,7 +109,7 @@ directory.
 ## Documentation
 
 See [gvdot.readthedocs.io](https://gvdot.readthedocs.io) for an overview and
-API reference.
+reference.
 
 ## Installation
 

@@ -15,7 +15,7 @@ Class Dot
 The DOT language defines the input format accepted by Graphviz, a family of
 programs for drawing graphs.  Class :class:`Dot` is a DOT language graph
 expression.  To produce a diagram, applications create a dot object then use it
-to define and amend nodes, edges, subgraphs, and graph-level attribute.
+to define and amend nodes, edges, subgraphs, and graph-level attributes.
 Applications can also style diagrams with themes and roles.
 
 Once complete, applications convert the dot object to DOT language text or
@@ -119,13 +119,13 @@ has the representation
 
     a -- b [ penwidth=0.25 color=red label="fine" ]
 
-HTML IDs are distinct from non-HTML IDs in DOT language.  Python :type:`ID`
+HTML IDs `are`` distinct from non-HTML IDs in DOT language.  Python :type:`ID`
 values ``"the<br/>end"`` and ``Markup("the<br/>end")`` have the DOT language
 representations ``"the<br/>end"`` and ``<the<br/>end>`` respectively.  When
 used as a label, Graphviz renders the first as text containing angle brackets
 and a slash, and the second as "the" and "end" on two lines.
 
-For convenience, because some Graphiz attributes have boolean values specified
+For convenience, because some Graphviz attributes have boolean values specified
 as ``true`` or ``false``, :class:`Dot` normalizes Python bool :type:`ID` values
 to those lowercase forms.
 
@@ -315,11 +315,11 @@ A :class:`Dot` object created by the :class:`Dot` constructor with descendant
 :meth:`subgraph_define` form a tree.  That tree is mirrored by the ``subgraph``
 statement hierarchy of the DOT language representation of the root.
 
-Nodes and edges have dot object tree wide scope.  They may only be defined once
-in the tree, but can amended any number of times through any dot object in the
-tree.  The dot object through which a node or edge is defined determines where
-it will appear in the subgraph hierarchy and, therefore, the set of default
-attributes which apply to the node or edge.
+Nodes and edges have dot object tree-wide scope.  They may only be defined once
+in the tree, but can be amended any number of times through any dot object in
+the tree.  The dot object through which a node or edge is defined determines
+where it will appear in the subgraph hierarchy and, therefore, the set of
+default attributes which apply to the node or edge.
 
 .. code-block:: python
 
@@ -359,7 +359,7 @@ The :class:`Dot` instance defined above has the DOT representation
 
 Node ``a`` and edge ``a -- b`` have ``fontsize`` 10 with ``color`` and
 ``penwidth`` unspecified, whereas node ``b`` and edge ``b -- c`` have
-``fontsize`` 10, and also ``color`` green and ``pendwidth`` 2.
+``fontsize`` 10, and also ``color`` green and ``penwidth`` 2.
 
 If a subgraph is a cluster, some Graphviz layout engines (including the default
 engine, dot) will place all nodes defined within the subgraph together in the
@@ -446,18 +446,17 @@ provided need only be unique among the edges of their associated node pair.
 
      - .. image:: _static/overview/multigraph-stage3.*
         :align: center
-        :alt: Three distinct edges
+        :alt: The second is now amended
 
 Discriminants are a gvdot feature.  As you can see, they don't appear in the
 DOT language representation.  We used integer discriminants in this example
-because it was convenient, discriminants can be any :type:`ID`.
+because it was convenient, but discriminants can be any :type:`ID`.
 
 Rendering
 ---------
 
 Package gvdot executes Graphviz programs to render :class:`Dot` objects.  The
-input to these programs is the DOT language representation you can see with see
-with
+input to these programs is the DOT language representation you can see with
 
 .. code-block:: python
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gvdot"
-version = "0.9.2dev1"
+version = "0.9.2"
 description = "Generate and render optionally themed Graphviz diagrams with simple, easy to maintain code."
 readme = "README.md"
 authors = [{ name = "Edward Screven" }]
@@ -32,6 +32,8 @@ ipython = ["ipython>=7.23.1"]
 [project.urls]
 Homepage = "https://github.com/escreven/gvdot"
 Repository = "https://github.com/escreven/gvdot"
+Documentation = "https://gvdot.readthedocs.io"
+Issues = "https://github.com/escreven/gvdot/issues"
 
 [tool.setuptools]
 package-dir = { "" = "src" }
