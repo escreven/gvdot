@@ -13,7 +13,7 @@ from subprocess import CalledProcessError, TimeoutExpired
 from typing import Any
 import re
 
-__version__ = "0.9.2"
+__version__ = "0.9.3dev1"
 
 __all__ = (
     "Markup", "Port", "Dot", "InvocationException", "ProcessException",
@@ -35,7 +35,7 @@ except ImportError:
 
 def _missing_ipython():
     raise RuntimeError(
-        "IPython is required to show dot objects. "
+        "IPython is required to show Dot objects. "
         "Install with: pip install gvdot[ipython]")
 
 
@@ -61,7 +61,8 @@ type ID = str|int|float|bool|Markup
 
     - using an int ``x`` as an :type:`ID` is equivalent to using ``str(x)``
     - using a float ``x`` as an :type:`ID` is equivalent to using ``str(x)``
-    - using ``Markup(x)`` as an :type:`ID` is different than using ``x``
+    - using ``Markup(x)`` as an :type:`ID` is different than
+      using ``x``
 
     For convenience, given that Graphviz uses ``true`` and ``false`` for
     boolean values,
@@ -185,7 +186,7 @@ def _update_roles(target:dict[str,_Attrs], source:dict[str,_Attrs]) -> None:
 
 #
 # A _Mien is the result of merging the heritable attributes of themes and a
-# root dot object.
+# root Dot object.
 #
 
 class _Mien:
@@ -415,35 +416,34 @@ class _NormPort:
 
 class Dot:
     """
-    A DOT language graph expression.
+    A DOT language builder.
 
-    :param directed: The graph is a directed graph.
+    :param directed: Make the graph directed.
 
-    :param strict: The graph declaration will include the ``strict`` keyword.
-        This argument is present for completeness.  It's unlikely to be useful
-        with dot objects since :class:`Dot` guarantees edge uniqueness for
-        non-multigraphs.
+    :param strict: Include the ``strict`` keyword.  This argument is present
+        for completeness.  It's unlikely to be useful with Dot objects since
+        :class:`Dot` guarantees edge uniqueness for non-multigraphs.
 
     :param multigraph: Support multiple edges between the same node pair
         (ordered pair in the directed case.)  This parameter affects the
         behavior of methods :meth:`edge`, :meth:`edge_define`, and
         :meth:`edge_update` but does not change the DOT language produced from
-        the dot object.
+        the Dot object.
 
     :param id: The graph identifier.
 
     :param comment: Possibly multiline text prepended as a ``//`` style
         comment.
 
-    :raises ValueError: If both ``strict`` and ``multigraph`` are requested.
+    :raises ValueError: If both ``strict`` and ``multigraph`` are True.
 
-    A :class:`Dot` instance can either be a root dot object created by the
-    constructor or a child dot object created by :meth:`subgraph` or
-    :meth:`subgraph_define`.  Method :meth:`parent` returns a dot object's
-    parent if the object is a child, and None otherwise.
+    A Dot object can either be a root created by the constructor or a child
+    created by :meth:`subgraph` or :meth:`subgraph_define`.  Method
+    :meth:`parent` returns a Dot object's parent if the object is a child, and
+    None otherwise.
 
-    Except as otherwise described, dot object methods return ``self`` to enable
-    chained method invocations.
+    Except as otherwise described, :class:`Dot` methods return ``self`` to
+    enable chained method invocations.
     """
     __slots__ = (
         "directed", "strict", "multigraph", "graphid",
@@ -527,7 +527,7 @@ class Dot:
 
     def is_multigraph(self) -> bool:
         """
-        Return True iff this is a multigraph dot object.
+        Return True iff this is a multigraph Dot object.
         """
         return self.multigraph
 
@@ -733,18 +733,29 @@ class Dot:
             dot.edge(Port("a",cp="n"), Port("b","output","s"), color="blue")
             dot.edge("a","b",style="dashed")
 
-        The outcome of calling :meth:`edge` with endpoint node IDs between
-        which there is an existing edge depends on the constructor
-        ``multigraph`` parameter and whether or not a discriminant is
-        specified.
+        The outcome of calling :meth:`edge` for an endpoint node pair between
+        which there is an existing edge depends on whether or not the Dot
+        object is multigraph and the specified discriminant.
 
-        - Non-multigraph: the existing edge is amended.  Discriminants are not
-          relevant in this case because they are not permitted.
-        - Multigraph, no discriminant: a new edge is defined.  The implication
-          is that unless a discriminant is provided when a multigraph edge is
-          defined, that edge cannot be amended.
-        - Multigraph, distinct discriminant: a new edge is defined.
-        - Multigraph, same discriminant: the defined edge is amended.
+        .. list-table::
+            :header-rows: 1
+            :align: center
+
+            * - Multigraph
+              - Specified Discriminant
+              - Outcome
+            * - No
+              - (Not permitted)
+              - Existing edge amended
+            * - Yes
+              - None
+              - New edge defined
+            * - Yes
+              - Existing among node pair edges
+              - Existing edge amended
+            * - Yes
+              - New among node pair edges
+              - New edge defined
 
         When amending an edge, if an endpoint argument is a :class:`Port`, that
         specification replaces the endpoint's previous port (if any).  For
@@ -829,9 +840,9 @@ class Dot:
 
         :param id: The subgraph to define or amend.
 
-        :return: A new or existing child dot object.  Graph attributes,
+        :return: A new or existing child Dot object.  Graph attributes,
             attribute defaults, and nodes and edges defined through the child
-            will appear within a subgraph statement of the root dot object's
+            will appear within a subgraph statement of the root Dot object's
             DOT language representation.
 
         Subgraph identities are scoped to parent graphs or subgraphs, so
@@ -953,14 +964,14 @@ class Dot:
 
     def parent(self) -> Dot|None:
         """
-        The dot object's parent if the object is a subgraph, otherwise None if
-        the dot object is a root.
+        The Dot object's parent if the object is a child, and None if the Dot
+        object is a root.
         """
         return self._parent
 
     def copy(self, *, id:ID|None=None, comment:str|None=None) -> Dot:
         """
-        Return a deep copy of the dot object.
+        Return a deep copy of the Dot object.
 
         :param id: The copy's graph identifier.  If not provided, the copy will
             have this graph's identifier.
@@ -968,7 +979,7 @@ class Dot:
         :param comment: The copy's comment.  If not provided, the copy will
             have this graph's comment.
 
-        If the dot object is using a theme, the copy will use the identical
+        If the Dot object is using a theme, the copy will use the identical
         theme.
         """
         result = deepcopy(self)
@@ -984,33 +995,33 @@ class Dot:
         attribute values from ``theme``.
 
         :class:`Dot` forms DOT language representations by merging inherited
-        attribute values with a dot object's own assigned values (which have
+        attribute values with a Dot object's own assigned values (which have
         precedence).  Inheritance can be chained, with themes inheriting from
         themes.  The final merged result incorporates attributes from the
         entire chain.
 
-        The theme must be a root dot object, and only root dot objects can
+        The theme must be a root Dot object, and only root Dot objects can
         inherit from themes.  However, since roles have tree-wide scope,
-        entities defined through subgraph dot objects can be assigned roles
+        entities defined through subgraph Dot objects can be assigned roles
         inherited by the root.
 
         Theme use is dynamic.  Any change to the theme inheritance chain or
         heritable attributes of a theme in the chain is immediately reflected
-        in the dot object's DOT language representation.
+        in the Dot object's DOT language representation.
 
         :param theme: The attribute inheritance source or None.  If ``theme``
-            is None, the dot object does not inherit from any theme.
+            is None, the Dot object does not inherit from any theme.
 
-        :raises ValueError: The theme is not a root dot object, or the using
+        :raises ValueError: The theme is not a root Dot object, or the using
             the theme would create an inheritance cycle.
 
-        :raises RuntimeError: The dot object is not a root dot object.
+        :raises RuntimeError: The Dot object is not a root.
         """
         if self._parent is not None:
-            raise RuntimeError("Only root dot objects can inherit from themes")
+            raise RuntimeError("Only root Dot objects can inherit from themes")
         if theme is not None:
             if theme._parent is not None:
-                raise ValueError("Theme is not a root dot object")
+                raise ValueError("Theme is not a root Dot object")
             current = theme
             while current is not None:
                 if current is self:
@@ -1021,7 +1032,7 @@ class Dot:
 
     def _statements(self, lines:list[str], indent:int, mien:_Mien):
         """
-        Append the dot object's statements to lines, indented as specified.
+        Append the Dot object's statements to lines, indented as specified.
         """
         prefix = "    " * indent
         base = len(lines)
@@ -1105,7 +1116,7 @@ class Dot:
 
     def __str__(self) -> str:
         """
-        The DOT language representation of the dot object.
+        The DOT language representation of the Dot object.
         """
         lines = []
 
@@ -1133,7 +1144,7 @@ class Dot:
                     ratio:float|str|None=None, timeout:float|None=None,
                     directory:str|PathLike|None=None) -> bytes:
         """
-        Render the dot object by invoking a Graphviz program.
+        Render the Dot object by invoking a Graphviz program.
 
         :param program: Which Graphviz program to use (dot by default).
             ``program`` should either be the name of the program or a path to
@@ -1231,7 +1242,7 @@ class Dot:
                ratio:float|str|None=None, timeout:float|None=None,
                directory:str|PathLike|None=None) -> str:
         """
-        Convert the dot object to an SVG string by invoking a Graphviz program.
+        Convert the Dot object to an SVG string by invoking a Graphviz program.
 
         :param inline: Generate SVG without an XML header.
 
@@ -1252,7 +1263,7 @@ class Dot:
              ratio:float|str|None=None, timeout:float|None=None,
              directory:str|PathLike|None=None) -> None:
         """
-        Save a rendering of the dot object to a file.  :meth:`save` generates
+        Save a rendering of the Dot object to a file.  :meth:`save` generates
         the file data by invoking a Graphviz program.
 
         :param filename: The name of the file to write.
@@ -1304,14 +1315,14 @@ class Dot:
              ratio:float|str|None=None, timeout:float|None=None,
              directory:str|PathLike|None=None) -> None:
         """
-        Display the dot object in a Jupyter notebook as an IPython ``SVG`` or
+        Display the Dot object in a Jupyter notebook as an IPython ``SVG`` or
         ``Image`` object.  :meth:`show` generates the data required by invoking
         a Graphviz program.
 
         :raises ShowException: :meth:`show()` could not complete because the
             program could not be invoked, it timed out, or it exited with a
             non-zero status code.  When :meth:`show()` raises
-            :class:`ShowException`, it also displays a Markdown block
+            :class:`ShowException`, it also displays a ``Markdown`` block
             explaining why it could not complete.
 
         :raises RuntimeError: IPython is not installed.
@@ -1355,7 +1366,7 @@ class Dot:
 
     def show_source(self) -> None:
         """
-        Display the dot object's DOT language representation in a Jupyter
+        Display the Dot object's DOT language representation in a Jupyter
         notebook as an IPython ``Code`` object.
 
         :raises RuntimeError: IPython is not installed.

@@ -25,9 +25,10 @@ As usual, we begin by creating a theme.
         .node_role("black", fillcolor="#001122")
         .edge_role("phantom", style="invisible"))
 
-Before we write the generation code, let's see what this looks like.  We force
-nodes ``1`` and ``4`` to be on the same rank and ordered correctly with a
-subgraph and a phantom (invisible) edge.
+Before we write the generation code, let's see how this looks by building a
+tree by hand.  To ensure ``dot`` lays out the tree correctly, we use subgraphs
+and phantom (invisible) edges to ensure sibling nodes are on the same rank
+and ordered correctly.
 
 .. code-block:: python
 
@@ -47,14 +48,12 @@ subgraph and a phantom (invisible) edge.
     :align: center
     :alt: Initial hand-crafted red-black tree
 
-|br|
-The nodes look nice, but the children of ``2`` are crowded, and we can't
+|br| The nodes are nice, but the children of ``2`` are crowded, and we can't
 visually determine if ``3`` is the left or right child of ``4``.  We will solve
 these problems by adding phantom nodes --- every parent will have three
 children, including at least one phantom.
 
-We add a phantom node role to the theme to accompany the existing phantom edge
-role.
+We add a phantom node role to the theme, joining the existing phantom edge role
 
 .. code-block:: python
 
@@ -94,9 +93,7 @@ and use it in our hand-crafted tree.
     :align: center
     :alt: Improved hand-crafted red-black tree
 
-|br|
-Much better looking, but awfully tedious to construct by hand.  Time to
-get programmatic.
+|br| Much better, but tedious to construct by hand.  Time to automate.
 
 We create a simple red-black tree implementation based on Sedgewick's paper.
 
@@ -289,6 +286,10 @@ theme.
     rb_theme.edge_role("phantom", style=None, color="lightgray")
     diagram.show()
 
-.. image:: _static/examples/rb-auto-phantoms.svg
+displays
+
+.. image:: _static/examples/rb-auto-phantoms.*
     :align: center
     :alt: Red-black tree diagram with phantoms visible
+
+|br|

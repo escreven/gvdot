@@ -12,18 +12,18 @@ Overview
 Class Dot
 ---------
 
-The DOT language defines the input format accepted by Graphviz, a family of
-programs for drawing graphs.  Class :class:`Dot` is a DOT language graph
-expression.  To produce a diagram, applications create a dot object then use it
-to define and amend nodes, edges, subgraphs, and graph-level attributes.
-Applications can also style diagrams with themes and roles.
+Graphviz is a family of programs for drawing graphs.  The input to these
+programs are graph expressions written in the `DOT language
+<https://graphviz.org/doc/info/lang.html>`_.  Class :class:`Dot` is a DOT
+language builder.  To produce a diagram, applications create a Dot object then
+use it to define and amend nodes, edges, subgraphs, and graph-level attributes.
+Applications can also style diagrams with themes and roles.  Once complete,
+applications convert the object to DOT language text or render it as SVG or an
+image.  Notebook users can also interactively display Dot objects in Jupyter
+notebooks.
 
-Once complete, applications convert the dot object to DOT language text or
-render it as SVG or an image.  Notebook users can also interactively display
-dot objects in Jupyter notebooks.
-
-The string representation of a dot object is DOT language text, the same text
-used when rendering the dot object.  For example,
+The string representation of a Dot object is DOT language text, the same text
+used when rendering the Dot object.  For example,
 
 .. include:: _code/overview/rollback.py.rst
 
@@ -119,7 +119,7 @@ has the representation
 
     a -- b [ penwidth=0.25 color=red label="fine" ]
 
-HTML IDs `are`` distinct from non-HTML IDs in DOT language.  Python :type:`ID`
+HTML IDs `are` distinct from non-HTML IDs in DOT language.  Python :type:`ID`
 values ``"the<br/>end"`` and ``Markup("the<br/>end")`` have the DOT language
 representations ``"the<br/>end"`` and ``<the<br/>end>`` respectively.  When
 used as a label, Graphviz renders the first as text containing angle brackets
@@ -133,28 +133,31 @@ Attributes
 -----------
 
 Applications specify graph, subgraph, node, and edge attributes as keyword
-arguments to dot object methods defining or amending those entities, defining
-roles for those entities, or setting defaults for those entity types.
+arguments to :class:`Dot` methods
+
+- defining or amending those entities,
+- defining roles for those entities, or
+- setting defaults for those entity types.
 
 .. include:: _code/overview/attrs.py.rst
 
 Through a combination of gvdot functionality and Graphviz built-in behavior,
-the attribute values assigned above are merged together to render the diagram
-as
+the attribute values assigned above are merged together to render the Dot
+object as
 
 .. image:: _static/overview/attrs.*
     :align: center
     :alt: Combination of many attributes
 
-|br|
-The DOT language representation of that dot object is
+|br| The DOT language representation of the Dot object is
 
 .. include:: _code/overview/attrs.dot.rst
 
 Each keyword argument name except for ``role`` should be a Graphviz attribute
 name and each value should be an :type:`ID` or ``None``.  Value ``None``
 deletes the attribute from the target entity, role, or entity type default if
-it was previously specified, and is ignored if not.
+it was previously specified.  If the attribute was not previously specified,
+the assignment to ``None`` has no effect.
 
 Running the following as a cell in a notebook
 
@@ -232,17 +235,16 @@ can have attribute ``role``.
 
 A role need not be defined before it is assigned.  However, :class:`Dot` raises
 an exception if an assigned role is not defined when the application creates a
-DOT language representation or rendering of a dot object.
-
+DOT language representation or rendering of a Dot object.
 
 Themes
 ------
 
-A theme is a normal :class:`Dot` object from which other dot objects inherit
+A theme is a normal :class:`Dot` object from which other Dot objects inherit
 graph attributes, default attributes, and roles.  While a theme can have nodes,
-edges, and subgraphs, those elements are ignored by :class:`Dot` objects styled
-by the theme.  Also, whether or not a theme is directed, is a multigraph, or is
-strict is irrelevant.
+edges, and subgraphs, those elements are ignored by Dot objects styled by the
+theme.  Also, whether or not a theme is directed, is a multigraph, or is strict
+is irrelevant.
 
 We can improve our task diagrammer above by pulling all presentation attributes
 out of ``task_diagram()`` into a theme.
@@ -281,9 +283,9 @@ The terms "define", "establish", and "amend" are used throughout the
 amend".  In the context of gvdot method descriptions,
 
 - `define` means create a node, edge, subgraph, or role and assign initial
-  attribute values for nodes, edges, and roles.  Defined nodes, edges, and
-  subgraphs will appear as statements in the DOT language representation.
-  Defined roles are recorded for resolution in that representation.
+  attribute values if applicable.  Defined nodes, edges, and subgraphs will
+  appear as statements in the DOT language representation.  Defined roles are
+  recorded for resolution in that representation.
 
 - `establish` means assign initial graph, default graph, default node, or
   default edge attribute values.
@@ -303,21 +305,21 @@ it otherwise.  :class:`Dot` also has variants :meth:`~Dot.node_define`,
 :meth:`~Dot.edge_define`, and :meth:`~Dot.subgraph_edge` which raise exceptions
 if the entity is already defined and :meth:`~Dot.node_update`,
 :meth:`~Dot.edge_update`, and :meth:`~Dot.subgraph_update` which raise
-exceptions if it is not.  The "define and amend" version have the advantage of
-giving code a clean, declarative feel.  The ``_define`` and ``_update``
+exceptions if it is not.  The "define and amend" versions have the advantage of
+giving code a clean, declarative feel.  The ``..._define`` and ``..._update``
 variants can make buggy code fail faster.
 
 Subgraphs
 ---------
 
 A :class:`Dot` object created by the :class:`Dot` constructor with descendant
-:class:`Dot` instances created through methods :meth:`subgraph` or
+Dot instances created through methods :meth:`subgraph` or
 :meth:`subgraph_define` form a tree.  That tree is mirrored by the ``subgraph``
 statement hierarchy of the DOT language representation of the root.
 
-Nodes and edges have dot object tree-wide scope.  They may only be defined once
-in the tree, but can be amended any number of times through any dot object in
-the tree.  The dot object through which a node or edge is defined determines
+Nodes and edges have Dot object tree-wide scope.  They may only be defined once
+in the tree, but can be amended any number of times through any Dot object in
+the tree.  The Dot object through which a node or edge is defined determines
 where it will appear in the subgraph hierarchy and, therefore, the set of
 default attributes which apply to the node or edge.
 
@@ -336,7 +338,7 @@ default attributes which apply to the node or edge.
     sub.node_default(color="green").edge_default(color="green")
     subsub.node_default(penwidth=2).edge_default(penwidth=2)
 
-The :class:`Dot` instance defined above has the DOT representation
+The :class:`Dot` instance defined above has the DOT language representation
 
 .. code-block:: graphviz
 
@@ -363,14 +365,14 @@ Node ``a`` and edge ``a -- b`` have ``fontsize`` 10 with ``color`` and
 
 If a subgraph is a cluster, some Graphviz layout engines (including the default
 engine, dot) will place all nodes defined within the subgraph together in the
-layout.  Therefore, the dot object through which a node is defined may
+layout.  Therefore, the Dot object through which a node is defined may
 determine its placement.
 
-Roles also have dot object tree scope.  They may be defined and amended through
-any dot object in the tree, but unlike nodes and edges, the object through
-which a role is defined has no consequence.  Roles may be assigned to any
-entity of the associated kind without regard to the dot object through which
-either was defined.
+Roles also have Dot object tree-wide scope.  They may be defined and amended
+through any Dot object in the tree, but unlike nodes and edges, the object
+through which a role is defined has no consequence.  Roles may be assigned to
+any entity of the associated kind without regard to the Dot object through
+which either was defined.
 
 Subgraphs are scoped to their parent.  So, the assertions below all hold.
 
@@ -405,7 +407,7 @@ resulting in
      - .. image:: _static/overview/multigraph-stage1.*
           :alt: One edge amended twice
 
-If we construct the :class:`Dot` object as multigraph,
+If we construct the :class:`Dot` object as a multigraph,
 
 .. include:: _code/overview/multigraph-stage2.py.rst
 
