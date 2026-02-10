@@ -3,7 +3,7 @@
 Entity-Relationship Diagram
 ===========================
 
-The Graphviz Gallery includes `a Chen-style entity relationship diagram
+The Graphviz gallery includes `a Chen-style entity relationship diagram
 <https://graphviz.org/Gallery/neato/ER.html>`_.  We can reproduce that example
 by transcribing the gallery's `DOT language input file
 <https://graphviz.org/Gallery/neato/ER.gv.txt>`_ to gvdot calls.
@@ -58,7 +58,7 @@ assignments, while the code uses gvdot roles.
 .. figure:: _static/examples/er-transcribed.svg
     :align: center
     :width: 60%
-    :alt: Transcribed ER-Diagram
+    :alt: Transcribed ER-diagram
 
     The transcription output matches the original.
 
@@ -131,8 +131,8 @@ roles as well.
         .node_role("entity", shape="box")
         .node_role("attribute", shape="ellipse")
         .node_role("relationship", shape="diamond")
-        .edge_role("e-to-r", len=1.0)
-        .edge_role("a-to-e"))
+        .edge_role("e-to-r", len=1.0)  # entity-to-relationship
+        .edge_role("a-to-e"))          # attribute-to-entity
 
 The gallery example uses a solid light grey for relationships, so we specialize
 the theme a bit.
@@ -170,14 +170,14 @@ and maintain.
     diagram.show(size="5,5")
 
 Notice the code assigns role ``a-to-e`` to attribute-entity edges, even though
-that role has no attributes values specified as part of the theme.  That
-practice means we can later style attribute-entity edges without having to
-modify the generating code.
+that role has no attributes specified as part of the theme.  That practice
+means we can later style attribute-entity edges without having to modify the
+generating code.
 
 .. figure:: _static/examples/er-generated-bw.svg
     :align: center
     :width: 60%
-    :alt: Generated Black and White ER-Diagram
+    :alt: Generated Black and White ER-diagram
 
     The layout differs because neato depends on statement order.
 
@@ -254,7 +254,7 @@ diagram.
 .. figure:: _static/examples/er-generated-color.svg
     :align: center
     :width: 60%
-    :alt: Generated Color ER-Diagram
+    :alt: Generated Color ER-diagram
 
     Much nicer.
 

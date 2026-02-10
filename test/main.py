@@ -141,7 +141,7 @@ def _run(cases:list[_Case], failstop:bool):
 def _main():
 
     parser = ArgumentParser(
-        description="Test LiveImport")
+        description="Test gvdot")
 
     parser.add_argument("pattern", nargs='?', default=None,
         help="Only run tests with names containing this regex")

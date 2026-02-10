@@ -26,9 +26,9 @@ represented by instances of
 
 .. include:: _code/index/nfa-model.py.rst
 
-where ``delta["q"][0]`` is the list of states reached from :math:`q` by epsilon
-transitions, and ``delta["q"][i]`` is the list of states reached from :math:`q`
-by symbol ``alphabet[i-1]``.
+where ``delta["q"][0]`` is the list of states reached from state :math:`q` by
+epsilon transitions, and ``delta["q"][i]`` is the list of states reached from
+:math:`q` by symbol ``alphabet[i-1]``.
 
 We start by defining a theme, a normal :class:`Dot` object from which other dot
 objects can inherit graph attributes, default attributes, and roles.
