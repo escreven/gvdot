@@ -206,7 +206,7 @@ applications can assemble diagrams in any sequence that is convenient and
 assign common attributes using roles.
 
 A role is a named collection of attribute values similar to default node or
-edge attributes.  Using the special attribute ```role```, applications may
+edge attributes.  Using the special attribute ``role``, applications may
 assign a role to a node, edge, or graph, causing that entity to inherit the
 role's attribute values.  Suppose we are modeling projects with
 
@@ -385,6 +385,72 @@ Subgraphs are scoped to their parent.  So, the assertions below all hold.
 
 Multigraphs
 -----------
+
+By default, the DOT language representation of a :class:`Dot` object has no
+more than one edge statement for any pair of nodes (ordered pairs for directed
+graphs).  In the code below
+
+.. include:: _code/overview/multigraph-stage1.py.rst
+
+the second and third :meth:`~Dot.edge` calls amend the edge ``a -- b``,
+resulting in
+
+.. list-table::
+   :widths: 65 35
+   :align: center
+   :class: .gvdot-example-table
+
+   * - .. include:: _code/overview/multigraph-stage1.dot.rst
+
+     - .. image:: _static/overview/multigraph-stage1.*
+          :alt: One edge amended twice
+
+If we construct the :class:`Dot` object as multigraph,
+
+.. include:: _code/overview/multigraph-stage2.py.rst
+
+each :meth:`~Dot.edge` call defines a new edge.  Now we get
+
+.. list-table::
+   :widths: 65 35
+   :align: center
+   :class: .gvdot-example-table
+
+   * - .. include:: _code/overview/multigraph-stage2.dot.rst
+
+     - .. image:: _static/overview/multigraph-stage2.*
+        :align: center
+        :alt: Three distinct edges
+
+But suppose we want to amend a multigraph edge?  For that we use
+`discriminants`, a third component to edge identity used in multigraphs.  The
+:meth:`Dot.edge` method is declared as
+
+.. code-block:: python
+
+    def edge(self, point1:ID|Port, point2:ID|Port,
+             discriminant:ID|None=None, /, **attrs:ID|None) -> Dot:
+
+The ``discriminant`` parameter is a value allowing an application to refer to
+multigraph edges.  Discriminants are not required in multigraphs, and if
+provided need only be unique among the edges of their associated node pair.
+
+.. include:: _code/overview/multigraph-stage3.py.rst
+
+.. list-table::
+   :widths: 65 35
+   :align: center
+   :class: .gvdot-example-table
+
+   * - .. include:: _code/overview/multigraph-stage3.dot.rst
+
+     - .. image:: _static/overview/multigraph-stage3.*
+        :align: center
+        :alt: Three distinct edges
+
+Discriminants are a gvdot feature.  As you can see, they don't appear in the
+DOT language representation.  We used integer discriminants in this example
+because it was convenient, discriminants can be any :type:`ID`.
 
 Rendering
 ---------

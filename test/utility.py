@@ -84,7 +84,7 @@ def _normalize_text(text:str) -> list[tuple[int,str]]:
     return lines
 
 #
-# Raised be expect_str() when actual DOT text doens't match expected text.
+# Raised by expect_str() when actual DOT text doens't match expected text.
 # Properties expected and actual are the unnormalized text, and the
 # corresponding line numbers are zero based.  If expected or actual is a prefix
 # of the other, the corresponding line number is -1.

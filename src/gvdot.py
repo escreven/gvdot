@@ -991,8 +991,9 @@ class Dot:
         entire chain.
 
         The theme must be a root dot object, and only root dot objects can
-        inherit from themes.  However, entities defined through subgraph dot
-        objects can be assigned roles inherited by the dot object tree root.
+        inherit from themes.  However, since roles have tree-wide scope,
+        entities defined through subgraph dot objects can be assigned roles
+        inherited by the root.
 
         Theme use is dynamic.  Any change to the theme inheritance chain or
         heritable attributes of a theme in the chain is immediately reflected
@@ -1144,10 +1145,9 @@ class Dot:
             isn't already, then uses it to form the ``-T`` argument to the
             specified program.
 
-        :param dpi: Render with this many pixels per inch.  This can be used to
-            create higher resolution images than Graphviz's default 96dpi.  See
-            the Graphviz `dpi <https://graphviz.org/docs/attrs/dpi/>`_
-            attribute documentation.
+        :param dpi: Render with this many pixels per inch.  See the Graphviz
+            `dpi <https://graphviz.org/docs/attrs/dpi/>`_ attribute
+            documentation.
 
         :param size: Specify a maximum or minimum size.  See the Graphviz
             `size <https://graphviz.org/docs/attrs/size/>`_ attribute
@@ -1272,7 +1272,8 @@ class Dot:
         Parameter ``format`` is optional.  If not given, :meth:`save` attempts
         to infer the format from the file extension.  The file extensions for
         which :meth:`save` infers formats by case insensitive comparison are
-        svg, png, jpg, jpeg, gif, tif, tiff, and pdf.
+        ``.svg``, ``.png``, ``.jpg``, ``.jpeg``, ``.gif``, ``.tif``, ``.tiff``,
+        and ``.pdf``.
         """
         filepath = Path(filename)
 
@@ -1317,9 +1318,9 @@ class Dot:
         :raises RuntimeError: IPython is not installed.
 
         For the parameters, see :meth:`to_rendered`.  The ``size`` parameter
-        can be especially useful.   A value such as ``"5,5"`` can help ensure
-        the graph visually fits in the notebook.  Note the default ``format``
-        for :meth:`save` is ``'svg'``.
+        can be especially useful: a value such as ``"5,5"`` can help ensure the
+        graph visually fits in the notebook.  Note the default format for
+        :meth:`save` is ``'svg'``.
         """
         if display and Markdown and SVG and Image:
             try:

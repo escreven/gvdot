@@ -1,0 +1,18 @@
+css
+/* Target code blocks in a table with the 'no-margin-code' class */
+.gvdot-example-table .highlight,
+.gvdot-example-table .highlight-python,
+.gvdot-example-table .highlight-graphviz {
+    margin-bottom: 0 !important;
+}
+
+/* Optional: Also remove margin from any paragraphs inside the table cells */
+.gvdot-example-table td p {
+    margin-bottom: 0 !important;
+}
+
+.gvdot-example-table td,
+.gvdot-example-table th {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+}

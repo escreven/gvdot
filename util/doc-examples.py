@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from argparse import ArgumentParser
 from collections import defaultdict
 from dataclasses import dataclass
 import inspect
@@ -409,18 +410,85 @@ def project_example() -> list[_Artifact]:
     return artifacts
 
 
+def multigraph_example() -> list[_Artifact]:
+
+    def code1():
+        dot = Dot().graph(rankdir="LR")
+        dot.edge("a", "b", color="red", label="first")
+        dot.edge("a", "b", color="green", label="second")
+        dot.edge("a", "b", color="blue", label="third")
+        return dot
+
+    def code2():
+        dot = Dot(multigraph=True).graph(rankdir="LR")
+        dot.edge("a", "b", color="red", label="first")
+        dot.edge("a", "b", color="green", label="second")
+        dot.edge("a", "b", color="blue", label="third")
+        return dot
+
+    def code3():
+        dot = Dot(multigraph=True).graph(rankdir="LR")
+        dot.edge("a", "b", 1, color="red", label="first")
+        dot.edge("a", "b", 2, color="green", label="second")
+        dot.edge("a", "b", 3, color="blue", label="third")
+
+        # Amend the green edge
+        dot.edge("a", "b", 2, style="dashed")
+        return dot
+
+    return [
+        _PythonCode("overview/multigraph-stage1", code1),
+        _PythonCode("overview/multigraph-stage2", code2),
+        _PythonCode("overview/multigraph-stage3", code3),
+        _DotCode(   "overview/multigraph-stage1", code1()),
+        _DotCode(   "overview/multigraph-stage2", code2()),
+        _DotCode(   "overview/multigraph-stage3", code3()),
+        _Image(     "overview/multigraph-stage1", code1()),
+        _Image(     "overview/multigraph-stage2", code2()),
+        _Image(     "overview/multigraph-stage3", code3()),
+    ]
+
+
 # ============================================================================
 #                                  MAIN
 # ============================================================================
 
+def _main():
+
+    parser = ArgumentParser(
+        description="Generate example code and images for documentation.")
+
+    parser.add_argument("pattern", nargs="?", default=None,
+        help="Only generate artifacts for examples matching this pattern")
+
+    args      = parser.parse_args()
+    pattern   = args.pattern
+    artifacts = []
+
+    for name, value in globals().items():
+        if (type(value) is FunctionType and
+            getattr(value,'__module__',None) == '__main__' and
+            (match := re.fullmatch(r"([a-z].*)_example", name))):
+                example = match[1]
+                if pattern is None or re.search(pattern,example):
+                    print(f"Will generate artifacts for {example}")
+                    artifacts.extend(value())
+
+    if not artifacts:
+        print("No examples matched pattern")
+    else:
+        _save_artifacts(artifacts)
+
 if __name__ == "__main__":
 
-    artifacts = [
-        *nfa_example(),
-        *rollback_example(),
-        *change_mind_example(),
-        *project_example(),
-        *attrs_example(),
-    ]
-
-    _save_artifacts(artifacts)
+    _main()
+#
+#    artifacts = [
+#        *nfa_example(),
+#        *rollback_example(),
+#        *change_mind_example(),
+#        *project_example(),
+#        *attrs_example(),
+#    ]
+#
+#    _save_artifacts(artifacts)

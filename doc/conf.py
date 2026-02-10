@@ -21,7 +21,7 @@ extensions = [
 # No templates for now.
 # templates_path = ['_templates']
 html_static_path = ['_static']
-
+html_css_files = ['css/custom.css']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 language = 'en'
