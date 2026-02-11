@@ -1,0 +1,70 @@
+name: gvdot Test Suite
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  DEPS: 'coverage'
+
+#
+# Before running the full matrix of tests, we test the "canary" configuration
+# first: Python 3.12 on Linux.  Because of the nature gvdot, if the canary test
+# fails, likely many if not all of the remaining tests will fail.
+#
+
+jobs:
+
+  canary:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: ts-graphviz/setup-graphviz@v2
+    - name: Setup Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip wheel setuptools
+        pip install $DEPS
+        pip install -e .
+      shell: bash
+    - name: Run Tests
+      run: |
+        coverage run \
+            --include src/gvdot.py test/main.py -failstop
+        coverage report --include=src/gvdot.py --fail-under=100
+      shell: bash
+
+  full:
+    needs: canary
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.12', '3.13', '3.14']
+      fail-fast: false
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: ts-graphviz/setup-graphviz@v2
+    - name: Setup Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip wheel setuptools
+        pip install $DEPS
+        pip install -e .
+      shell: bash
+    - name: Run Tests
+      run: |
+        coverage run \
+            --include 'src/gvdot.py' test/main.py -failstop
+        coverage report --include=src/gvdot.py --fail-under=100
+      shell: bash
