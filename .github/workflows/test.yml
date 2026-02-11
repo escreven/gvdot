@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 env:
-  DEPS: 'coverage'
+  DEPS: 'pillow coverage'
 
 #
 # Before running the full matrix of tests, we test the "canary" configuration

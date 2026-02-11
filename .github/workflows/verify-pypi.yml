@@ -22,7 +22,7 @@ on:
         type: string
 
 env:
-  DEPS: 'coverage'
+  DEPS: 'pillow coverage'
 
 jobs:
 
