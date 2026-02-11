@@ -33,6 +33,7 @@ jobs:
       shell: bash
     - name: Run Tests
       run: |
+        dot -V
         coverage run \
             --include src/gvdot.py test/main.py -failstop
         coverage report --include=src/gvdot.py --fail-under=100
@@ -64,6 +65,7 @@ jobs:
       shell: bash
     - name: Run Tests
       run: |
+        dot -V
         coverage run \
             --include 'src/gvdot.py' test/main.py -failstop
         coverage report --include=src/gvdot.py --fail-under=100

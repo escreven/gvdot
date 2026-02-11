@@ -1244,7 +1244,9 @@ class Dot:
         """
         Convert the Dot object to an SVG string by invoking a Graphviz program.
 
-        :param inline: Generate SVG without an XML header.
+        :param inline: Generate SVG without an XML header.  Be aware that
+            older, still commonly installed versions of Graphviz do not support
+            inline SVG generation.
 
         For the remaining parameters, and for the exceptions raised, see
         :meth:`to_rendered`.
@@ -1282,16 +1284,14 @@ class Dot:
         Parameter ``format`` is optional.  If not given, :meth:`save` attempts
         to infer the format from the file extension.  The file extensions for
         which :meth:`save` infers formats by case insensitive comparison are
-        ``.svg``, ``.png``, ``.jpg``, ``.jpeg``, ``.gif``, ``.tif``, ``.tiff``,
-        and ``.pdf``.
+        ``.svg``, ``.png``, ``.jpg``, ``.jpeg``, ``.gif``, and ``.pdf``.
         """
         filepath = Path(filename)
 
         if format is None:
             extension = filepath.suffix.removeprefix(".").lower()
 
-            if extension in ('svg','png','jpg','jpeg','gif',
-                             'tif','tiff','pdf'):
+            if extension in ('svg','png','jpg','jpeg','gif','pdf'):
                 format = extension
             else:
                 raise ValueError(f"Cannot infer format from {filename}")

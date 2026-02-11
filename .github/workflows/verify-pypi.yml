@@ -95,5 +95,6 @@ jobs:
 
     - name: Run Tests
       run: |
+        dot -V
         python test/main.py -failstop
       shell: bash

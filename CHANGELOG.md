@@ -1,5 +1,11 @@
 ## Unreleased
 
+#### Changed
+- `save()` no longer infers the TIFF format from the filename.  Older versions
+  of Graphviz (including the one currently installed by apt-get on Ubuntu) do
+  not support TIFF.  Applications can still specify 'tiff' and any other format
+  explicitly.
+
 ## [0.9.2] - 2026-02-09
 
 #### Added

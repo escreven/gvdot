@@ -7,6 +7,7 @@ import inspect
 import textwrap
 import traceback
 from types import FunctionType, ModuleType
+from gvdot import ProcessException
 from utility import DotMismatch, fakedots
 
 # Modules defining tests
@@ -114,6 +115,11 @@ def _run(cases:list[_Case], failstop:bool):
                 print()
                 print(f"    {_exception_to_str(failure)}")
                 print()
+                if isinstance(failure,ProcessException):
+                    for line in failure.stderr.splitlines():
+                        print(f"    {line}")
+                    if failure.stderr:
+                        print()
             for frame in traceback.format_tb(failure.__traceback__)[1:]:
                 print(textwrap.indent(frame.rstrip(),"    "))
             cause = failure.__cause__

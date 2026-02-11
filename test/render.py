@@ -10,8 +10,8 @@ def test_to_rendered():
     Method to_rendered() should invoke the specified graphviz program to render
     the dot object as bytes.  If the program isn't found, it should raise an
     InvocationError.  If the program exits with a non-zero status, it should
-    raise a CalledProcessError.  If a timeout is specified, and the program
-    times out, it should raise a TimeoutExpired exception.  The dpi, size, and
+    raise a ProcessException.  If a timeout is specified, and the program times
+    out, it should raise a TimeoutException exception.  The dpi, size, and
     ratio arguments should be passed as -G options to the program.
     """
     dot = Dot().edge("a","b").graph(label="Title")
@@ -96,8 +96,8 @@ def test_to_svg():
     Method to_svg() should invoke the specified graphviz program to render the
     dot object as SVG.  If the program isn't found, it should raise an
     InvocationError.  If the program exits with a non-zero status, it should
-    raise a CalledProcessError.  If a timeout is specified, and the program
-    times out, it should raise a TimeoutExpired exception.  The dpi, size, and
+    raise a ProcessException.  If a timeout is specified, and the program times
+    out, it should raise a TimeoutException exception.  The dpi, size, and
     ratio arguments should be passed as -G options to the program.
     """
     dot = Dot().edge("a","b")
@@ -105,8 +105,17 @@ def test_to_svg():
     svg = dot.to_svg()
     assert likely_full_svg(svg)
 
-    svg = dot.to_svg(inline=True)
-    assert likely_svg(svg) and not likely_full_svg(svg)
+    #
+    # Older versions of Graphviz do not support the -Tsvg_inline option.
+    # Therefore, we accept either the correct line SVG result or a
+    # ProcessException mentioning svg_inline.
+    #
+
+    try:
+        svg = dot.to_svg(inline=True)
+        assert likely_svg(svg) and not likely_full_svg(svg)
+    except ProcessException as ex:
+        assert "svg_inline" in ex.stderr
 
     svg = dot.to_svg("neato")
     assert likely_full_svg(svg)
@@ -148,9 +157,9 @@ def test_save():
     object as bytes.  It should infer the format from the file extension if not
     given, if given the format should take precedence over the extension.  If
     the program isn't found, it should raise an InvocationError.  If the
-    program exits with a non-zero status, it should raise a CalledProcessError.
+    program exits with a non-zero status, it should raise a ProcessException.
     If a timeout is specified, and the program times out, it should raise a
-    TimeoutExpired exception.
+    TimeoutException exception.
     """
     dir = tmpdir()
 
@@ -208,3 +217,13 @@ def test_save():
         assert "-Gdpi=30" in data
         assert "-Gratio=20" in data
         assert "-Gsize=1,1" in data
+
+
+def test_inferred_formats():
+    """
+    Make sure all inferred save formats are supported.
+    """
+    dot = Dot().node("Yes")
+    dir = tmpdir()
+    for extension in ('svg','png','jpg','jpeg','gif','pdf'):
+        dot.save(f"{dir}/supported.{extension}")
