@@ -255,7 +255,7 @@ This simplifies our generator to
 
 .. include:: _code/overview/project-themes-code1.py.rst
 
-Function ``task_diagram()`` generates the same diagram, but it allows the
+The revised ``task_diagram()`` generates the same diagram while allowing the
 caller to entirely specify the presentation via a theme.  Suppose that
 sometimes we want to present project status in a vertically compact way.  All
 we need is a new theme.
@@ -487,7 +487,7 @@ Here we ran the default program ``dot`` to render the task diagram into the
 default format ``png``.   We specified the image should be generated with a
 resolution of 300 dots per inch.
 
-:class:`Dot` includes three other rendering methods which all call :meth:`~to_rendered`:
+:class:`Dot` includes three other rendering methods which all call :meth:`~Dot.to_rendered`:
 
 - :meth:`Dot.to_svg` renders to SVG and returns the result as a string.
 - :meth:`Dot.save` renders and saves to a file.
