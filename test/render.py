@@ -51,6 +51,8 @@ def test_to_rendered():
     assert "exited with status" in str(ex)
     assert ex.status == 1 and "ErrorText" in ex.stderr
 
+    expect_ex(RuntimeError, lambda: Dot().subgraph().to_rendered())
+
     #
     # The rendered output should be smaller if we use a coarse resolution.
     #
@@ -142,6 +144,8 @@ def test_to_svg():
 
     assert ex.status == 1 and "ErrorText" in ex.stderr
 
+    expect_ex(RuntimeError, lambda: Dot().subgraph().to_svg())
+
     # Returned string is the echoed command line
     svg = dot.to_svg(
         dpi=30, ratio=20, size="1,1",
@@ -207,6 +211,8 @@ def test_save():
         directory=tmpdir(), program=doterror()))
 
     assert ex.status == 1 and "ErrorText" in ex.stderr
+
+    expect_ex(RuntimeError, lambda: Dot().subgraph().save(test_png))
 
     # Written data is the echoed command line
     dot.save(test_png,

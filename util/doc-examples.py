@@ -482,13 +482,3 @@ def _main():
 if __name__ == "__main__":
 
     _main()
-#
-#    artifacts = [
-#        *nfa_example(),
-#        *rollback_example(),
-#        *change_mind_example(),
-#        *project_example(),
-#        *attrs_example(),
-#    ]
-#
-#    _save_artifacts(artifacts)

@@ -13,7 +13,7 @@ from subprocess import CalledProcessError, TimeoutExpired
 from typing import Any
 import re
 
-__version__ = "1.0.0"
+__version__ = "1.0.1dev1"
 
 __all__ = (
     "Markup", "Port", "Dot", "InvocationException", "ProcessException",
@@ -111,6 +111,89 @@ def _normalize(id:Any, what:str) -> str:
             raise ValueError(f"{what} {repr(id)} is not an ID")
 
 #
+# Return the quoted form of a normalized identifier, unless it is markup.
+# Because the identifier is normalized, there is no need to escape it when
+# quoting.
+#
+
+def _prefer_quoted(id:str):
+    if id and id[0] != '"' and id[0] != '<':
+        return '"' + id + '"'
+    else:
+        return id
+
+
+@dataclass(slots=True)
+class Port:
+    """
+    An edge endpoint.  Graphviz allows endpoints to be specified as a node
+    identifier, an optional port name, and an optional compass point.  Properly
+    speaking, in the DOT language grammar a port is the name and compass point
+    components only, but for simplicity this class incorporates all three.
+
+    :param node: The node identifier.
+
+    :param name: The optional port name.
+
+    :param cp: The optional compass point, which must be one of "n", "ne" "e",
+        "se", "s", "sw", "w", "nw", "c", or "\\_".  Compass point "\\_" appears
+        in the DOT grammar and is equivalent to None; it's included for
+        completeness.
+    """
+    node : ID
+    name : ID  | None = None
+    cp   : str | None = None
+
+#
+# The allowed compass points.
+#
+
+_COMPASS_PT = { "n", "ne", "e", "se", "s", "sw", "w", "nw", "c" }
+
+#
+# Normalized, validated, and application mutation safe version of a Port.
+# Property implicit=True means the application provided only an ID, not a Port
+# object.
+#
+
+class _NormPort:
+    __slots__ = "node", "name", "cp", "implicit"
+
+    def __init__(self, point:ID|Port):
+
+        if isinstance(point,Port):
+            self.node = _normalize(point.node,"Endpoint node identifier")
+            self.name = (_normalize(name,"Endpoint port field")
+                         if (name := point.name) is not None else None)
+            if (cp := point.cp) is not None:
+                if cp == '_':
+                    cp = None
+                elif cp not in _COMPASS_PT:
+                    raise ValueError(f"Invalid compass point: {repr(cp)}")
+            self.cp = cp
+            self.implicit = False
+        else:
+            self.node = _normalize(point, "Endpoint node identifier")
+            self.name = None
+            self.cp = None
+            self.implicit = True
+
+    def __repr__(self):
+        return f"_NormPort<{str(self)}>"
+
+    def __str__(self):
+        result = self.node
+        if (name := self.name) is not None:
+            if name in _COMPASS_PT: name = _prefer_quoted(name)
+            result += ":" + name
+        if (cp := self.cp) is not None:
+            result += ":" + cp
+        return result
+
+    def __deepcopy__(self, memo):
+        return self
+
+#
 # Graphs, nodes, and edges all have attributes.  While from the grammar an
 # attribute can be any ID, all attributes supported by Graphviz have names that
 # are lexically identifiers in Python, and through this API are specified via
@@ -156,24 +239,6 @@ def _resolve_role(attrs:_Attrs, roles:dict[str,_Attrs],
     return attrs
 
 #
-# We prefer quoted strings for attribute values that are general text.
-#
-
-_TEXT_ATTRS = { "label", "headlabel", "taillabel", "xlabel", "comment" }
-
-#
-# Return the quoted form of a normalized identifier, unless it is markup.
-# Because the identifier is normalized, there is no need to escape it when
-# quoting.
-#
-
-def _prefer_quoted(id:str):
-    if id and id[0] != '"' and id[0] != '<':
-        return '"' + id + '"'
-    else:
-        return id
-
-#
 # Merge target and source role dictionaries with source having precedence.
 #
 
@@ -185,63 +250,10 @@ def _update_roles(target:dict[str,_Attrs], source:dict[str,_Attrs]) -> None:
             target[role] = source_attrs.copy()
 
 #
-# A _Mien is the result of merging the heritable attributes of themes and a
-# root Dot object.
+# We prefer quoted strings for attribute values that are general text.
 #
 
-class _Mien:
-    __slots__ = ("d_grapha", "d_nodea", "d_edgea", "grapha",
-                 "noderoles", "edgeroles", "graphroles")
-
-    d_grapha   : _Attrs
-    d_nodea    : _Attrs
-    d_edgea    : _Attrs
-    grapha     : _Attrs
-    graphroles : dict[str,_Attrs]
-    noderoles  : dict[str,_Attrs]
-    edgeroles  : dict[str,_Attrs]
-
-    def __init__(self, dot:Dot):
-
-        if (theme := dot.theme) is None:
-            self.d_grapha = dot.d_grapha
-            self.d_nodea = dot.d_nodea
-            self.d_edgea = dot.d_edgea
-            self.grapha = dot.grapha
-            self.graphroles = dot.graphroles
-            self.noderoles = dot.noderoles
-            self.edgeroles = dot.edgeroles
-            return
-
-        stack = [ dot ]
-        while theme is not None:
-            stack.append(theme)
-            theme = theme.theme
-
-        d_grapha   = dict()
-        d_nodea    = dict()
-        d_edgea    = dict()
-        grapha     = dict()
-        graphroles = defaultdict(dict)
-        noderoles  = defaultdict(dict)
-        edgeroles  = defaultdict(dict)
-
-        for theme in reversed(stack):
-            d_grapha.update(theme.d_grapha)
-            d_nodea.update(theme.d_nodea)
-            d_edgea.update(theme.d_edgea)
-            grapha.update(theme.grapha)
-            _update_roles(graphroles,theme.graphroles)
-            _update_roles(noderoles,theme.noderoles)
-            _update_roles(edgeroles,theme.edgeroles)
-
-        self.d_grapha   = d_grapha
-        self.d_nodea    = d_nodea
-        self.d_edgea    = d_edgea
-        self.grapha     = grapha
-        self.graphroles = graphroles
-        self.noderoles  = noderoles
-        self.edgeroles  = edgeroles
+_TEXT_ATTRS = { "label", "headlabel", "taillabel", "xlabel", "comment" }
 
 #
 # Unique values used as implicit edge disciminants in the multi-graph case when
@@ -345,73 +357,64 @@ class _Edge:
             s += " / " + str(self.normdisc)
         return s
 
-
-_COMPASS_PT = { "n", "ne", "e", "se", "s", "sw", "w", "nw", "c" }
-
-
-@dataclass(slots=True)
-class Port:
-    """
-    An edge endpoint.  Graphviz allows endpoints to be specified as a node
-    identifier, an optional port name, and an optional compass point.  Properly
-    speaking, in the DOT language grammar a port is the name and compass point
-    components only, but for simplicity this class incorporates all three.
-
-    :param node: The node identifier.
-
-    :param name: The optional port name.
-
-    :param cp: The optional compass point, which must be one of "n", "ne" "e",
-        "se", "s", "sw", "w", "nw", "c", or "\\_".  Compass point "\\_" appears
-        in the DOT grammar and is equivalent to None; it's included for
-        completeness.
-    """
-    node : ID
-    name : ID  | None = None
-    cp   : str | None = None
-
 #
-# Normalized, validated, and application mutation safe version of a Port.
-# Property implicit=True means the application provided only an ID, not a Port
-# object.
+# A _Mien is the result of merging the heritable attributes of themes and a
+# root Dot object.
 #
 
-class _NormPort:
-    __slots__ = "node", "name", "cp", "implicit"
+class _Mien:
+    __slots__ = ("d_grapha", "d_nodea", "d_edgea", "grapha",
+                 "noderoles", "edgeroles", "graphroles")
 
-    def __init__(self, point:ID|Port):
+    d_grapha   : _Attrs
+    d_nodea    : _Attrs
+    d_edgea    : _Attrs
+    grapha     : _Attrs
+    graphroles : dict[str,_Attrs]
+    noderoles  : dict[str,_Attrs]
+    edgeroles  : dict[str,_Attrs]
 
-        if isinstance(point,Port):
-            self.node = _normalize(point.node,"Endpoint node identifier")
-            self.name = (_normalize(name,"Endpoint port field")
-                         if (name := point.name) is not None else None)
-            if (cp := point.cp) is not None:
-                if cp == '_':
-                    cp = None
-                elif cp not in _COMPASS_PT:
-                    raise ValueError(f"Invalid compass point: {repr(cp)}")
-            self.cp = cp
-            self.implicit = False
-        else:
-            self.node = _normalize(point, "Endpoint node identifier")
-            self.name = None
-            self.cp = None
-            self.implicit = True
+    def __init__(self, dot:Dot):
 
-    def __repr__(self):
-        return f"_NormPort<{str(self)}>"
+        if (theme := dot.theme) is None:
+            self.d_grapha = dot.d_grapha
+            self.d_nodea = dot.d_nodea
+            self.d_edgea = dot.d_edgea
+            self.grapha = dot.grapha
+            self.graphroles = dot.graphroles
+            self.noderoles = dot.noderoles
+            self.edgeroles = dot.edgeroles
+            return
 
-    def __str__(self):
-        result = self.node
-        if (name := self.name) is not None:
-            if name in _COMPASS_PT: name = _prefer_quoted(name)
-            result += ":" + name
-        if (cp := self.cp) is not None:
-            result += ":" + cp
-        return result
+        stack = [ dot ]
+        while theme is not None:
+            stack.append(theme)
+            theme = theme.theme
 
-    def __deepcopy__(self, memo):
-        return self
+        d_grapha   = dict()
+        d_nodea    = dict()
+        d_edgea    = dict()
+        grapha     = dict()
+        graphroles = defaultdict(dict)
+        noderoles  = defaultdict(dict)
+        edgeroles  = defaultdict(dict)
+
+        for theme in reversed(stack):
+            d_grapha.update(theme.d_grapha)
+            d_nodea.update(theme.d_nodea)
+            d_edgea.update(theme.d_edgea)
+            grapha.update(theme.grapha)
+            _update_roles(graphroles,theme.graphroles)
+            _update_roles(noderoles,theme.noderoles)
+            _update_roles(edgeroles,theme.edgeroles)
+
+        self.d_grapha   = d_grapha
+        self.d_nodea    = d_nodea
+        self.d_edgea    = d_edgea
+        self.grapha     = grapha
+        self.graphroles = graphroles
+        self.noderoles  = noderoles
+        self.edgeroles  = edgeroles
 
 
 class Dot:
@@ -524,6 +527,10 @@ class Dot:
         other._parent     = deepcopy(self._parent,memo)
 
         return other
+
+    def _require_root(self, phrase:str):
+        if self._parent is not None:
+            raise RuntimeError(f"Child Dot objects cannot {phrase}")
 
     def is_multigraph(self) -> bool:
         """
@@ -971,17 +978,20 @@ class Dot:
 
     def copy(self, *, id:ID|None=None, comment:str|None=None) -> Dot:
         """
-        Return a deep copy of the Dot object.
+        Return a deep copy of a root Dot object.
 
         :param id: The copy's graph identifier.  If not provided, the copy will
-            have this graph's identifier.
+            have the Dot object's graph identifier.
 
         :param comment: The copy's comment.  If not provided, the copy will
-            have this graph's comment.
+            have the Dot object's comment.
+
+        :raises RuntimeError: The Dot object is a child.
 
         If the Dot object is using a theme, the copy will use the identical
         theme.
         """
+        self._require_root("be copied")
         result = deepcopy(self)
         if id is not None:
             result.graphid = _normalize(id,"Graph identifier")
@@ -1015,10 +1025,9 @@ class Dot:
         :raises ValueError: The theme is not a root Dot object, or the using
             the theme would create an inheritance cycle.
 
-        :raises RuntimeError: The Dot object is not a root.
+        :raises RuntimeError: The Dot object is a child.
         """
-        if self._parent is not None:
-            raise RuntimeError("Only root Dot objects can inherit from themes")
+        self._require_root("inherit from themes")
         if theme is not None:
             if theme._parent is not None:
                 raise ValueError("Theme is not a root Dot object")
@@ -1114,10 +1123,12 @@ class Dot:
         if len(lines) - base - blanklines <= 8 or blanklines == 1:
             lines[base:] = [ line for line in lines[base:] if line ]
 
-    def __str__(self) -> str:
+    def _source(self) -> str:
         """
-        The DOT language representation of the Dot object.
+        The DOT language representation of a root Dot object.
         """
+        self._require_root("be rendered")
+
         lines = []
 
         if comment := self.comment:
@@ -1139,12 +1150,21 @@ class Dot:
 
         return '\n'.join(lines)
 
+    def __str__(self) -> str:
+        """
+        The DOT language representation of a root Dot object.  If the Dot
+        object is a child, :meth:`__str__` returns the default
+        :meth:`object.__repr__`.
+        """
+        return self._source() if self._parent is None else super().__str__()
+
     def to_rendered(self, program:str|PathLike="dot", *, format="png",
                     dpi:float|None=None, size:int|float|str|None=None,
                     ratio:float|str|None=None, timeout:float|None=None,
                     directory:str|PathLike|None=None) -> bytes:
         """
-        Render the Dot object by invoking a Graphviz program.
+        Render the Dot object by invoking a Graphviz program.  The object must
+        be a root.
 
         :param program: Which Graphviz program to use (dot by default).
             ``program`` should either be the name of the program or a path to
@@ -1183,6 +1203,8 @@ class Dot:
         :raises TimeoutException: The invoked program took longer than
             ``timeout`` seconds to run and was killed.
 
+        :raises RuntimeError: The Dot object is a child.
+
         If the process's ``PATH`` includes directory ``/opt/graphviz/bin`` and
         that is the only directory in ``PATH`` including Graphviz executables,
         the following :meth:`to_rendered` calls are equivalent:
@@ -1202,7 +1224,7 @@ class Dot:
         """
         t_arg = f"-T{format.lower()}"
 
-        input = str(self).encode()
+        input = self._source().encode()
 
         if directory is not None:
             program = PurePath(directory,program)
@@ -1243,6 +1265,7 @@ class Dot:
                directory:str|PathLike|None=None) -> str:
         """
         Convert the Dot object to an SVG string by invoking a Graphviz program.
+        The object must be a root.
 
         :param inline: Generate SVG without an XML header.  Be aware that
             older, still commonly installed versions of Graphviz do not support
@@ -1266,7 +1289,8 @@ class Dot:
              directory:str|PathLike|None=None) -> None:
         """
         Save a rendering of the Dot object to a file.  :meth:`save` generates
-        the file data by invoking a Graphviz program.
+        the file data by invoking a Graphviz program.  The object must be a
+        root.
 
         :param filename: The name of the file to write.
 
@@ -1317,7 +1341,7 @@ class Dot:
         """
         Display the Dot object in a Jupyter notebook as an IPython ``SVG`` or
         ``Image`` object.  :meth:`show` generates the data required by invoking
-        a Graphviz program.
+        a Graphviz program.  The object must be a root.
 
         :raises ShowException: :meth:`show()` could not complete because the
             program could not be invoked, it timed out, or it exited with a
@@ -1325,7 +1349,8 @@ class Dot:
             :class:`ShowException`, it also displays a ``Markdown`` block
             explaining why it could not complete.
 
-        :raises RuntimeError: IPython is not installed.
+        :raises RuntimeError: IPython is not installed, or the Dot object is a
+            child.
 
         For the parameters, see :meth:`to_rendered`.  The ``size`` parameter
         can be especially useful: a value such as ``"5,5"`` can help ensure the
@@ -1367,12 +1392,13 @@ class Dot:
     def show_source(self) -> None:
         """
         Display the Dot object's DOT language representation in a Jupyter
-        notebook as an IPython ``Code`` object.
+        notebook as an IPython ``Code`` object.  The object must be a root.
 
-        :raises RuntimeError: IPython is not installed.
+        :raises RuntimeError: IPython is not installed, or the Dot object is a
+            child.
         """
         if display and Code:
-            display(Code(str(self),language="graphviz"))
+            display(Code(self._source(),language="graphviz"))
         else:
             _missing_ipython()
 
