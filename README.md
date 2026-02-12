@@ -1,4 +1,5 @@
 [![PyPI Version](https://img.shields.io/pypi/v/gvdot.svg)](https://pypi.org/project/gvdot/)
+[![Test Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/escreven/liveimport/blob/main/.github/workflows/test.yml)
 [![Read the Docs Status](https://readthedocs.org/projects/gvdot/badge/?version=latest)](https://gvdot.readthedocs.io)
 [![View on GitHub](https://img.shields.io/badge/Source-GitHub-blue?logo=github)](https://github.com/escreven/gvdot)
 
