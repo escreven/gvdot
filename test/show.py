@@ -1,9 +1,9 @@
 import re
-from subprocess import TimeoutExpired
 from typing import Any
 from gvdot import Dot, ShowException
 import gvdot
-from utility import expect_ex, image_format, likely_full_svg, tmpdir
+from utility import doterror, dotsleep, expect_ex, image_format
+from utility import likely_full_svg, tmpdir
 
 
 class _MockIPython:
@@ -139,7 +139,7 @@ def test_show():
 
         expect_ex(ShowException,lambda: dot.show(
             format="svg", directory=tmpdir(),
-            program="dotsleep", timeout=0.1))
+            program=dotsleep(), timeout=0.01))
         displayed = mock.take()
         assert len(displayed) == 1
         assert displayed[0][0] == "Markdown"
@@ -147,7 +147,7 @@ def test_show():
 
         expect_ex(ShowException,lambda: dot.show(
             format="png", directory=tmpdir(),
-            program="dotsleep", timeout=0.1))
+            program=dotsleep(), timeout=0.01))
         displayed = mock.take()
         assert len(displayed) == 1
         assert displayed[0][0] == "Markdown"
@@ -155,7 +155,7 @@ def test_show():
 
         expect_ex(ShowException,lambda: dot.show(
             format="svg", directory=tmpdir(),
-            program="doterror"))
+            program=doterror()))
         displayed = mock.take()
         assert len(displayed) == 1
         assert displayed[0][0] == "Markdown"
@@ -163,7 +163,7 @@ def test_show():
 
         expect_ex(ShowException,lambda: dot.show(
             format="png", directory=tmpdir(),
-            program="doterror"))
+            program=doterror()))
         displayed = mock.take()
         assert len(displayed) == 1
         assert displayed[0][0] == "Markdown"

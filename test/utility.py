@@ -133,12 +133,13 @@ def expect_str(dot:Dot, text:str):
 def expect_ex[T:BaseException](extype:type[T], fn:Callable) -> T:
     try:
         fn()
-        raise AssertionError(f"No exception; expected {extype.__name__}")
     except BaseException as ex:
         if not isinstance(ex,extype):
             raise AssertionError(f"Caught {ex.__class__.__name__}; "
                                  f"expected {extype.__name__}") from ex
         return ex
+
+    raise AssertionError(f"No exception; expected {extype.__name__}")
 
 #
 # Data validation for to_svg and to_rendered test helpers.
@@ -160,6 +161,11 @@ def image_file_format(filename:str):
 # Create fake Graphviz programs for testing timeouts and non-zero exit status.
 # The context value is the temporary directory of the fakes.
 #
+# On Windows, the fakes are implemented as .cmd batch files.  Unfortunately,
+# because Windows doesn't have a notion of process tree, subprocess.run() of
+# dotsleep.cmd with a timeout doesn't actually return until after the
+# powershell sleep completes.
+#
 
 _tmpdir:str|None = None
 
@@ -167,6 +173,15 @@ def tmpdir() -> str:
     if _tmpdir is None:
         raise RuntimeError("tmpdir is None")
     return _tmpdir
+
+if os.name == 'nt':
+    def dotsleep(): return "dotsleep.cmd"
+    def doterror(): return "doterror.cmd"
+    def dotecho(): return "dotecho.cmd"
+else:
+    def dotsleep(): return "dotsleep"
+    def doterror(): return "doterror"
+    def dotecho(): return "dotecho"
 
 @contextmanager
 def fakedots():
@@ -177,22 +192,26 @@ def fakedots():
         doterror = os.path.join(_tmpdir, "doterror")
         dotecho = os.path.join(_tmpdir, "dotecho")
 
-        with open(dotsleep, "w", newline="\n") as f:
-            f.write('#!/bin/sh\nsleep 10\n')
+        def script(path, commands):
+            if os.name == 'nt':
+                path += '.cmd'
+            with open(path, "w") as f:
+                f.write(commands)
 
-        with open(doterror, "w", newline="\n") as f:
-            f.write('#!/bin/sh\necho ErrorText >&2\nexit 1\n')
-
-        with open(dotecho, "w", newline="\n") as f:
-            f.write('#!/bin/sh\necho "$@"\n')
-
-        os.chmod(dotsleep, 0o755)
-        os.chmod(doterror, 0o755)
-        os.chmod(dotecho, 0o755)
+        if os.name == 'nt':
+            script(dotsleep, 'powershell -Command "Start-Sleep -s 5"\n')
+            script(doterror, '@echo ErrorText 1>&2\nexit /b 1\n')
+            script(dotecho,  '@echo %*\n')
+        else:
+            script(dotsleep, '#!/bin/sh\nsleep 10\n')
+            script(doterror, '#!/bin/sh\necho ErrorText >&2\nexit 1\n')
+            script(dotecho,  '#!/bin/sh\necho "$@"\n')
+            os.chmod(dotsleep, 0o755)
+            os.chmod(doterror, 0o755)
+            os.chmod(dotecho, 0o755)
 
         yield
 
     finally:
         shutil.rmtree(_tmpdir)
         _tmpdir = None
-

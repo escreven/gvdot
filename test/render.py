@@ -1,8 +1,9 @@
 import os
 import shutil
 from gvdot import Dot, InvocationException, ProcessException, TimeoutException
+from utility import dotecho, doterror, dotsleep, tmpdir
 from utility import expect_ex, image_format, likely_full_svg, likely_svg
-from utility import tmpdir, image_file_format
+from utility import image_file_format
 
 
 def test_to_rendered():
@@ -40,12 +41,12 @@ def test_to_rendered():
     assert image_format(data) == 'PNG'
 
     ex = expect_ex(TimeoutException,lambda: dot.to_rendered(
-        directory=tmpdir(), program="dotsleep", timeout=0.1))
+        directory=tmpdir(), program=dotsleep(), timeout=0.001))
 
     assert "timed out" in str(ex)
 
     ex = expect_ex(ProcessException,lambda: dot.to_rendered(
-        directory=tmpdir(), program="doterror"))
+        directory=tmpdir(), program=doterror()))
 
     assert "exited with status" in str(ex)
     assert ex.status == 1 and "ErrorText" in ex.stderr
@@ -84,7 +85,7 @@ def test_to_rendered():
     # Returned date is the echoed command line
     data = dot.to_rendered(
         dpi=30, ratio=20, size="1,1",
-        directory=tmpdir(), program="dotecho").decode()
+        directory=tmpdir(), program=dotecho()).decode()
 
     assert "-Gdpi=30" in data
     assert "-Gratio=20" in data
@@ -134,17 +135,17 @@ def test_to_svg():
     assert likely_full_svg(svg)
 
     expect_ex(TimeoutException,lambda: dot.to_svg(
-        directory=tmpdir(), program="dotsleep", timeout=0.1))
+        directory=tmpdir(), program=dotsleep(), timeout=0.01))
 
     ex = expect_ex(ProcessException,lambda: dot.to_svg(
-        directory=tmpdir(), program="doterror"))
+        directory=tmpdir(), program=doterror()))
 
     assert ex.status == 1 and "ErrorText" in ex.stderr
 
     # Returned string is the echoed command line
     svg = dot.to_svg(
         dpi=30, ratio=20, size="1,1",
-        directory=tmpdir(), program="dotecho")
+        directory=tmpdir(), program=dotecho())
 
     assert "-Gdpi=30" in svg
     assert "-Gratio=20" in svg
@@ -200,17 +201,17 @@ def test_save():
     assert image_file_format(test_png) == 'PNG'
 
     expect_ex(TimeoutException,lambda: dot.save(test_png,
-        directory=tmpdir(), program="dotsleep", timeout=0.1))
+        directory=tmpdir(), program=dotsleep(), timeout=0.01))
 
     ex = expect_ex(ProcessException,lambda: dot.save(test_png,
-        directory=tmpdir(), program="doterror"))
+        directory=tmpdir(), program=doterror()))
 
     assert ex.status == 1 and "ErrorText" in ex.stderr
 
     # Written data is the echoed command line
     dot.save(test_png,
         dpi=30, ratio=20, size="1,1",
-        directory=tmpdir(), program="dotecho")
+        directory=tmpdir(), program=dotecho())
 
     with open(test_png, "rb") as f:
         data = f.read().decode()
