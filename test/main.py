@@ -12,6 +12,7 @@ from utility import DotMismatch, fakedots
 
 # Modules defining tests
 import core
+import dotcopy
 import identifiers
 import internals as internals
 import render
@@ -162,6 +163,7 @@ def _main():
 
     cases = []
     cases.extend(_get_cases(core))
+    cases.extend(_get_cases(dotcopy))
     cases.extend(_get_cases(identifiers))
     cases.extend(_get_cases(internals))
     cases.extend(_get_cases(render))
