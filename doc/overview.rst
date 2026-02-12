@@ -242,7 +242,7 @@ Themes
 
 A theme is a normal :class:`Dot` object from which other Dot objects inherit
 graph attributes, default attributes, and roles.  While a theme can have nodes,
-edges, and subgraphs, those elements are ignored by Dot objects styled by the
+edges, and subgraphs, those entities are ignored by Dot objects styled by the
 theme.  Also, whether or not a theme is directed, is a multigraph, or is strict
 is irrelevant.
 

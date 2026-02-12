@@ -1,11 +1,13 @@
 ## Unreleased
 
 #### Fixed
-- Clarify and enforce with an exception that only root Dot objects should be
-  copied via `copy()`.  Deep copying a child works, but does not do what a
-  caller likely expects.  (It copies the entire tree.)
-- Clarify and enforce with an exception that only root Dot objects have a DOT
-  language representation, and therefore only roots can be rendered.
+- Clarify that only root Dot objects should be copied via `copy()`, raising a
+  descriptive exception if the application attempts to copy a child.  Deep
+  copying a child works, but does not do what a caller likely expects.  (It
+  copies the entire tree.)
+- Clarify that only root Dot objects have a DOT language representation, and
+  therefore only roots can be rendered, raising a descriptive exception if the
+  application attempts to render a child.
 
 ## [1.0.0] - 2026-02-11
 

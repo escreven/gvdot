@@ -978,7 +978,7 @@ class Dot:
 
     def copy(self, *, id:ID|None=None, comment:str|None=None) -> Dot:
         """
-        Return a deep copy of a root Dot object.
+        Return a deep copy of a Dot object tree.
 
         :param id: The copy's graph identifier.  If not provided, the copy will
             have the Dot object's graph identifier.
@@ -1125,7 +1125,7 @@ class Dot:
 
     def _source(self) -> str:
         """
-        The DOT language representation of a root Dot object.
+        The DOT language representation of a Dot object tree.
         """
         self._require_root("be rendered")
 
@@ -1152,7 +1152,7 @@ class Dot:
 
     def __str__(self) -> str:
         """
-        The DOT language representation of a root Dot object.  If the Dot
+        The DOT language representation of a Dot object tree.  If the Dot
         object is a child, :meth:`__str__` returns the default
         :meth:`object.__repr__`.
         """
@@ -1163,8 +1163,7 @@ class Dot:
                     ratio:float|str|None=None, timeout:float|None=None,
                     directory:str|PathLike|None=None) -> bytes:
         """
-        Render the Dot object by invoking a Graphviz program.  The object must
-        be a root.
+        Render a Dot object tree by invoking a Graphviz program.
 
         :param program: Which Graphviz program to use (dot by default).
             ``program`` should either be the name of the program or a path to
@@ -1264,8 +1263,8 @@ class Dot:
                ratio:float|str|None=None, timeout:float|None=None,
                directory:str|PathLike|None=None) -> str:
         """
-        Convert the Dot object to an SVG string by invoking a Graphviz program.
-        The object must be a root.
+        Convert a Dot object tree to an SVG string by invoking a Graphviz
+        program.
 
         :param inline: Generate SVG without an XML header.  Be aware that
             older, still commonly installed versions of Graphviz do not support
@@ -1288,9 +1287,8 @@ class Dot:
              ratio:float|str|None=None, timeout:float|None=None,
              directory:str|PathLike|None=None) -> None:
         """
-        Save a rendering of the Dot object to a file.  :meth:`save` generates
-        the file data by invoking a Graphviz program.  The object must be a
-        root.
+        Save a rendering of a Dot object tree to a file.  :meth:`save`
+        generates the file data by invoking a Graphviz program.
 
         :param filename: The name of the file to write.
 
@@ -1339,9 +1337,9 @@ class Dot:
              ratio:float|str|None=None, timeout:float|None=None,
              directory:str|PathLike|None=None) -> None:
         """
-        Display the Dot object in a Jupyter notebook as an IPython ``SVG`` or
-        ``Image`` object.  :meth:`show` generates the data required by invoking
-        a Graphviz program.  The object must be a root.
+        Display a Dot object tree in a Jupyter notebook as an IPython ``SVG``
+        or ``Image`` object.  :meth:`show` generates the data required by
+        invoking a Graphviz program.
 
         :raises ShowException: :meth:`show()` could not complete because the
             program could not be invoked, it timed out, or it exited with a
@@ -1391,8 +1389,8 @@ class Dot:
 
     def show_source(self) -> None:
         """
-        Display the Dot object's DOT language representation in a Jupyter
-        notebook as an IPython ``Code`` object.  The object must be a root.
+        Display a Dot object tree's DOT language representation in a Jupyter
+        notebook as an IPython ``Code`` object.
 
         :raises RuntimeError: IPython is not installed, or the Dot object is a
             child.
