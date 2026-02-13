@@ -1,5 +1,5 @@
 """
-Make using Graphviz from Python convenient.
+Generate and render Graphviz diagrams with clear, maintainable code by separating presentation from structure.
 """
 from __future__ import annotations
 from collections import defaultdict
@@ -13,7 +13,7 @@ from subprocess import CalledProcessError, TimeoutExpired
 from typing import Any, Self
 import re
 
-__version__ = "1.1.0dev1"
+__version__ = "1.1.0"
 
 __all__ = (
     "Markup", "Port", "Dot", "InvocationException", "ProcessException",
