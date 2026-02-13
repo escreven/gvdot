@@ -5,98 +5,87 @@
 Reference
 =========
 
-Class Dot
----------
+Dot and Block
+-------------
 
 .. autoclass:: Dot
+    :show-inheritance:
+
+.. autoclass:: Block
+
+.. container:: custom-box
+
+    **NOTE**: The methods of :class:`Dot` and :class:`Block` described below
+    are organized by category, not by class.  Keep in mind that each
+    :class:`Block` method is also a method of :class:`Dot`.
+
+
+Theme Methods
+~~~~~~~~~~~~~
 
 .. automethod:: Dot.use_theme
-
 
 Graph Methods
 ~~~~~~~~~~~~~
 
-.. automethod:: Dot.graph_default
-
 .. automethod:: Dot.graph_role
-
-.. automethod:: Dot.graph
+.. automethod:: Block.graph_default
+.. automethod:: Block.graph
 
 Node Methods
 ~~~~~~~~~~~~
 
-.. automethod:: Dot.node_default
-
 .. automethod:: Dot.node_role
-
-.. automethod:: Dot.node
-
-.. automethod:: Dot.node_define
-
-.. automethod:: Dot.node_update
-
-.. automethod:: Dot.node_is_defined
+.. automethod:: Block.node_default
+.. automethod:: Block.node
+.. automethod:: Block.node_define
+.. automethod:: Block.node_update
+.. automethod:: Block.node_is_defined
 
 Edge Methods
 ~~~~~~~~~~~~
 
-.. automethod:: Dot.edge_default
-
 .. automethod:: Dot.edge_role
-
-.. automethod:: Dot.edge
-
-.. automethod:: Dot.edge_define
-
-.. automethod:: Dot.edge_update
-
-.. automethod:: Dot.edge_is_defined
+.. automethod:: Block.edge_default
+.. automethod:: Block.edge
+.. automethod:: Block.edge_define
+.. automethod:: Block.edge_update
+.. automethod:: Block.edge_is_defined
 
 Subgraph Methods
 ~~~~~~~~~~~~~~~~
 
-.. automethod:: Dot.subgraph
-
-.. automethod:: Dot.subgraph_define
-
-.. automethod:: Dot.subgraph_update
+.. automethod:: Block.subgraph
+.. automethod:: Block.subgraph_define
+.. automethod:: Block.subgraph_update
 
 Render Methods
 ~~~~~~~~~~~~~~
 
 .. automethod:: Dot.__str__
-
 .. automethod:: Dot.to_rendered
-
 .. automethod:: Dot.to_svg
-
 .. automethod:: Dot.save
-
 .. automethod:: Dot.show
-
 .. automethod:: Dot.show_source
+
 
 Other Methods
 ~~~~~~~~~~~~~
 
-.. automethod:: Dot.all_default
-
-.. automethod:: Dot.all_role
-
 .. automethod:: Dot.is_multigraph
-
-.. automethod:: Dot.parent
-
 .. automethod:: Dot.copy
+.. automethod:: Dot.all_role
+.. automethod:: Block.all_default
+.. automethod:: Block.parent
+.. automethod:: Block.dot
 
 
 Supporting Types
 ----------------
 
 .. autotype:: ID
-
 .. autoclass:: Markup
-
 .. autoclass:: Port
 
 

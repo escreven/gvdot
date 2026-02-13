@@ -18,14 +18,14 @@ def test_copy():
     dot.graph_role("gr",a1=1)
     dot.node_role("nr",a2=2)
     dot.edge_role("er",a3=3)
-    subdot = dot.subgraph(id="Subgraph1")
-    subdot.graph_default(dpi=300)
-    subdot.node_default(shape="circle")
-    subdot.edge_default(color="red")
-    subdot.graph(label="SubLabel1")
-    subdot.graph(rankdir="LTR", role="gr")
-    subdot.node("c", role="nr")
-    subdot.edge("c","d", role="er")
+    subblock = dot.subgraph(id="Subgraph1")
+    subblock.graph_default(dpi=300)
+    subblock.node_default(shape="circle")
+    subblock.edge_default(color="red")
+    subblock.graph(label="SubLabel1")
+    subblock.graph(rankdir="LTR", role="gr")
+    subblock.node("c", role="nr")
+    subblock.edge("c","d", role="er")
 
     DOT= """
     // {comment}
@@ -85,10 +85,3 @@ def test_copy():
     }
     """)
     assert str(dot) == str(other)
-
-
-def test_no_subdot_copies():
-    """
-    Copying child dot objects is not allowed.
-    """
-    expect_ex(RuntimeError, lambda: Dot().subgraph().copy())

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from copy import deepcopy
-from gvdot import Dot, Port
+from gvdot import Block, Dot, Port
 from utility import expect_str, expect_ex
 
 
@@ -103,15 +103,15 @@ def test_statement_order():
     """
     dot = Dot()
     dot.graph(label="Label")
-    subdot = dot.subgraph(id="Subgraph1")
-    subdot.graph(label="SubLabel1")
-    subdot.edge("c","d")
-    subdot.node("c")
-    subdot.graph(rankdir="LTR")
-    subdot.edge_default(color="red")
-    subdot.node_default(shape="circle")
-    subdot.graph_default(dpi=300)
-    subdot.subgraph(id="Subgraph1Sub")
+    subblock = dot.subgraph(id="Subgraph1")
+    subblock.graph(label="SubLabel1")
+    subblock.edge("c","d")
+    subblock.node("c")
+    subblock.graph(rankdir="LTR")
+    subblock.edge_default(color="red")
+    subblock.node_default(shape="circle")
+    subblock.graph_default(dpi=300)
+    subblock.subgraph(id="Subgraph1Sub")
     dot.subgraph("Subgraph2")
     dot.edge("a","b")
     dot.node("a")
@@ -480,50 +480,50 @@ def test_subgraph_scoping():
     root dot object, but may be defined or amended in the root or any subgraph.
     Default attributes are specific to the graph or subgraph.
     """
-    def add_defaults(dot:Dot, value:str):
-        dot.graph_default(a1=value)
-        dot.node_default(a2=value)
-        dot.edge_default(a3=value)
+    def add_defaults(cx:Block, value:str):
+        cx.graph_default(a1=value)
+        cx.node_default(a2=value)
+        cx.edge_default(a3=value)
 
     dot = Dot(id="Root")
-    subdot = dot.subgraph("Sub")
-    subsubdot = subdot.subgraph("SubSub")
+    subblock = dot.subgraph("Sub")
+    subsubblock = subblock.subgraph("SubSub")
 
     add_defaults(dot,"root")
-    add_defaults(subdot,"sub")
-    add_defaults(subsubdot,"subsub")
+    add_defaults(subblock,"sub")
+    add_defaults(subsubblock,"subsub")
 
     dot.node("a")
-    subdot.node("b")
-    subsubdot.node("c")
+    subblock.node("b")
+    subsubblock.node("c")
 
     dot.edge("a","b")
-    subdot.edge("b","c")
-    subsubdot.edge("c","a")
+    subblock.edge("b","c")
+    subsubblock.edge("c","a")
 
-    def assign(dot:Dot, name:str, value):
+    def assign(cx:Block, name:str, value):
         kv={name:value}
-        dot.node("a",**kv)
-        dot.node("b",**kv)
-        dot.node("c",**kv)
-        dot.edge("a","b",**kv)
-        dot.edge("b","c",**kv)
-        dot.edge("c","a",**kv)
-        dot.graph_role("test",**kv)
-        dot.node_role("test",**kv)
-        dot.edge_role("test",**kv)
+        cx.node("a",**kv)
+        cx.node("b",**kv)
+        cx.node("c",**kv)
+        cx.edge("a","b",**kv)
+        cx.edge("b","c",**kv)
+        cx.edge("c","a",**kv)
+        cx.dot().graph_role("test",**kv)
+        cx.dot().node_role("test",**kv)
+        cx.dot().edge_role("test",**kv)
 
     assign(dot,"by_root",1)
-    assign(subdot,"by_sub",2)
-    assign(subsubdot,"by_subsub",3)
+    assign(subblock,"by_sub",2)
+    assign(subsubblock,"by_subsub",3)
 
     dot.node("x",role="test")
-    subdot.node("y",role="test")
-    subsubdot.node("z",role="test")
+    subblock.node("y",role="test")
+    subsubblock.node("z",role="test")
 
     dot.edge("x","x",role="test")
-    subdot.edge("y","y",role="test")
-    subsubdot.edge("z","z",role="test")
+    subblock.edge("y","y",role="test")
+    subsubblock.edge("z","z",role="test")
 
     expect_str(dot,
     """
@@ -557,41 +557,28 @@ def test_subgraph_scoping():
     """)
 
 
-def test_parent():
+def test_parent_and_dot():
     """
-    Method parent() should return the dot object's parent, if any.
+    Method parent() should return a blocks's parent, if any.  dot() should
+    return the enveloping Dot object.
     """
     dot = Dot()
-    subdot = dot.subgraph()
+    sub = dot.subgraph()
     assert dot.parent() is None
-    assert subdot.parent() is dot
-
-
-def test_chaining():
-    """
-    Most Dot methods should return self.
-    """
-    dot = Dot()
-    assert dot is dot.graph_default()
-    assert dot is dot.graph_role("test")
-    assert dot is dot.graph()
-    assert dot is dot.node_default()
-    assert dot is dot.node_role("test")
-    assert dot is dot.node("a")
-    assert dot is dot.node_define("b")
-    assert dot is dot.node_update("a")
-    assert dot is dot.edge_default()
-    assert dot is dot.edge_role("test")
-    assert dot is dot.edge("a","b")
-    assert dot is dot.edge_define("a","c")
-    assert dot is dot.edge_update("a","c")
-    assert dot is dot.use_theme(Dot())
-    assert dot is dot.all_default()
-    assert dot is dot.all_role("test")
+    assert dot.dot() is dot
+    assert sub.parent() is dot
+    assert sub.dot() is dot
 
 
 def test_child_str():
     """
     The string representation of a child Dot object is a default __repr__.
     """
-    assert "gvdot.Dot" in str(Dot().subgraph())
+    assert "gvdot.Block" in str(Dot().subgraph())
+
+
+def test_no_block_create():
+    """
+    The class Block cannot be instantiated directly.
+    """
+    expect_ex(RuntimeError, lambda: Block())

@@ -13,7 +13,7 @@ Class Dot
 ---------
 
 Graphviz is a family of programs for drawing graphs.  The input to these
-programs are graph expressions written in the `DOT language
+programs is a graph expression written in the `DOT language
 <https://graphviz.org/doc/info/lang.html>`_.  Class :class:`Dot` is a DOT
 language builder.  To produce a diagram, applications create a Dot object then
 use it to define and amend nodes, edges, subgraphs, and graph-level attributes.
@@ -87,13 +87,13 @@ where :class:`Markup` is a gvdot class delineating HTML strings.
 Regardless of how they appear, Graphviz does not differentiate between non-HTML
 IDs; in DOT language, ``1.23`` and ``"1.23"`` are two ways to write the same
 thing.  Accordingly, :class:`Dot` methods normalize non-Markup :type:`ID`
-values to strings, making these two :meth:`Dot.node` calls equivalent:
+values to strings, making these two calls equivalent:
 
 .. code-block:: python
 
     #
-    # The first argument is a node id.  Graphviz allows any ID to be
-    # used as a node identifier.
+    # The first argument is a node identifier.  Graphviz allows any ID
+    # to be used as a node identifier.
     #
     dot.node(100, fontsize=12, margin=0.25, color="green")
     dot.node("100", fontsize="12", margin="0.25", color="green")
@@ -117,7 +117,7 @@ has the representation
 
 .. code-block:: graphviz
 
-    a -- b [ penwidth=0.25 color=red label="fine" ]
+    a -- b [penwidth=0.25 color=red label="fine"]
 
 HTML IDs `are` distinct from non-HTML IDs in DOT language.  Python :type:`ID`
 values ``"the<br/>end"`` and ``Markup("the<br/>end")`` have the DOT language
@@ -133,11 +133,8 @@ Attributes
 -----------
 
 Applications specify graph, subgraph, node, and edge attributes as keyword
-arguments to :class:`Dot` methods
-
-- defining or amending those entities,
-- defining roles for those entities, or
-- setting defaults for those entity types.
+arguments to :class:`Dot` methods defining or amending those entities; defining
+roles for those entities; or setting defaults for those entity types.
 
 .. include:: _code/overview/attrs.py.rst
 
@@ -243,8 +240,8 @@ Themes
 A theme is a normal :class:`Dot` object from which other Dot objects inherit
 graph attributes, default attributes, and roles.  While a theme can have nodes,
 edges, and subgraphs, those entities are ignored by Dot objects styled by the
-theme.  Also, whether or not a theme is directed, is a multigraph, or is strict
-is irrelevant.
+theme.  Also, whether or not a theme is directed, multigraph, or strict is
+irrelevant.
 
 We can improve our task diagrammer above by pulling all presentation attributes
 out of ``task_diagram()`` into a theme.
@@ -262,8 +259,8 @@ we need is a new theme.
 
 .. include:: _code/overview/project-themes-theme2.py.rst
 
-We only needed to specify what differs because the compact theme inherited from
-the base theme.  If we run
+We only specified what differs because the compact theme inherits from the base
+theme.  When we run
 
 .. include:: _code/overview/project-themes-code2.py.rst
 
@@ -275,59 +272,36 @@ in a notebook, we see
 
 |br|
 
-Defining and Amending
----------------------
-
-The terms "define", "establish", and "amend" are used throughout the
-:ref:`reference-doc`, sometimes together as "define or amend" or "establish or
-amend".  In the context of gvdot method descriptions,
-
-- `define` means create a node, edge, subgraph, or role and assign initial
-  attribute values if applicable.  Defined nodes, edges, and subgraphs will
-  appear as statements in the DOT language representation.  Defined roles are
-  recorded for resolution in that representation.
-
-- `establish` means assign initial graph, default graph, default node, or
-  default edge attribute values.
-
-- `amend` means make additional attribute value assignments to already defined
-  or established entities, roles, and defaults, overwriting existing
-  assignments with the same attribute names.  In the case of edges, amend also
-  means potentially changing an endpoint's :class:`port specification <Port>`.
-  In the case of subgraphs, the :ref:`reference-doc` uses the phrase "prepare
-  to amend" because the relevant methods return a reference through which the
-  application may modify the subgraph.
-
-The core :class:`Dot` methods for building out the structure of a diagram are
-:meth:`~Dot.node`, :meth:`~Dot.edge`, and :meth:`~Dot.subgraph`.  These methods
-are "define or amend" --- they define an entity if it doesn't exist, and amend
-it otherwise.  :class:`Dot` also has variants :meth:`~Dot.node_define`,
-:meth:`~Dot.edge_define`, and :meth:`~Dot.subgraph_edge` which raise exceptions
-if the entity is already defined and :meth:`~Dot.node_update`,
-:meth:`~Dot.edge_update`, and :meth:`~Dot.subgraph_update` which raise
-exceptions if it is not.  The "define and amend" versions have the advantage of
-giving code a clean, declarative feel.  The ``..._define`` and ``..._update``
-variants can make buggy code fail faster.
-
 Subgraphs
 ---------
 
-A :class:`Dot` object created by the :class:`Dot` constructor with descendant
-Dot instances created through methods :meth:`subgraph` or
-:meth:`subgraph_define` form a tree.  That tree is mirrored by the ``subgraph``
-statement hierarchy of the DOT language representation of the root.
+Class :class:`Block` is a scope for graph and default attribute assignments and
+a container for node, edge, and subgraph definitions.  It is the base class of
+:class:`Dot`, and most methods for building DOT language are actually
+:class:`Block` methods.  You can think about class :class:`Block` as being an
+analogue of ``graph`` and ``subgraph`` curly brackets in the DOT language.
 
-Nodes and edges have Dot object tree-wide scope.  They may only be defined once
-in the tree, but can be amended any number of times through any Dot object in
-the tree.  The Dot object through which a node or edge is defined determines
-where it will appear in the subgraph hierarchy and, therefore, the set of
-default attributes which apply to the node or edge.
+Methods :meth:`~Block.subgraph` and :meth:`~Block.subgraph_define` return Block
+objects.  A Dot object created by the :class:`Dot` constructor with descendant
+Block objects created through methods :meth:`subgraph` or
+:meth:`subgraph_define` form a tree.  That tree is mirrored by the ``subgraph``
+statement hierarchy of the DOT language representation of the Dot object.
+
+Node and edge identities are global within a Dot object.  They may only be
+defined once, but can be amended any number of times through the Dot object or
+any Block object in the tree.  The Block object through which a node or edge is
+defined determines where it will appear in the subgraph hierarchy and,
+therefore, the set of default attributes which apply to the node or edge.
 
 .. code-block:: python
 
     dot = Dot(id="Root")
     sub = dot.subgraph(id="Sub")
     subsub = sub.subgraph(id="SubSub")
+
+    assert type(dot) is Dot and isinstance(dot, Block)
+    assert type(sub) is Block
+    assert type(subsub) is Block
 
     dot.node("a")
     dot.edge("a","b")
@@ -365,14 +339,13 @@ Node ``a`` and edge ``a -- b`` have ``fontsize`` 10 with ``color`` and
 
 If a subgraph is a cluster, some Graphviz layout engines (including the default
 engine, dot) will place all nodes defined within the subgraph together in the
-layout.  Therefore, the Dot object through which a node is defined may
+layout.  Therefore, the Block object through which a node is defined may
 determine its placement.
 
-Roles also have Dot object tree-wide scope.  They may be defined and amended
-through any Dot object in the tree, but unlike nodes and edges, the object
-through which a role is defined has no consequence.  Roles may be assigned to
-any entity of the associated kind without regard to the Dot object through
-which either was defined.
+Roles are also global within a Dot object.  They may be assigned to any entity
+of the associated kind without regard to the Block object through which the
+entity is defined.  However, roles may only be defined and amended through the
+Dot object.
 
 Subgraphs are scoped to their parent.  So, the assertions below all hold.
 
@@ -394,7 +367,7 @@ graphs).  In the code below
 
 .. include:: _code/overview/multigraph-stage1.py.rst
 
-the second and third :meth:`~Dot.edge` calls amend the edge ``a -- b``,
+the second and third :meth:`~Block.edge` calls amend the edge ``a -- b``,
 resulting in
 
 .. list-table::
@@ -411,7 +384,7 @@ If we construct the :class:`Dot` object as a multigraph,
 
 .. include:: _code/overview/multigraph-stage2.py.rst
 
-each :meth:`~Dot.edge` call defines a new edge.  Now we get
+each :meth:`~Block.edge` call defines a new edge.  Now we get
 
 .. list-table::
    :widths: 65 35
@@ -424,9 +397,9 @@ each :meth:`~Dot.edge` call defines a new edge.  Now we get
         :align: center
         :alt: Three distinct edges
 
-But suppose we want to amend a multigraph edge?  For that we use
+But what if we want to amend a multigraph edge?  For that we use
 `discriminants`, a third component to edge identity used in multigraphs.  The
-:meth:`Dot.edge` method is declared as
+:meth:`~Block.edge` method is declared as
 
 .. code-block:: python
 
@@ -492,3 +465,38 @@ resolution of 300 dots per inch.
 - :meth:`Dot.to_svg` renders to SVG and returns the result as a string.
 - :meth:`Dot.save` renders and saves to a file.
 - :meth:`Dot.show` renders and displays the result in a notebook.
+
+
+Defining and Amending
+---------------------
+
+The terms "define", "establish", and "amend" are used throughout the
+:ref:`reference-doc`, sometimes together as "define or amend" or "establish or
+amend".  In the context of gvdot method descriptions,
+
+- `define` means create a node, edge, subgraph, or role and assign initial
+  attribute values if applicable.  Defined nodes, edges, and subgraphs will
+  appear as statements in the DOT language representation.  Defined roles are
+  recorded for resolution in that representation.
+
+- `establish` means assign initial graph, default graph, default node, or
+  default edge attribute values.
+
+- `amend` means make additional attribute value assignments to already defined
+  or established entities, roles, and defaults, overwriting existing
+  assignments with the same attribute names.  In the case of edges, amend also
+  means potentially changing an endpoint's :class:`port specification <Port>`.
+  In the case of subgraphs, the :ref:`reference-doc` uses the phrase "prepare
+  to amend" because the relevant methods return a reference through which the
+  application may modify the subgraph.
+
+The core methods for building out the structure of a diagram are
+:meth:`~Block.node`, :meth:`~Block.edge`, and :meth:`~Block.subgraph`.  These
+methods are "define or amend" --- they define an entity if it doesn't exist,
+and amend it otherwise.  Variants :meth:`~Block.node_define`,
+:meth:`~Block.edge_define`, and :meth:`~Block.subgraph_define` raise exceptions
+if the entity is already defined, while :meth:`~Block.node_update`,
+:meth:`~Block.edge_update`, and :meth:`~Block.subgraph_update` raise exceptions
+if it is not.  The "define and amend" versions have the advantage of giving
+code a clean, declarative feel.  The ``..._define`` and ``..._update`` variants
+can make buggy code fail faster.

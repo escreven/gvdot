@@ -7,7 +7,7 @@ Package gvdot makes it easy to generate and render Graphviz diagrams with
 clear, maintainable code by separating presentation from structure.
 
 The heart of gvdot is class :class:`Dot`, a DOT language builder.  Applications
-create diagrams using :class:`Dot` methods, then either convert the object to
+create diagrams using :class:`Dot` methods, then either convert the instance to
 DOT language text or render it as SVG or an image.  Users can also
 interactively display Dot objects in notebooks.
 
