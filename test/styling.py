@@ -266,13 +266,10 @@ def test_theme_errors():
     expect_ex(ValueError, lambda: theme1.use_theme(theme3))
 
     dot1 = Dot()
-    sub1 = dot1.subgraph()
-
     dot2 = Dot()
     sub2 = dot2.subgraph()
 
-    expect_ex(ValueError, lambda: dot1.use_theme(sub2))
-    expect_ex(RuntimeError, lambda: sub1.use_theme(dot2))
+    expect_ex(RuntimeError, lambda: dot1.use_theme(sub2))  #type:ignore
 
 
 def test_subgraphs_see_theme_roles():
@@ -282,10 +279,10 @@ def test_subgraphs_see_theme_roles():
     """
     theme = Dot().all_role("test",x=1)
     dot = Dot().use_theme(theme)
-    subdot = dot.subgraph()
-    subdot.graph(role="test")
-    subdot.node("a",role="test")
-    subdot.edge("a","b",role="test")
+    subblock = dot.subgraph()
+    subblock.graph(role="test")
+    subblock.node("a",role="test")
+    subblock.edge("a","b",role="test")
     expect_str(dot,"""
     graph {
         subgraph {

@@ -169,9 +169,6 @@ def test_show():
         assert displayed[0][0] == "Markdown"
         assert "exited with status" in displayed[0][1]
 
-        expect_ex(RuntimeError, lambda: Dot().subgraph().show())
-        expect_ex(RuntimeError, lambda: Dot().subgraph().show_source())
-
         dot.show(format="SVG", size="1, 1")
         displayed = mock.take()
         assert len(displayed) == 1

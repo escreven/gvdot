@@ -10,10 +10,10 @@ from os import PathLike
 from pathlib import Path, PurePath
 import subprocess
 from subprocess import CalledProcessError, TimeoutExpired
-from typing import Any
+from typing import Any, Self
 import re
 
-__version__ = "1.0.1dev1"
+__version__ = "1.1.0dev1"
 
 __all__ = (
     "Markup", "Port", "Dot", "InvocationException", "ProcessException",
@@ -309,12 +309,12 @@ type _SubgraphKey = str
 class _Edge:
     __slots__ = "normport1", "normport2", "normdisc", "directed", "attrs"
 
-    def __init__(self, dot:Dot, normport1:_NormPort, normport2:_NormPort,
-                 normdisc:_NormDisc):
+    def __init__(self, directed:bool, normport1:_NormPort,
+                 normport2:_NormPort, normdisc:_NormDisc):
         self.normport1 = normport1
         self.normport2 = normport2
         self.normdisc = normdisc
-        self.directed = dot.directed
+        self.directed = directed
         self.attrs:_Attrs = dict()
 
     def update_ports(self, otherport1:_NormPort, otherport2:_NormPort):
@@ -359,7 +359,7 @@ class _Edge:
 
 #
 # A _Mien is the result of merging the heritable attributes of themes and a
-# root Dot object.
+# Dot object.
 #
 
 class _Mien:
@@ -417,188 +417,116 @@ class _Mien:
         self.edgeroles  = edgeroles
 
 
-class Dot:
+class Block:
     """
-    A DOT language builder.
+    A scope for graph and default attribute assignments and a container for
+    node, edge, and subgraph definitions.
 
-    :param directed: Make the graph directed.
+    :class:`Block` is the base class of :class:`Dot`.
 
-    :param strict: Include the ``strict`` keyword.  This argument is present
-        for completeness.  It's unlikely to be useful with Dot objects since
-        :class:`Dot` guarantees edge uniqueness for non-multigraphs.
+    There is a one-to-one correspondence between Block objects and the graph
+    and subgraph statements of a Dot object's DOT language representation.  The
+    Dot object itself corresponds to the top-level ``graph`` or ``digraph``
+    form.  The remaining Block objects are those returned by methods
+    :meth:`~Block.subgraph` or :meth:`~Block.subgraph_define`.
 
-    :param multigraph: Support multiple edges between the same node pair
-        (ordered pair in the directed case.)  This parameter affects the
-        behavior of methods :meth:`edge`, :meth:`edge_define`, and
-        :meth:`edge_update` but does not change the DOT language produced from
-        the Dot object.
-
-    :param id: The graph identifier.
-
-    :param comment: Possibly multiline text prepended as a ``//`` style
-        comment.
-
-    :raises ValueError: If both ``strict`` and ``multigraph`` are True.
-
-    A Dot object can either be a root created by the constructor or a child
-    created by :meth:`subgraph` or :meth:`subgraph_define`.  Method
-    :meth:`parent` returns a Dot object's parent if the object is a child, and
-    None otherwise.
-
-    Except as otherwise described, :class:`Dot` methods return ``self`` to
-    enable chained method invocations.
+    Blocks should only be created by calling :func:`Dot`,
+    :meth:`~Block.subgraph`, or :meth:`~Block.subgraph_define`.  Executing
+    :func:`Block` directly raises a :class:`RuntimeError`.
     """
     __slots__ = (
-        "directed", "strict", "multigraph", "graphid",
-        "comment", "d_grapha", "d_nodea", "d_edgea",
-        "grapha", "noderoles", "edgeroles", "graphroles",
-        "nodemap", "edgemap", "subgraphmap", "nodes",
-        "edges", "subgraphs", "_parent", "theme"
+        "graphid", "d_grapha", "d_nodea", "d_edgea", "grapha",
+        "subgraphmap", "nodes", "edges", "subgraphs",
+        "_dot", "_parent"
     )
-    def __init__(self, *, directed:bool=False, strict:bool=False,
-                 multigraph:bool=False, id:ID|None=None,
-                 comment:str|None = None):
+    def __init__(self):
+        raise RuntimeError(
+            "Block objects cannot be created directly")
 
-        if multigraph and strict:
-            raise ValueError("Cannot specify both multigraph and strict")
-
-        self.directed = directed
-        self.strict = strict
-        self.multigraph = multigraph
-        self.graphid:str|None = (None if id is None else
-                                 _normalize(id, "Graph identifier"))
-        self.comment = comment
+    def _block_init(self, graphid:str|None, dot:Dot,
+                      parent:Block|None) -> None:
+        self.graphid = graphid
         self.d_grapha:_Attrs = dict()
         self.d_nodea:_Attrs = dict()
         self.d_edgea:_Attrs = dict()
         self.grapha:_Attrs = dict()
-        self.graphroles:dict[str,_Attrs] = defaultdict(dict)
-        self.noderoles:dict[str,_Attrs] = defaultdict(dict)
-        self.edgeroles:dict[str,_Attrs] = defaultdict(dict)
-        self.nodemap:dict[_NodeKey,_Attrs] = defaultdict(dict)
-        self.edgemap:dict[_EdgeKey,_Edge] = dict()
-        self.subgraphmap:dict[_SubgraphKey,Dot] = dict()
+        self.subgraphmap:dict[_SubgraphKey,Block] = dict()
         self.nodes:list[_NodeKey] = []
         self.edges:list[_Edge] = []
-        self.subgraphs:list[Dot] = []
-        self._parent:Dot|None = None
-        self.theme:Dot|None = None
+        self.subgraphs:list[Block] = []
+        self._dot = dot
+        self._parent = parent
 
-    def __deepcopy__(self, memo:dict[int,Any]) -> Dot:
-
-        #
-        # Create a new copy, if there isn't one already in memo.
-        #
-
-        if (other := memo.get(selfid := id(self))) is not None:
-            return other
-
-        other = Dot.__new__(Dot)
-        memo[selfid] = other
-
-        #
-        # We want the original and the copy to reference identical themes.
-        #
-
-        other.theme = self.theme
-
-        #
-        # The rest is standard.
-        #
-
-        other.directed    = deepcopy(self.directed,memo)
-        other.strict      = deepcopy(self.strict,memo)
-        other.multigraph  = deepcopy(self.multigraph,memo)
-        other.graphid     = deepcopy(self.graphid,memo)
-        other.comment     = deepcopy(self.comment,memo)
-        other.d_grapha    = deepcopy(self.d_grapha,memo)
-        other.d_nodea     = deepcopy(self.d_nodea,memo)
-        other.d_edgea     = deepcopy(self.d_edgea,memo)
-        other.grapha      = deepcopy(self.grapha,memo)
-        other.graphroles  = deepcopy(self.graphroles,memo)
-        other.noderoles   = deepcopy(self.noderoles,memo)
-        other.edgeroles   = deepcopy(self.edgeroles,memo)
-        other.nodemap     = deepcopy(self.nodemap,memo)
-        other.edgemap     = deepcopy(self.edgemap,memo)
-        other.subgraphmap = deepcopy(self.subgraphmap,memo)
-        other.nodes       = deepcopy(self.nodes,memo)
-        other.edges       = deepcopy(self.edges,memo)
-        other.subgraphs   = deepcopy(self.subgraphs,memo)
-        other._parent     = deepcopy(self._parent,memo)
-
-        return other
-
-    def _require_root(self, phrase:str):
-        if self._parent is not None:
-            raise RuntimeError(f"Child Dot objects cannot {phrase}")
-
-    def is_multigraph(self) -> bool:
+    def graph_default(self, **attrs:ID|None) -> Self:
         """
-        Return True iff this is a multigraph Dot object.
-        """
-        return self.multigraph
-
-    def graph_default(self, **attrs:ID|None) -> Dot:
-        """
-        Establish or amend the default graph attributes.
+        Establish or amend default graph attributes.
 
         :param attrs: New or amending attribute value assignments.
         """
         _set_attrs(self.d_grapha,attrs)
         return self
 
-    def graph_role(self, role:str, /, **attrs:ID|None) -> Dot:
+    def graph(self, **attrs:ID|None) -> Self:
         """
-        Define a graph role or amend its attributes.
-
-        :param role: The graph role to define or amend.
-        :param attrs: New or amending attribute value assignments.
-        """
-        _set_attrs(self.graphroles[_normalize(role,"Role name")],attrs)
-        return self
-
-    def graph(self, **attrs:ID|None) -> Dot:
-        """
-        Establish or amend the graph's attributes.
+        Establish or amend graph attributes.
 
         :param attrs: New or amending attribute value assignments.
         """
         _set_attrs(self.grapha,attrs,True)
         return self
 
-    def node_default(self, **attrs:ID|None) -> Dot:
+    def node_default(self, **attrs:ID|None) -> Self:
         """
-        Establish or amend the default node attributes.
+        Establish or amend default node attributes.
 
         :param attrs: New or amending attribute value assignments.
         """
         _set_attrs(self.d_nodea,attrs)
         return self
 
-    def node_role(self, role:str, /, **attrs:ID|None) -> Dot:
-        """
-        Define a node role or amend its attributes.
-
-        :param role: The node role to define or amend.
-        :param attrs: New or amending attribute value assignments.
-        """
-        _set_attrs(self.noderoles[_normalize(role,"Role name")],attrs)
-        return self
-
-    def node(self, id:ID, /, **attrs:ID|None) -> Dot:
+    def node(self, id:ID, /, **attrs:ID|None) -> Self:
         """
         Define a node or amend its attributes.
 
         :param id: The node to define or amend.
         :param attrs: New or amending attribute value assignments.
+
+        The Block object through which a node is defined determines where in
+        the DOT language representation the corresponding node statement will
+        appear.  However, node identity is global, so a node may be amended
+        through any Block object.
+
+        For example,
+
+        .. code-block:: python
+
+            dot = Dot()
+            sub1 = dot.subgraph("Sub1")
+            sub2 = dot.subgraph("Sub2")
+            sub2.node("a", label="Defined in Sub2")
+            sub1.node("a", fontsize=10)
+            dot.node("a", color="blue")
+
+        has the Dot language representation
+
+        .. code-block:: graphviz
+
+            graph {
+                subgraph Sub1 {
+                }
+                subgraph Sub2 {
+                    a [label="Defined in Sub2" fontsize=10 color=blue]
+                }
+            }
         """
+        nodemap = self._dot.nodemap
         key = _normalize(id, "Node identifier")
-        if key not in self.nodemap:
+        if key not in nodemap:
             self.nodes.append(key)
-        _set_attrs(self.nodemap[key],attrs,True)
+        _set_attrs(nodemap[key],attrs,True)
         return self
 
-    def node_define(self, id:ID, /, **attrs:ID|None) -> Dot:
+    def node_define(self, id:ID, /, **attrs:ID|None) -> Self:
         """
         Same as method :meth:`node`, except require the node to be undefined.
 
@@ -606,14 +534,15 @@ class Dot:
         :param attrs: New attribute value assignments.
         :raises RuntimeError: The node is already defined.
         """
+        nodemap = self._dot.nodemap
         key = _normalize(id, "Node identifier")
-        if key in self.nodemap:
+        if key in nodemap:
             raise RuntimeError(f"Node {key} already defined")
         self.nodes.append(key)
-        _set_attrs(self.nodemap[key],attrs,True)
+        _set_attrs(nodemap[key],attrs,True)
         return self
 
-    def node_update(self, id:ID, /, **attrs:ID|None) -> Dot:
+    def node_update(self, id:ID, /, **attrs:ID|None) -> Self:
         """
         Same as method :meth:`node`, except require the node to be defined.
 
@@ -621,10 +550,11 @@ class Dot:
         :param attrs: Amending attribute value assignments.
         :raises RuntimeError: The node is not defined.
         """
+        nodemap = self._dot.nodemap
         key = _normalize(id, "Node identifier")
-        if key not in self.nodemap:
+        if key not in nodemap:
             raise RuntimeError(f"Node {key} not defined")
-        _set_attrs(self.nodemap[key],attrs,True)
+        _set_attrs(nodemap[key],attrs,True)
         return self
 
     def node_is_defined(self, id:ID) -> bool:
@@ -633,25 +563,15 @@ class Dot:
 
         :param id: The node to test.
         """
-        return _normalize(id, "Node identifier") in self.nodemap
+        return _normalize(id, "Node identifier") in self._dot.nodemap
 
-    def edge_default(self, **attrs:ID|None) -> Dot:
+    def edge_default(self, **attrs:ID|None) -> Self:
         """
-        Establish or amend the default edge attributes.
+        Establish or amend default edge attributes.
 
         :param attrs: New or amending attribute value assignments.
         """
         _set_attrs(self.d_edgea,attrs)
-        return self
-
-    def edge_role(self, role:str, /, **attrs:ID|None) -> Dot:
-        """
-        Define an edge role or amend its attributes.
-
-        :param role: The edge role to define or amend.
-        :param attrs: New or amending attribute value assignments.
-        """
-        _set_attrs(self.edgeroles[_normalize(role,"Role name")],attrs)
         return self
 
     def _edge_preamble(self, point1:ID|Port, point2:ID|Port,
@@ -660,15 +580,16 @@ class Dot:
         """
         Implement the common preamble of all edge identity based methods.
         """
+        dot = self._dot
         normport1 = _NormPort(point1)
         normport2 = _NormPort(point2)
 
         if discriminant is not None:
-            if not self.multigraph:
+            if not dot.multigraph:
                 raise ValueError(
                     "Discriminant must be None for non-multigraphs")
             normdisc = _normalize(discriminant,"Edge discriminant")
-        elif self.multigraph:
+        elif dot.multigraph:
             normdisc = _Nonce()
         else:
             normdisc = None
@@ -676,7 +597,7 @@ class Dot:
         node1 = normport1.node
         node2 = normport2.node
 
-        if self.directed or node1 <= node2:
+        if dot.directed or node1 <= node2:
             key = (node1,node2,normdisc)
         else:
             key = (node2,node1,normdisc)
@@ -685,17 +606,18 @@ class Dot:
 
     def _edge(self, point1:ID|Port, point2:ID|Port,
               discriminant:ID|None, attrargs:dict[str,Any],
-              must_exist=False, must_not_exist=False) -> Dot:
+              must_exist=False, must_not_exist=False) -> Self:
         """
         Define or amend an edge, enforcing defined/not-defined constraints.
         """
+        dot = self._dot
         key, normport1, normport2, normdisc = self._edge_preamble(
             point1,point2,discriminant)
 
-        if (edge := (edgemap := self.edgemap).get(key)) is None:
-            edge = _Edge(self,normport1,normport2,normdisc)
+        if (edge := (edgemap := dot.edgemap).get(key)) is None:
+            edge = _Edge(dot.directed,normport1,normport2,normdisc)
             if must_exist:
-                if self.multigraph:
+                if dot.multigraph:
                     advice = " (missing or wrong discriminant?)"
                 else:
                     advice = ""
@@ -711,7 +633,7 @@ class Dot:
         return self
 
     def edge(self, point1:ID|Port, point2:ID|Port,
-             discriminant:ID|None=None, /, **attrs:ID|None) -> Dot:
+             discriminant:ID|None=None, /, **attrs:ID|None) -> Self:
         """
         Define an edge or amend its attributes and endpoints.
 
@@ -728,6 +650,11 @@ class Dot:
             Discriminants do not appear in the DOT language representation.
 
         :param attrs: New or amending attribute value assignments.
+
+        The Block object through which an edge is defined determines where in
+        the DOT language representation the corresponding edge statement will
+        appear.  However, edge identity is global, so an edge may be amended
+        through any Block object.
 
         Consistent with the DOT language, only the ``id`` portion of a
         :class:`Port` is relevant to edge identification.  In the code below,
@@ -806,7 +733,7 @@ class Dot:
         return self._edge(point1,point2,discriminant,attrs)
 
     def edge_define(self, point1:ID|Port, point2:ID|Port,
-                    discriminant:ID|None=None, /, **attrs:ID|None) -> Dot:
+                    discriminant:ID|None=None, /, **attrs:ID|None) -> Self:
         """
         Same as method :meth:`edge`, except require the edge to be undefined.
 
@@ -818,7 +745,7 @@ class Dot:
         return self._edge(point1,point2,discriminant,attrs,must_not_exist=True)
 
     def edge_update(self, point1:ID|Port, point2:ID|Port,
-                    discriminant:ID|None=None, /, **attrs:ID|None) -> Dot:
+                    discriminant:ID|None=None, /, **attrs:ID|None) -> Self:
         """
         Same as method :meth:`edge`, except require the edge to be defined.
 
@@ -839,18 +766,18 @@ class Dot:
         :param discriminant: See :meth:`edge`.
         """
         key, _, _, _ = self._edge_preamble(point1,point2,discriminant)
-        return key in self.edgemap
+        return key in self._dot.edgemap
 
-    def subgraph(self, id:ID|None=None) -> Dot:
+    def subgraph(self, id:ID|None=None) -> Block:
         """
         Define or prepare to amend a subgraph.
 
         :param id: The subgraph to define or amend.
 
-        :return: A new or existing child Dot object.  Graph attributes,
-            attribute defaults, and nodes and edges defined through the child
-            will appear within a subgraph statement of the root Dot object's
-            DOT language representation.
+        :return: A new or existing Block object.  Graph attributes, attribute
+            defaults, and nodes and edges defined through the block will appear
+            within a subgraph statement of the enveloping Dot object's DOT
+            language representation.
 
         Subgraph identities are scoped to parent graphs or subgraphs, so
 
@@ -872,31 +799,21 @@ class Dot:
                 }
             }
         """
+        dot = self._dot
         if id is not None:
-            key = _normalize(id, "Subgraph identifier")
-            if (subdot := self.subgraphmap.get(key)) is not None:
-                return subdot
-        #
-        # Here we have a Python weakness on display: no multiple constructors
-        # means no clean way to have the child constructed differently.  We
-        # choose to perform surgery on the child after construction rather than
-        # pollute Dot's public constructor.  Note we do not replace
-        # subgraphmap, since subgraphs are scoped to their parent.
-        #
-        subdot = Dot(directed=self.directed, strict=self.strict,
-                     multigraph=self.multigraph, id=id)
-        subdot.nodemap = self.nodemap
-        subdot.edgemap = self.edgemap
-        subdot.noderoles = self.noderoles
-        subdot.edgeroles = self.edgeroles
-        subdot.graphroles = self.graphroles
-        subdot._parent = self
-        self.subgraphs.append(subdot)
-        if id is not None:
-            self.subgraphmap[key] = subdot
-        return subdot
+            graphid = _normalize(id, "Subgraph identifier")
+            if (sub := self.subgraphmap.get(graphid)) is not None:
+                return sub
+        else:
+            graphid = None
+        sub = Block.__new__(Block)
+        sub._block_init(graphid, dot, self)
+        self.subgraphs.append(sub)
+        if graphid is not None:
+            self.subgraphmap[graphid] = sub
+        return sub
 
-    def subgraph_define(self, id:ID) -> Dot:
+    def subgraph_define(self, id:ID) -> Block:
         """
         Same as :meth:`subgraph`, except require the subgraph to be
         undefined.
@@ -910,7 +827,7 @@ class Dot:
             raise RuntimeError(f"Subgraph {key} already defined")
         return self.subgraph(id)
 
-    def subgraph_update(self, id:ID) -> Dot:
+    def subgraph_update(self, id:ID) -> Block:
         """
         Same as :meth:`subgraph`, except require the subgraph to be
         defined.
@@ -932,116 +849,40 @@ class Dot:
         """
         return _normalize(id,"Subgraph identifier") in self.subgraphmap
 
-    def all_default(self, **attrs:ID|None) -> Dot:
+    def all_default(self, **attrs:ID|None) -> Self:
         """
         Establish or amend default graph, node, and edge attributes all at once.
 
-        Executing ``dot.all_default(**attrs)`` has the same effect as executing
+        Executing ``block.all_default(**attrs)`` has the same effect as
+        executing
 
         .. code-block:: python
 
-            dot.graph_default(**attrs)
-            dot.node_default(**attrs)
-            dot.edge_default(**attrs)
+            block.graph_default(**attrs)
+            block.node_default(**attrs)
+            block.edge_default(**attrs)
         """
         _set_attrs(self.d_grapha,attrs)
         _set_attrs(self.d_nodea,attrs)
         _set_attrs(self.d_edgea,attrs)
         return self
 
-    def all_role(self, role:str, /, **attrs:ID|None) -> Dot:
+    def parent(self) -> Block|None:
         """
-        Define or amend the attributes of same-named graph, node, and edge
-        roles all at once.
-
-        Executing ``dot.all_role(role, **attrs)`` has the same effect as
-        executing
-
-        .. code-block:: python
-
-            dot.graph_role(role, **attrs)
-            dot.node_role(role, **attrs)
-            dot.edge_role(role, **attrs)
-        """
-        normrole = _normalize(role,"Role name")
-        _set_attrs(self.graphroles[normrole],attrs)
-        _set_attrs(self.noderoles[normrole],attrs)
-        _set_attrs(self.edgeroles[normrole],attrs)
-        return self
-
-    def parent(self) -> Dot|None:
-        """
-        The Dot object's parent if the object is a child, and None if the Dot
-        object is a root.
+        Return the parent Block object, if there is one.  Otherwise return
+        None.
         """
         return self._parent
 
-    def copy(self, *, id:ID|None=None, comment:str|None=None) -> Dot:
+    def dot(self) -> Dot:
         """
-        Return a deep copy of a Dot object tree.
-
-        :param id: The copy's graph identifier.  If not provided, the copy will
-            have the Dot object's graph identifier.
-
-        :param comment: The copy's comment.  If not provided, the copy will
-            have the Dot object's comment.
-
-        :raises RuntimeError: The Dot object is a child.
-
-        If the Dot object is using a theme, the copy will use the identical
-        theme.
+        Return the enveloping Dot object.
         """
-        self._require_root("be copied")
-        result = deepcopy(self)
-        if id is not None:
-            result.graphid = _normalize(id,"Graph identifier")
-        if comment is not None:
-            result.comment = comment
-        return result
+        return self._dot
 
-    def use_theme(self, theme:Dot|None) -> Dot:
+    def _statements(self, lines:list[str], indent:int, mien:_Mien) -> None:
         """
-        Inherit graph, default graph, default node, default edge, and role
-        attribute values from ``theme``.
-
-        :class:`Dot` forms DOT language representations by merging inherited
-        attribute values with a Dot object's own assigned values (which have
-        precedence).  Inheritance can be chained, with themes inheriting from
-        themes.  The final merged result incorporates attributes from the
-        entire chain.
-
-        The theme must be a root Dot object, and only root Dot objects can
-        inherit from themes.  However, since roles have tree-wide scope,
-        entities defined through subgraph Dot objects can be assigned roles
-        inherited by the root.
-
-        Theme use is dynamic.  Any change to the theme inheritance chain or
-        heritable attributes of a theme in the chain is immediately reflected
-        in the Dot object's DOT language representation.
-
-        :param theme: The attribute inheritance source or None.  If ``theme``
-            is None, the Dot object does not inherit from any theme.
-
-        :raises ValueError: The theme is not a root Dot object, or the using
-            the theme would create an inheritance cycle.
-
-        :raises RuntimeError: The Dot object is a child.
-        """
-        self._require_root("inherit from themes")
-        if theme is not None:
-            if theme._parent is not None:
-                raise ValueError("Theme is not a root Dot object")
-            current = theme
-            while current is not None:
-                if current is self:
-                    raise ValueError("Using theme would create a cycle")
-                current = current.theme
-        self.theme = theme
-        return self
-
-    def _statements(self, lines:list[str], indent:int, mien:_Mien):
-        """
-        Append the Dot object's statements to lines, indented as specified.
+        Append the block's statements to lines, indented as specified.
         """
         prefix = "    " * indent
         base = len(lines)
@@ -1065,7 +906,7 @@ class Dot:
                 blanklines += 1
 
         blankline()
-        if (_parent := self._parent) is None:
+        if type(self) is Dot:
             d_grapha = mien.d_grapha
             d_nodea  = mien.d_nodea
             d_edgea  = mien.d_edgea
@@ -1081,9 +922,9 @@ class Dot:
         graphroles = mien.graphroles
         noderoles  = mien.noderoles
         edgeroles  = mien.edgeroles
-        nodemap    = self.nodemap
+        nodemap    = self._dot.nodemap
         graphid    = self.graphid
-        grapha     = _resolve_role(mien.grapha if _parent is None
+        grapha     = _resolve_role(mien.grapha if type(self) is Dot
                                    else self.grapha, graphroles,
                                    "graph",graphid)
 
@@ -1123,12 +964,216 @@ class Dot:
         if len(lines) - base - blanklines <= 8 or blanklines == 1:
             lines[base:] = [ line for line in lines[base:] if line ]
 
-    def _source(self) -> str:
-        """
-        The DOT language representation of a Dot object tree.
-        """
-        self._require_root("be rendered")
 
+class Dot(Block):
+    """
+    A DOT language builder.
+
+    :param directed: Make the graph directed.
+
+    :param strict: Include the ``strict`` keyword.  This argument is present
+        for completeness.  It's unlikely to be useful with Dot objects since
+        :class:`Dot` guarantees edge uniqueness for non-multigraphs.
+
+    :param multigraph: Support multiple edges between the same node pair
+        (ordered pair in the directed case.)  This parameter affects the
+        behavior of methods :meth:`~Block.edge`, :meth:`~Block.edge_define`,
+        and :meth:`~Block.edge_update` but does not change the DOT language
+        produced from the Dot object.
+
+    :param id: The graph identifier.
+
+    :param comment: Possibly multiline text prepended as a ``//`` style
+        comment.
+
+    :raises ValueError: If both ``strict`` and ``multigraph`` are True.
+    """
+    __slots__ = (
+        "directed", "strict", "multigraph", "comment",
+        "graphroles", "noderoles", "edgeroles",
+        "nodemap", "edgemap", "theme"
+    )
+    def __init__(self, *, directed:bool=False, strict:bool=False,
+                 multigraph:bool=False, id:ID|None=None,
+                 comment:str|None = None):
+
+        if multigraph and strict:
+            raise ValueError("Cannot specify both multigraph and strict")
+
+        self.directed   = directed
+        self.strict     = strict
+        self.multigraph = multigraph
+        self.comment    = comment
+
+        self.graphroles:dict[str,_Attrs] = defaultdict(dict)
+        self.noderoles:dict[str,_Attrs]  = defaultdict(dict)
+        self.edgeroles:dict[str,_Attrs]  = defaultdict(dict)
+
+        self.nodemap:dict[_NodeKey,_Attrs] = defaultdict(dict)
+        self.edgemap:dict[_EdgeKey,_Edge]  = dict()
+        self.theme:Dot|None = None
+
+        graphid = None if id is None else _normalize(id, "Graph identifier")
+        self._block_init(graphid, self, None)
+
+    def __deepcopy__(self, memo:dict[int,Any]) -> Dot:
+
+        #
+        # Create a new copy, if there isn't one already in memo.
+        #
+
+        if (other := memo.get(selfid := id(self))) is not None:
+            return other
+
+        other = Dot.__new__(Dot)
+        memo[selfid] = other
+
+        #
+        # We want the original and the copy to reference identical themes.
+        #
+
+        other.theme = self.theme
+
+        #
+        # The rest is standard.
+        #
+
+        other.directed    = deepcopy(self.directed,memo)
+        other.strict      = deepcopy(self.strict,memo)
+        other.multigraph  = deepcopy(self.multigraph,memo)
+        other.graphid     = deepcopy(self.graphid,memo)
+        other.comment     = deepcopy(self.comment,memo)
+        other.d_grapha    = deepcopy(self.d_grapha,memo)
+        other.d_nodea     = deepcopy(self.d_nodea,memo)
+        other.d_edgea     = deepcopy(self.d_edgea,memo)
+        other.grapha      = deepcopy(self.grapha,memo)
+        other.graphroles  = deepcopy(self.graphroles,memo)
+        other.noderoles   = deepcopy(self.noderoles,memo)
+        other.edgeroles   = deepcopy(self.edgeroles,memo)
+        other.nodemap     = deepcopy(self.nodemap,memo)
+        other.edgemap     = deepcopy(self.edgemap,memo)
+        other.subgraphmap = deepcopy(self.subgraphmap,memo)
+        other.nodes       = deepcopy(self.nodes,memo)
+        other.edges       = deepcopy(self.edges,memo)
+        other.subgraphs   = deepcopy(self.subgraphs,memo)
+        other._dot        = other
+        other._parent     = None
+
+        return other
+
+    def is_multigraph(self) -> bool:
+        """
+        Return True iff this is a multigraph Dot object.
+        """
+        return self.multigraph
+
+    def graph_role(self, role:str, /, **attrs:ID|None) -> Self:
+        """
+        Define a graph role or amend its attributes.
+
+        :param role: The graph role to define or amend.
+        :param attrs: New or amending attribute value assignments.
+        """
+        _set_attrs(self.graphroles[_normalize(role,"Role name")],attrs)
+        return self
+
+    def node_role(self, role:str, /, **attrs:ID|None) -> Self:
+        """
+        Define a node role or amend its attributes.
+
+        :param role: The node role to define or amend.
+        :param attrs: New or amending attribute value assignments.
+        """
+        _set_attrs(self.noderoles[_normalize(role,"Role name")],attrs)
+        return self
+
+    def edge_role(self, role:str, /, **attrs:ID|None) -> Self:
+        """
+        Define an edge role or amend its attributes.
+
+        :param role: The edge role to define or amend.
+        :param attrs: New or amending attribute value assignments.
+        """
+        _set_attrs(self.edgeroles[_normalize(role,"Role name")],attrs)
+        return self
+
+    def all_role(self, role:str, /, **attrs:ID|None) -> Self:
+        """
+        Define or amend the attributes of same-named graph, node, and edge
+        roles all at once.
+
+        Executing ``dot.all_role(role, **attrs)`` has the same effect as
+        executing
+
+        .. code-block:: python
+
+            dot.graph_role(role, **attrs)
+            dot.node_role(role, **attrs)
+            dot.edge_role(role, **attrs)
+        """
+        normrole = _normalize(role,"Role name")
+        _set_attrs(self.graphroles[normrole],attrs)
+        _set_attrs(self.noderoles[normrole],attrs)
+        _set_attrs(self.edgeroles[normrole],attrs)
+        return self
+
+    def copy(self, *, id:ID|None=None, comment:str|None=None) -> Dot:
+        """
+        Return a deep copy of the Dot object.
+
+        :param id: The copy's graph identifier.  If not provided, the copy will
+            have the Dot object's graph identifier.
+
+        :param comment: The copy's comment.  If not provided, the copy will
+            have the Dot object's comment.
+
+        If the Dot object is using a theme, the copy will use the identical
+        theme.
+        """
+        result = deepcopy(self)
+        if id is not None:
+            result.graphid = _normalize(id,"Graph identifier")
+        if comment is not None:
+            result.comment = comment
+        return result
+
+    def use_theme(self, theme:Dot|None) -> Self:
+        """
+        Inherit graph, default graph, default node, default edge, and role
+        attribute values from ``theme``.
+
+        :class:`Dot` forms DOT language representations by merging inherited
+        attribute values with a Dot object's own assigned values (which have
+        precedence).  Inheritance can be chained, with themes inheriting from
+        themes.  The final merged result incorporates attributes from the
+        entire chain.
+
+        Theme use is dynamic.  Any change to the theme inheritance chain or
+        heritable attributes of a theme in the chain is immediately reflected
+        in the Dot object's DOT language representation.
+
+        :param theme: The attribute inheritance source or None.  If ``theme``
+            is None, the Dot object does not inherit from any theme.
+
+        :raises ValueError: Using the theme would create an inheritance cycle.
+        """
+        if theme is not None:
+            if not isinstance(theme,Dot):
+                # Dynamic check in case a programmer gets mixed up between a
+                # Dot object and one of its blocks.
+                raise RuntimeError("Theme must be a Dot object")
+            current = theme
+            while current is not None:
+                if current is self:
+                    raise ValueError("Using theme would create a cycle")
+                current = current.theme
+        self.theme = theme
+        return self
+
+    def __str__(self) -> str:
+        """
+        The DOT language representation of the Dot object.
+        """
         lines = []
 
         if comment := self.comment:
@@ -1150,20 +1195,12 @@ class Dot:
 
         return '\n'.join(lines)
 
-    def __str__(self) -> str:
-        """
-        The DOT language representation of a Dot object tree.  If the Dot
-        object is a child, :meth:`__str__` returns the default
-        :meth:`object.__repr__`.
-        """
-        return self._source() if self._parent is None else super().__str__()
-
     def to_rendered(self, program:str|PathLike="dot", *, format="png",
                     dpi:float|None=None, size:int|float|str|None=None,
                     ratio:float|str|None=None, timeout:float|None=None,
                     directory:str|PathLike|None=None) -> bytes:
         """
-        Render a Dot object tree by invoking a Graphviz program.
+        Render the Dot object by invoking a Graphviz program.
 
         :param program: Which Graphviz program to use (dot by default).
             ``program`` should either be the name of the program or a path to
@@ -1202,8 +1239,6 @@ class Dot:
         :raises TimeoutException: The invoked program took longer than
             ``timeout`` seconds to run and was killed.
 
-        :raises RuntimeError: The Dot object is a child.
-
         If the process's ``PATH`` includes directory ``/opt/graphviz/bin`` and
         that is the only directory in ``PATH`` including Graphviz executables,
         the following :meth:`to_rendered` calls are equivalent:
@@ -1223,7 +1258,7 @@ class Dot:
         """
         t_arg = f"-T{format.lower()}"
 
-        input = self._source().encode()
+        input = str(self).encode()
 
         if directory is not None:
             program = PurePath(directory,program)
@@ -1263,8 +1298,7 @@ class Dot:
                ratio:float|str|None=None, timeout:float|None=None,
                directory:str|PathLike|None=None) -> str:
         """
-        Convert a Dot object tree to an SVG string by invoking a Graphviz
-        program.
+        Convert the Dot object to an SVG string by invoking a Graphviz program.
 
         :param inline: Generate SVG without an XML header.  Be aware that
             older, still commonly installed versions of Graphviz do not support
@@ -1287,7 +1321,7 @@ class Dot:
              ratio:float|str|None=None, timeout:float|None=None,
              directory:str|PathLike|None=None) -> None:
         """
-        Save a rendering of a Dot object tree to a file.  :meth:`save`
+        Save a rendering of the Dot object to a file.  :meth:`save`
         generates the file data by invoking a Graphviz program.
 
         :param filename: The name of the file to write.
@@ -1337,9 +1371,9 @@ class Dot:
              ratio:float|str|None=None, timeout:float|None=None,
              directory:str|PathLike|None=None) -> None:
         """
-        Display a Dot object tree in a Jupyter notebook as an IPython ``SVG``
-        or ``Image`` object.  :meth:`show` generates the data required by
-        invoking a Graphviz program.
+        Display the Dot object in a Jupyter notebook as an IPython ``SVG`` or
+        ``Image`` object.  :meth:`show` generates the data required by invoking
+        a Graphviz program.
 
         :raises ShowException: :meth:`show()` could not complete because the
             program could not be invoked, it timed out, or it exited with a
@@ -1347,8 +1381,7 @@ class Dot:
             :class:`ShowException`, it also displays a ``Markdown`` block
             explaining why it could not complete.
 
-        :raises RuntimeError: IPython is not installed, or the Dot object is a
-            child.
+        :raises RuntimeError: IPython is not installed.
 
         For the parameters, see :meth:`to_rendered`.  The ``size`` parameter
         can be especially useful: a value such as ``"5,5"`` can help ensure the
@@ -1389,14 +1422,13 @@ class Dot:
 
     def show_source(self) -> None:
         """
-        Display a Dot object tree's DOT language representation in a Jupyter
+        Display the Dot object's DOT language representation in a Jupyter
         notebook as an IPython ``Code`` object.
 
-        :raises RuntimeError: IPython is not installed, or the Dot object is a
-            child.
+        :raises RuntimeError: IPython is not installed.
         """
         if display and Code:
-            display(Code(self._source(),language="graphviz"))
+            display(Code(str(self),language="graphviz"))
         else:
             _missing_ipython()
 
@@ -1425,7 +1457,7 @@ class ProcessException(Exception):
     .. attribute:: program
         :type: str
 
-        The program that could not be run.
+        The program that ran.
 
     .. attribute:: status
         :type: int

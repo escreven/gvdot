@@ -161,8 +161,8 @@ Now we write the generation code.
                 c1 = link(node, node.left)
                 c2 = link(node, None)
                 c3 = link(node, node.right)
-                subdot = dot.subgraph().graph(rank="same")
-                subdot.edge(c1,c2,role="phantom").edge(c2,c3,role="phantom")
+                block = dot.subgraph().graph(rank="same")
+                block.edge(c1,c2,role="phantom").edge(c2,c3,role="phantom")
 
         return dot
 

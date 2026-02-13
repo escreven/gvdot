@@ -1,13 +1,16 @@
 ## Unreleased
 
-#### Fixed
-- Clarify that only root Dot objects should be copied via `copy()`, raising a
-  descriptive exception if the application attempts to copy a child.  Deep
-  copying a child works, but does not do what a caller likely expects.  (It
-  copies the entire tree.)
-- Clarify that only root Dot objects have a DOT language representation, and
-  therefore only roots can be rendered, raising a descriptive exception if the
-  application attempts to render a child.
+#### Added
+- Class `Dot` now has a base class `Block` which implements most of `Dot`'s DOT
+  language building methods, but not role definition, theme assignment,
+  rendering, or conversion to DOT language text.
+
+#### Changed
+- Methods `subgraph()` and `subgraph_define()` now return `Block` instances
+  instead of `Dot` instances.  This change enforces through types what were
+  previously runtime facts: the objects returned by `subgraph()` and
+  `subgraph_define()` could not have themes assigned, and could not be usefully
+  copied, rendered, or converted to DOT language text.
 
 ## [1.0.0] - 2026-02-11
 

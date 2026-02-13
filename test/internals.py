@@ -9,7 +9,7 @@ def test_reprs():
     normport1 = _NormPort("a")
     normport2 = _NormPort("b")
     assert "_Nonce" in repr(_Nonce())
-    assert "_Edge" in repr(_Edge(Dot(),normport1,normport2,None))
+    assert "_Edge" in repr(_Edge(False,normport1,normport2,None))
     assert "_NormPort" in repr(normport1)
 
 
