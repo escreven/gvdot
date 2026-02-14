@@ -2,6 +2,7 @@
 [![Test Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/escreven/gvdot/blob/main/.github/workflows/test.yml)
 [![Read the Docs Status](https://readthedocs.org/projects/gvdot/badge/?version=latest)](https://gvdot.readthedocs.io)
 [![View on GitHub](https://img.shields.io/badge/Source-GitHub-blue?logo=github)](https://github.com/escreven/gvdot)
+![Python Version](https://img.shields.io/pypi/pyversions/gvdot)
 
 
 Generate and render Graphviz diagrams with clear, maintainable code by
@@ -116,22 +117,46 @@ reference.
 
 You can install gvdot from PyPI with
 
-```sh
+```bash
 $ pip install gvdot
 ```
 
 To ensure the optional notebook support is enabled, use
 
-```sh
+```bash
 $ pip install gvdot[ipython]
 ```
 
 You can also clone the repository and install it directly.
 
-```sh
+```bash
 $ git clone https://github.com/escreven/gvdot.git
 $ cd gvdot
 $ pip install .
 ```
 
-gvdot requires Python 3.12 or greater.
+Package gvdot requires Python 3.12 or greater.
+
+[Rendering](https://gvdot.readthedocs.io/en/latest/overview.html#rendering)
+ requires a Graphviz installation.  You can determine if one is in your `PATH`
+ with
+
+ ```bash
+ $ dot -V
+ ```
+
+To install Graphviz, see
+[https://graphviz.org/download](https://graphviz.org/download).
+
+## Reliability
+
+gvdot includes automated tests with 100% code coverage, which are run on
+MacOS, Linux, and Windows with Python 3.12, 3.13, and 3.14.  See [the GitHub
+workflow](https://github.com/escreven/liveimport/blob/main/.github/workflows/test.yml)
+for details.
+
+If you have the source, you can run the tests yourself with
+
+```bash
+$ python test/main.py
+```

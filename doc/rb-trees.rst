@@ -41,7 +41,6 @@ and ordered correctly.
     dot.edge(2, 4)
     dot.edge(4, 3)
     dot.subgraph().graph(rank="same").edge(1, 4, role="phantom")
-    dot.save("images/rb-hand-initial.svg")
     dot.show()
 
 .. image:: _static/examples/rb-hand-initial.*
@@ -86,7 +85,6 @@ and use it in our hand-crafted tree.
     .edge(3, "phantom_2", role="phantom")
     .edge("phantom_2", "phantom_3", role="phantom"))
 
-    dot.save("images/rb-hand-updated.svg")
     dot.show()
 
 .. image:: _static/examples/rb-hand-updated.*
