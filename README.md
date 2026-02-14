@@ -152,7 +152,7 @@ To install Graphviz, see
 
 gvdot includes automated tests with 100% code coverage, which are run on
 MacOS, Linux, and Windows with Python 3.12, 3.13, and 3.14.  See [the GitHub
-workflow](https://github.com/escreven/liveimport/blob/main/.github/workflows/test.yml)
+workflow](https://github.com/escreven/gvdot/blob/main/.github/workflows/test.yml)
 for details.
 
 If you have the source, you can run the tests yourself with
