@@ -14,8 +14,8 @@ from gvdot import Dot
 # avoid having to specify the expected DOT language exactly, we normalize DOT
 # text by stripping blank lines, separating tokens by a single space, and
 # sorting entity attribute lists alphabetically. While nowhere close to
-# actually parsing the DOT text, this is enough to verify expected output.
-# There are significant lexical and other restrictions:
+# actually parsing the DOT text, this is enough to conveniently verify expected
+# output.  There are significant lexical and other restrictions:
 #
 #    - Only // comments supported, and only on their own line
 #    - Only ASCII characters
@@ -84,7 +84,7 @@ def _normalize_text(text:str) -> list[tuple[int,str]]:
     return lines
 
 #
-# Raised by expect_str() when actual DOT text doens't match expected text.
+# Raised by expect_str() when actual DOT text doesn't match expected text.
 # Properties expected and actual are the unnormalized text, and the
 # corresponding line numbers are zero based.  If expected or actual is a prefix
 # of the other, the corresponding line number is -1.
@@ -126,7 +126,7 @@ def expect_str(dot:Dot, text:str):
                               expect_lineno, actual_lineno)
 
 #
-# Raise an AssertionError iff fn() does not raise the given exeption type.
+# Raise an AssertionError iff fn() does not raise the given exception type.
 # expect_ex() returns the exception raised.
 #
 
@@ -159,7 +159,6 @@ def image_file_format(filename:str):
 
 #
 # Create fake Graphviz programs for testing timeouts and non-zero exit status.
-# The context value is the temporary directory of the fakes.
 #
 # On Windows, the fakes are implemented as .cmd batch files.  Unfortunately,
 # because Windows doesn't have a notion of process tree, subprocess.run() of

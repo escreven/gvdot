@@ -658,8 +658,8 @@ class Block:
 
         Consistent with the DOT language, only the ``id`` portion of a
         :class:`Port` is relevant to edge identification.  In the code below,
-        the first statement defines an edge, and the second amends the same
-        edge's attributes.
+        the first :meth:`edge` call defines an edge, and the second amends the
+        same edge's attributes.
 
         .. code-block:: python
 
@@ -712,7 +712,7 @@ class Block:
             dot.edge("a","b")   # Define a non-directed edge between a and b.
             dot.edge("b","a")   # Amend the edge
 
-        Has the DOT language representation
+        The Dot object above has the DOT language representation
 
         .. code-block:: graphviz
 
@@ -775,7 +775,7 @@ class Block:
         :param id: The subgraph to define or amend.
 
         :return: A new or existing Block object.  Graph attributes, attribute
-            defaults, and nodes and edges defined through the block will appear
+            defaults, and nodes and edges defined through the block appear
             within a subgraph statement of the enveloping Dot object's DOT
             language representation.
 
