@@ -1,5 +1,7 @@
 ## Unreleased
 
+## [1.1.0] - 2026-02-13
+
 #### Added
 - Class `Dot` now has a base class `Block` which implements most of `Dot`'s DOT
   language building methods, but not role definition, theme assignment,
