@@ -80,9 +80,10 @@ or a Graphviz HTML string.  Package gvdot defines type :type:`ID` to represent
 
 .. code-block:: python
 
-    type ID = str | int | float | bool | Markup
+    type ID = str | int | float | bool | Markup | Nonce
 
-where :class:`Markup` is a gvdot class delineating HTML strings.
+where :class:`Markup` is a gvdot class delineating HTML strings and
+:class:`Nonce` is a placeholder for generated IDs described in a later section.
 
 Regardless of how they appear, Graphviz does not differentiate between non-HTML
 IDs; in DOT language, ``1.23`` and ``"1.23"`` are two ways to write the same
@@ -426,6 +427,92 @@ provided need only be unique among the edges of their associated node pair.
 Discriminants are a gvdot feature.  As you can see, they don't appear in the
 DOT language representation.  We used integer discriminants in this example
 because it was convenient, but discriminants can be any :type:`ID`.
+
+Nonces
+------
+
+Applications that generate Graphviz diagrams often need to synthesize
+identifiers for nodes and sometimes subgraphs.  Consider the NFA example on
+:doc:`the landing page <index>`.  To depict an arrow leading into the start
+state,
+
+.. image:: _static/overview/nfa-init.*
+    :alt: NFA start state
+    :align: center
+
+|br| we use an edge to the start state from an initial node assigned role
+``"init"`` defined as
+
+.. code-block:: python
+
+    node_role("init", label="", shape="none", width=0, height=0)
+
+The ``"init"`` role attributes make the initial node invisible.  We create the
+initial node and edge at the bottom of the fragment below.
+
+.. code-block:: python
+
+    def nfa_diagram(nfa:NFA, title:str):
+
+        dot = Dot(directed=True).use_theme(nfa_theme)
+        dot.graph(label=Markup(f"<b>{title}<br/></b>"))
+
+        init_id = ... # <-- What to put here?
+        dot.node(init_id, role="init")
+        dot.edge(init_id, nfa.start)
+        ...
+
+But what :type:`ID` should we assign to ``init_id``?  The remainder of the
+generation code creates state nodes with identifiers that are the state name.
+If we pick something like ``"_init_"``, we either must enforce a state name
+restriction, complicate our generation code with some kind of indirection, or
+hope the input source isn't malicious.
+
+The gvdot solution is class :class:`Nonce`. A Nonce is a placeholder that
+:class:`Dot` resolves to a unique DOT language ID when generating DOT language
+representations.  Using :class:`Nonce`, the code above becomes
+
+.. code-block:: python
+
+    def nfa_diagram(nfa:NFA, title:str):
+
+        dot = Dot(directed=True).use_theme(nfa_theme)
+        dot.graph(label=Markup(f"<b>{title}<br/></b>"))
+
+        init_id = Nonce()  # <-- Will resolve to a unique DOT language ID
+        dot.node(init_id, role="init")
+        dot.edge(init_id, nfa.start)
+        ...
+
+The DOT language representation of the NFA diagram includes the node and edge
+statements
+
+.. code-block:: graphviz
+
+    _nonce_1 [label="" shape=none width=0 height=0]
+    _nonce_1 -> s0
+
+Suppose the NFA definition is modified so that one of the states is named
+``"_nonce_1"`` (maliciously, almost certainly).  Then those statements would
+become
+
+.. code-block:: graphviz
+
+    _nonce_2 [label="" shape=none width=0 height=0]
+    _nonce_2 -> s0
+
+:class:`Dot` chooses a different ID for the Nonce to avoid a conflict with
+``_nonce_1``.
+
+:class:`Nonce` is a member of the :type:`ID` type union, so instances can be
+used everywhere in the gvdot API where :type:`ID` is accepted.
+
+Both the :doc:`er-diagram` and :doc:`rb-trees` examples in this document use
+Nonces.  The ER Diagram generator uses :class:`Nonce` to synthesize identifiers
+for nodes representing entity attributes.  Entity attribute names can't be
+used because they are not unique within a model.  The red-black tree generator
+creates phantom nodes with :class:`Nonce` identifiers to steer Graphviz toward
+a good tree layout.
 
 Rendering
 ---------

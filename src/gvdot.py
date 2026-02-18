@@ -10,14 +10,14 @@ from os import PathLike
 from pathlib import Path, PurePath
 import subprocess
 from subprocess import CalledProcessError, TimeoutExpired
-from typing import Any, Self
+from typing import Any, Hashable, Self
 import re
 
-__version__ = "1.1.0"
+__version__ = "1.2.0dev1"
 
 __all__ = (
-    "Markup", "Port", "Dot", "InvocationException", "ProcessException",
-    "TimeoutException", "ShowException",
+    "Markup", "Nonce", "Port", "Dot", "InvocationException",
+    "ProcessException", "TimeoutException", "ShowException",
 )
 
 #
@@ -54,7 +54,77 @@ class Markup:
     markup : str
 
 
-type ID = str|int|float|bool|Markup
+#
+# In addition to being a publicly available for creating unique IDs, nonces are
+# used as edge discriminants in the multi-graph case when none is provided by
+# the application.
+#
+
+class Nonce(Hashable):
+    """
+    A placeholder that :class:`Dot` resolves to a unique ID in DOT language
+    representations.
+
+    When generating the DOT language representation of a Dot object,
+    :class:`Dot` resolves every Nonce that is part of the object or its theme
+    chain to a DOT language ID, choosing IDs not used
+    anywhere else in the object or theme chain.  :class:`Dot` resolves two
+    Nonce objects ``u`` and ``v`` to the same ID if and only if ``u is v``.
+
+    :param prefix: :class:`Dot` will resolve the Nonce to an ID of the form
+        *prefix_n* where *prefix* is the given value and *n* is a small
+        positive integer.
+
+
+    Applications use Nonce objects to create identifiers that do not conflict
+    with each other or with IDs derived from input values.  For example, an
+    application might complete an illustration of a linked list with
+
+    .. code-block:: python
+
+        nil = Nonce()
+        dot.node(nil, role="nil")
+        dot.edge(last_value, nil)
+
+    The DOT language representation would then include a node statement for
+    ``nil`` like
+
+    .. code-block:: graphviz
+
+            _nonce_1 [label="NIL" fontname="sans-serif" fontsize=8 style=filled
+                shape=box width=0 height=0 margin=0.02]
+
+    and, if ``last_value`` is ``"Fred"``, an edge statement like
+
+    .. code-block:: graphviz
+
+            Fred -> _nonce_1
+
+    :class:`Dot` dynamically resolves Nonce objects each time it generates a
+    DOT language representation.  Changing a Dot object may change the ID to
+    which a Nonce object resolves.
+
+    Nonce objects are :class:`Hashable` and objects ``u`` and ``v`` compare
+    equal if and only if ``u`` is ``v``.
+    """
+    __slots__ = "prefix"
+
+    def __init__(self, prefix:str="_nonce"):
+        if not isinstance(prefix, str):
+            raise ValueError(f"Nonce prefix {repr(prefix)} is not a string")
+        self.prefix = prefix
+
+    def __hash__(self):
+        return hash(id(self))
+
+    def __eq__(self, other):
+        return other is self
+
+    def __deepcopy__(self, memo):
+        return self
+
+
+type ID = str|int|float|bool|Markup|Nonce
 """
     Values corresponding to the DOT language non-terminal *ID* used for both
     entity identifiers and attribute values.  Consistent with the grammar,
@@ -69,15 +139,25 @@ type ID = str|int|float|bool|Markup
 
     - using ``True`` as an :type:`ID` is equivalent to using ``"true"``
     - using ``False`` as an :type:`ID` is equivalent to using ``"false"``
+
+    Nonce objects are placeholders for generated IDs.  See :class:`Nonce`.
 """
+
+type _NormID = str | Nonce
+
+def _id_key(normid:_NormID) -> tuple[int,str|int]:
+    if isinstance(normid, str):
+        return 0, normid
+    else:
+        return 1, id(normid)
+
+def _id_debug(normid:_NormID) -> str:
+    return normid if isinstance(normid, str) else repr(normid)
 
 #
 # Make sure the purported ID is in fact an ID and return its normalized
-# representation (a string).  We do extra work to avoid quoting when we can, in
-# the hope this aids readability of the DOT language generated.
-# _normalize_unquoted is the same as _normalize except it doesn't add
-# surrounding quotes.  This required for passing attribute values on the
-# command line.
+# representation (a string or Nonce).  We do extra work to avoid quoting when
+# we can, in the hope this aids readability of the DOT language generated.
 #
 
 _SIMPLE_ID_RE = re.compile(
@@ -90,8 +170,10 @@ _RESERVED_IDS = {
 
 _NEEDESCAPE_RE = re.compile(r'["\n\r\\]')
 
-def _normalize(id:Any, what:str) -> str:
+def _normalize(id:Any, what:str) -> _NormID:
     match id:
+        case Nonce():
+            return id
         case bool():
             return "true" if id else "false"
         case Markup():
@@ -179,11 +261,14 @@ class _NormPort:
             self.implicit = True
 
     def __repr__(self):
-        return f"_NormPort<{str(self)}>"
+        return "_NormPort<{},{},{},{}>".format(
+            repr(self.node), repr(self.name),
+            repr(self.cp), repr(self.implicit))
 
-    def __str__(self):
-        result = self.node
+    def dot(self, resolver:_NonceResolver):
+        result = resolver.resolve(self.node)
         if (name := self.name) is not None:
+            name = resolver.resolve(name)
             if name in _COMPASS_PT: name = _prefer_quoted(name)
             result += ":" + name
         if (cp := self.cp) is not None:
@@ -200,7 +285,9 @@ class _NormPort:
 # keyword parameter names.
 #
 
-type _Attrs = dict[str,str]
+type _Attrs = dict[str,_NormID]
+
+type _Roles = dict[_NormID,_Attrs]
 
 #
 # Update target entity attributes based on a "**attrs" parameter in the public
@@ -222,8 +309,7 @@ def _set_attrs(target:_Attrs, attrargs:dict[str,Any], permit_role=False):
 # Return the flattened attributes of the possibly role-bearing object.
 #
 
-def _resolve_role(attrs:_Attrs, roles:dict[str,_Attrs],
-                  what:str, identity:Any):
+def _integrate_role(attrs:_Attrs, roles:_Roles, what:str, identity:Any):
     if (role_name := attrs.get('role')) is not None:
         if (role_attrs := roles.get(role_name)) is not None:
             attrs = attrs.copy()
@@ -242,7 +328,7 @@ def _resolve_role(attrs:_Attrs, roles:dict[str,_Attrs],
 # Merge target and source role dictionaries with source having precedence.
 #
 
-def _update_roles(target:dict[str,_Attrs], source:dict[str,_Attrs]) -> None:
+def _update_roles(target:_Roles, source:_Roles) -> None:
     for role, source_attrs in source.items():
         if (target_attrs := target.get(role)) is not None:
             target_attrs.update(source_attrs)
@@ -256,39 +342,12 @@ def _update_roles(target:dict[str,_Attrs], source:dict[str,_Attrs]) -> None:
 _TEXT_ATTRS = { "label", "headlabel", "taillabel", "xlabel", "comment" }
 
 #
-# Unique values used as implicit edge disciminants in the multi-graph case when
-# none is provided by the application.
-#
-
-class _Nonce:
-
-    counter = 0
-
-    __slots__ = "seqno"
-
-    def __init__(self):
-        _Nonce.counter = (seqno := _Nonce.counter) + 1
-        self.seqno = seqno
-
-    def __hash__(self):
-        return hash(-self.seqno)
-
-    def __eq__(self, other):
-        return type(other) is _Nonce and self.seqno == other.seqno
-
-    def __repr__(self):
-        return f"_Nonce<{self.seqno}>"
-
-    def __deepcopy__(self, memo):
-        return self
-
-#
-# We normalize discriminants to strings if they given as IDs, otherwise (when
-# given as None) they are normalized to nonces for multigraphs and None for
+# We normalize discriminants to _NormIDs if they are given, otherwise (when
+# given as None) they are normalized to _Nonces for multigraphs and None for
 # non-multigraphs.
 #
 
-type _NormDisc = str | _Nonce | None
+type _NormDisc = _NormID | None
 
 #
 # Identify nodes, edges, and subgraphs internally.  Node keys and subgraph keys
@@ -296,11 +355,11 @@ type _NormDisc = str | _Nonce | None
 # triples.  For non-directed graphs, node1 <= node2.
 #
 
-type _NodeKey = str
+type _NodeKey = _NormID
 
 type _EdgeKey = tuple[_NodeKey,_NodeKey,_NormDisc]
 
-type _SubgraphKey = str
+type _SubgraphKey = _NormID
 
 #
 # Edges have port specifications and attributes, and can be directed.
@@ -336,16 +395,18 @@ class _Edge:
         self.normport2 = normport2
 
     def __repr__(self):
-        return (f"_Edge<{self}>")
+        return "_Edge<{},{},{},{}>".format(
+            repr(self.normport1), repr(self.normport2),
+            repr(self.normdisc), repr(self.directed))
 
     #
     # DOT language representation.
     #
 
-    def __str__(self):
-        return (str(self.normport1) +
+    def dot(self, resolver:_NonceResolver):
+        return (self.normport1.dot(resolver) +
                 (" -> " if self.directed else " -- ") +
-                str(self.normport2))
+                self.normport2.dot(resolver))
 
     #
     # Used in exception messages.
@@ -354,7 +415,7 @@ class _Edge:
     def name(self):
         s = str(self)
         if self.normdisc is not None:
-            s += " / " + str(self.normdisc)
+            s += " / " + _id_debug(self.normdisc)
         return s
 
 #
@@ -370,9 +431,9 @@ class _Mien:
     d_nodea    : _Attrs
     d_edgea    : _Attrs
     grapha     : _Attrs
-    graphroles : dict[str,_Attrs]
-    noderoles  : dict[str,_Attrs]
-    edgeroles  : dict[str,_Attrs]
+    graphroles : _Roles
+    noderoles  : _Roles
+    edgeroles  : _Roles
 
     def __init__(self, dot:Dot):
 
@@ -417,6 +478,84 @@ class _Mien:
         self.edgeroles  = edgeroles
 
 
+#
+# Return a list of all _NormIDs values in a Dot object and its _Mien, including
+# None.  (Including None simplifies the collection code, and they're filtered
+# out for free when used.)
+#
+
+def _collect_ids(dot:Dot, mien:_Mien) -> list[_NormID|None]:
+
+    result:list[_NormID|None] = [ dot.graphid ]
+
+    result.extend(mien.d_grapha.values())
+    result.extend(mien.d_nodea.values())
+    result.extend(mien.d_edgea.values())
+    result.extend(mien.grapha.values())
+    for attrs in mien.graphroles.values(): result.extend(attrs.values())
+    for attrs in mien.noderoles.values(): result.extend(attrs.values())
+    for attrs in mien.edgeroles.values(): result.extend(attrs.values())
+
+    for node, attrs in dot.nodemap.items():
+        result.append(node)
+        result.extend(attrs.values())
+
+    for edge in dot.edgemap.values():
+        result.append(edge.normport1.node)
+        result.append(edge.normport1.name)
+        result.append(edge.normport2.node)
+        result.append(edge.normport2.name)
+        result.extend(edge.attrs.values())
+
+    def add_block(block:Block):
+        result.append(block.graphid)
+        result.extend(block.d_grapha.values())
+        result.extend(block.d_nodea.values())
+        result.extend(block.d_edgea.values())
+        result.extend(block.grapha.values())
+        for subgraph in block.subgraphs:
+            add_block(subgraph)
+
+    for subgraph in dot.subgraphs:
+        add_block(subgraph)
+
+    return result
+
+
+class _NonceResolver:
+    __slots__ = "avoid", "nonce_id", "prefix_seqno"
+
+    avoid        : set[str]
+    nonce_id     : dict[Nonce,str]
+    prefix_seqno : dict[str,int]
+
+    def __init__(self, dot:Dot, mien:_Mien):
+        self.avoid = { normid for normid in _collect_ids(dot,mien)
+                       if isinstance(normid,str) }
+        self.nonce_id     = dict()
+        self.prefix_seqno = dict()
+
+    def resolve(self, normid:_NormID) -> str:
+
+        if isinstance(normid, str):
+            return normid
+
+        if (resolved := self.nonce_id.get(normid)) is not None:
+            return resolved
+
+        prefix = normid.prefix
+        seqno = self.prefix_seqno.get(prefix, 0)
+        while True:
+            seqno += 1
+            candidate = _normalize(f"{prefix}_{seqno}", "Generated ID")
+            assert isinstance(candidate, str)
+            if candidate not in self.avoid:
+                self.avoid.add(candidate)
+                self.nonce_id[normid] = candidate
+                self.prefix_seqno[prefix] = seqno
+                return candidate
+
+
 class Block:
     """
     A scope for graph and default attribute assignments and a container for
@@ -443,8 +582,8 @@ class Block:
         raise RuntimeError(
             "Block objects cannot be created directly")
 
-    def _block_init(self, graphid:str|None, dot:Dot,
-                      parent:Block|None) -> None:
+    def _block_init(self, graphid:_NormID|None, dot:Dot,
+                    parent:Block|None) -> None:
         self.graphid = graphid
         self.d_grapha:_Attrs = dict()
         self.d_nodea:_Attrs = dict()
@@ -590,14 +729,14 @@ class Block:
                     "Discriminant must be None for non-multigraphs")
             normdisc = _normalize(discriminant,"Edge discriminant")
         elif dot.multigraph:
-            normdisc = _Nonce()
+            normdisc = Nonce("__D")
         else:
             normdisc = None
 
         node1 = normport1.node
         node2 = normport2.node
 
-        if dot.directed or node1 <= node2:
+        if dot.directed or _id_key(node1) <= _id_key(node2):
             key = (node1,node2,normdisc)
         else:
             key = (node2,node1,normdisc)
@@ -880,19 +1019,22 @@ class Block:
         """
         return self._dot
 
-    def _statements(self, lines:list[str], indent:int, mien:_Mien) -> None:
+    def _statements(self, lines:list[str], indent:int, mien:_Mien,
+                    resolver:_NonceResolver) -> None:
         """
         Append the block's statements to lines, indented as specified.
         """
-        prefix = "    " * indent
-        base = len(lines)
+        prefix     = "    " * indent
+        base       = len(lines)
         blanklines = 0
+        resolve    = resolver.resolve
 
         def statement(s:str, attrs:_Attrs|None):
             s = prefix + s
             if attrs:
                 pieces = []
                 for key, value in attrs.items():
+                    value = resolve(value)
                     if key in _TEXT_ATTRS:
                         value = _prefer_quoted(value)
                     pieces.append(f"{key}={value}")
@@ -924,38 +1066,40 @@ class Block:
         edgeroles  = mien.edgeroles
         nodemap    = self._dot.nodemap
         graphid    = self.graphid
-        grapha     = _resolve_role(mien.grapha if type(self) is Dot
-                                   else self.grapha, graphroles,
-                                   "graph",graphid)
+        grapha     = _integrate_role(mien.grapha if type(self) is Dot
+                                     else self.grapha, graphroles,
+                                     "graph",graphid)
 
         blankline()
         for key, value in grapha.items():
             if key != "label":
+                value = resolve(value)
                 if key in _TEXT_ATTRS:
                     value = _prefer_quoted(value)
                 statement(f"{key}={value}",None)
 
         blankline()
         for nodekey in self.nodes:
-            attrs = _resolve_role(nodemap[nodekey],noderoles,"node", nodekey)
-            statement(nodekey,attrs)
+            attrs = _integrate_role(nodemap[nodekey],noderoles,"node",nodekey)
+            statement(resolve(nodekey),attrs)
 
         blankline()
         for edge in self.edges:
-            attrs = _resolve_role(edge.attrs,edgeroles,"edge", edge)
-            statement(str(edge),attrs)
+            attrs = _integrate_role(edge.attrs,edgeroles,"edge", edge)
+            statement(edge.dot(resolver),attrs)
 
         for subgraph in self.subgraphs:
             blankline()
             lines.append(prefix + "subgraph " +
                          ("" if subgraph.graphid is None
-                          else subgraph.graphid + " ") + "{") #type:ignore
-            subgraph._statements(lines,indent+1,mien)
+                          else resolve(subgraph.graphid) + " ") + "{")
+            subgraph._statements(lines,indent+1,mien,resolver)
             lines.append(prefix + "}")
 
         if "label" in grapha:
             blankline()
-            statement(f"label={_prefer_quoted(grapha['label'])}",None)
+            label = resolve(grapha['label'])
+            statement(f"label={_prefer_quoted(label)}",None)
 
         if not lines[-1]:
             lines.pop()
@@ -1005,9 +1149,9 @@ class Dot(Block):
         self.multigraph = multigraph
         self.comment    = comment
 
-        self.graphroles:dict[str,_Attrs] = defaultdict(dict)
-        self.noderoles:dict[str,_Attrs]  = defaultdict(dict)
-        self.edgeroles:dict[str,_Attrs]  = defaultdict(dict)
+        self.graphroles:_Roles = defaultdict(dict)
+        self.noderoles:_Roles  = defaultdict(dict)
+        self.edgeroles:_Roles  = defaultdict(dict)
 
         self.nodemap:dict[_NodeKey,_Attrs] = defaultdict(dict)
         self.edgemap:dict[_EdgeKey,_Edge]  = dict()
@@ -1074,6 +1218,10 @@ class Dot(Block):
         :param role: The graph role to define or amend.
         :param attrs: New or amending attribute value assignments.
         """
+        #
+        # NOTE: Even though role names are limited to str, we normalize them
+        # because they are normalized when assigned as attribute values.
+        #
         _set_attrs(self.graphroles[_normalize(role,"Role name")],attrs)
         return self
 
@@ -1181,15 +1329,15 @@ class Dot(Block):
                 lines.append("// " + commentline)
             lines.append("")
 
+        mien = _Mien(self)
+        resolver = _NonceResolver(self, mien)
         lines.append(("strict " if self.strict else "") +
                      ("digraph " if self.directed else "graph ") +
                      ("" if self.graphid is None else
-                      self.graphid + " ") + #type:ignore
+                      resolver.resolve(self.graphid) + " ") +
                      "{")
 
-        mien = _Mien(self)
-
-        self._statements(lines,1,mien)
+        self._statements(lines,1,mien,resolver)
 
         lines.append("}\n")
 
@@ -1200,7 +1348,8 @@ class Dot(Block):
                     ratio:float|str|None=None, timeout:float|None=None,
                     directory:str|PathLike|None=None) -> bytes:
         """
-        Render the Dot object by invoking a Graphviz program.
+        Render the Dot object by invoking a Graphviz program.  The input to the
+        program is the object's DOT language representation.
 
         :param program: Which Graphviz program to use (dot by default).
             ``program`` should either be the name of the program or a path to

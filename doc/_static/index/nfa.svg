@@ -9,9 +9,9 @@
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 223)">
 <polygon fill="white" stroke="none" points="-4,4 -4,-223 498.97,-223 498.97,4 -4,4"/>
 <text xml:space="preserve" text-anchor="start" x="199.49" y="-200.8" font-family="Times,serif" font-weight="bold" font-size="16.00">Example NFA</text>
-<!-- _init_ -->
+<!-- _nonce_1 -->
 <g id="node1" class="node">
-<title>_init_</title>
+<title>_nonce_1</title>
 <polygon fill="khaki" stroke="none" points="0.72,-92.72 0,-92.72 0,-91.28 0.72,-91.28 0.72,-92.72"/>
 </g>
 <!-- s0 -->
@@ -20,9 +20,9 @@
 <ellipse fill="khaki" stroke="black" cx="55.72" cy="-92" rx="18" ry="18"/>
 <text xml:space="preserve" text-anchor="middle" x="55.72" y="-87.72" font-family="Times,serif" font-size="12.00">s0</text>
 </g>
-<!-- _init_&#45;&gt;s0 -->
+<!-- _nonce_1&#45;&gt;s0 -->
 <g id="edge1" class="edge">
-<title>_init_&#45;&gt;s0</title>
+<title>_nonce_1&#45;&gt;s0</title>
 <path fill="none" stroke="black" d="M0.87,-92C2.34,-92 13.93,-92 25.99,-92"/>
 <polygon fill="black" stroke="black" points="25.86,-95.5 35.86,-92 25.86,-88.5 25.86,-95.5"/>
 </g>

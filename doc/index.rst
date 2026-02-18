@@ -11,6 +11,8 @@ create diagrams using :class:`Dot` methods, then either convert the instance to
 DOT language text or render it as SVG or an image.  Users can also
 interactively display Dot objects in notebooks.
 
+.. _landing-page-example:
+
 Example
 ~~~~~~~
 

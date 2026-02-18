@@ -105,6 +105,28 @@ def test_roles_limited():
     expect_ex(ValueError, lambda: dot.edge_role("recurse",role="test"))
 
 
+def test_unusual_role_names():
+    """
+    Role names are strings, but they are not limited to being identifier-like.
+    They can contain spaces, double-quotes, and anything else and ID str can
+    contain.
+    """
+    dot = Dot()
+    dot.node_role("the node", color="blue")
+    dot.edge_role('the "edge"', style="dashed")
+    dot.graph_role(" <the graph> ", rankdir="LR")
+    dot.node("a", role="the node")
+    dot.edge("a", "b", role='the "edge"')
+    dot.graph(role=" <the graph> ")
+
+    expect_str(dot,"""
+    graph {
+        rankdir=LR
+        a [color=blue]
+        a -- b [style=dashed]
+    }
+    """)
+
 def test_roles_must_be_defined():
     """
     Assigned roles must eventually be defined, but not need to be defined

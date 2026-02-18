@@ -15,26 +15,26 @@
 <polygon fill="#bcee68" stroke="black" points="295.93,-164.8 239.43,-164.8 239.43,-128.8 295.93,-128.8 295.93,-164.8"/>
 <text xml:space="preserve" text-anchor="middle" x="267.68" y="-141" font-family="Helvetica,Arial,sans-serif" font-size="14.00">course</text>
 </g>
-<!-- 0 -->
+<!-- attribute_1 -->
 <g id="node2" class="node">
-<title>0</title>
+<title>attribute_1</title>
 <ellipse fill="lightblue" stroke="black" cx="347.84" cy="-154.92" rx="32.82" ry="18"/>
 <text xml:space="preserve" text-anchor="middle" x="347.84" y="-149.12" font-family="Helvetica,Arial,sans-serif" font-size="14.00">name</text>
 </g>
-<!-- course&#45;&#45;0 -->
+<!-- course&#45;&#45;attribute_1 -->
 <g id="edge1" class="edge">
-<title>course&#45;&#45;0</title>
+<title>course&#45;&#45;attribute_1</title>
 <path fill="none" stroke="black" d="M296.17,-149.68C302.29,-150.3 308.8,-150.96 315.07,-151.6"/>
 </g>
-<!-- 1 -->
+<!-- attribute_2 -->
 <g id="node3" class="node">
-<title>1</title>
+<title>attribute_2</title>
 <ellipse fill="lightblue" stroke="black" cx="304.78" cy="-73.65" rx="29.41" ry="18"/>
 <text xml:space="preserve" text-anchor="middle" x="304.78" y="-67.85" font-family="Helvetica,Arial,sans-serif" font-size="14.00">code</text>
 </g>
-<!-- course&#45;&#45;1 -->
+<!-- course&#45;&#45;attribute_2 -->
 <g id="edge2" class="edge">
-<title>course&#45;&#45;1</title>
+<title>course&#45;&#45;attribute_2</title>
 <path fill="none" stroke="black" d="M277.04,-128.34C282.84,-116.91 290.23,-102.33 295.93,-91.09"/>
 </g>
 <!-- institute -->
@@ -43,15 +43,15 @@
 <polygon fill="#bcee68" stroke="black" points="224.05,-290.41 161.55,-290.41 161.55,-254.41 224.05,-254.41 224.05,-290.41"/>
 <text xml:space="preserve" text-anchor="middle" x="192.8" y="-266.61" font-family="Helvetica,Arial,sans-serif" font-size="14.00">institute</text>
 </g>
-<!-- 2 -->
+<!-- attribute_3 -->
 <g id="node5" class="node">
-<title>2</title>
+<title>attribute_3</title>
 <ellipse fill="lightblue" stroke="black" cx="194.92" cy="-351.13" rx="32.82" ry="18"/>
 <text xml:space="preserve" text-anchor="middle" x="194.92" y="-345.33" font-family="Helvetica,Arial,sans-serif" font-size="14.00">name</text>
 </g>
-<!-- institute&#45;&#45;2 -->
+<!-- institute&#45;&#45;attribute_3 -->
 <g id="edge3" class="edge">
-<title>institute&#45;&#45;2</title>
+<title>institute&#45;&#45;attribute_3</title>
 <path fill="none" stroke="black" d="M193.29,-290.66C193.63,-303.29 194.08,-320.03 194.42,-332.7"/>
 </g>
 <!-- student -->
@@ -60,37 +60,37 @@
 <polygon fill="#bcee68" stroke="black" points="136.96,-162.81 76.71,-162.81 76.71,-126.81 136.96,-126.81 136.96,-162.81"/>
 <text xml:space="preserve" text-anchor="middle" x="106.84" y="-139.01" font-family="Helvetica,Arial,sans-serif" font-size="14.00">student</text>
 </g>
-<!-- 3 -->
+<!-- attribute_4 -->
 <g id="node7" class="node">
-<title>3</title>
+<title>attribute_4</title>
 <ellipse fill="lightblue" stroke="black" cx="32.82" cy="-183.25" rx="32.82" ry="18"/>
 <text xml:space="preserve" text-anchor="middle" x="32.82" y="-177.45" font-family="Helvetica,Arial,sans-serif" font-size="14.00">name</text>
 </g>
-<!-- student&#45;&#45;3 -->
+<!-- student&#45;&#45;attribute_4 -->
 <g id="edge4" class="edge">
-<title>student&#45;&#45;3</title>
+<title>student&#45;&#45;attribute_4</title>
 <path fill="none" stroke="black" d="M76.31,-160.67C69.78,-164.06 62.97,-167.6 56.73,-170.84"/>
 </g>
-<!-- 4 -->
+<!-- attribute_5 -->
 <g id="node8" class="node">
-<title>4</title>
+<title>attribute_5</title>
 <ellipse fill="lightblue" stroke="black" cx="97.25" cy="-61.5" rx="40.62" ry="18"/>
 <text xml:space="preserve" text-anchor="middle" x="97.25" y="-55.7" font-family="Helvetica,Arial,sans-serif" font-size="14.00">number</text>
 </g>
-<!-- student&#45;&#45;4 -->
+<!-- student&#45;&#45;attribute_5 -->
 <g id="edge5" class="edge">
-<title>student&#45;&#45;4</title>
+<title>student&#45;&#45;attribute_5</title>
 <path fill="none" stroke="black" d="M104.71,-126.32C103.12,-112.52 100.96,-93.73 99.37,-79.94"/>
 </g>
-<!-- 5 -->
+<!-- attribute_6 -->
 <g id="node9" class="node">
-<title>5</title>
+<title>attribute_6</title>
 <ellipse fill="lightblue" stroke="black" cx="36.21" cy="-105.75" rx="32.82" ry="18"/>
 <text xml:space="preserve" text-anchor="middle" x="36.21" y="-99.95" font-family="Helvetica,Arial,sans-serif" font-size="14.00">grade</text>
 </g>
-<!-- student&#45;&#45;5 -->
+<!-- student&#45;&#45;attribute_6 -->
 <g id="edge6" class="edge">
-<title>student&#45;&#45;5</title>
+<title>student&#45;&#45;attribute_6</title>
 <path fill="none" stroke="black" d="M76.48,-128.02C70.79,-124.88 64.94,-121.64 59.51,-118.64"/>
 </g>
 <!-- C&#45;I -->

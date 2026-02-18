@@ -14,21 +14,21 @@
 <ellipse fill="#001122" stroke="black" stroke-width="1.5" cx="55.6" cy="-73.8" rx="12.6" ry="12.6"/>
 <text xml:space="preserve" text-anchor="middle" x="55.6" y="-68" font-family="Helvetica,sans-Serif" font-size="14.00" fill="#eeeeee">71</text>
 </g>
-<!-- _phantom_1 -->
+<!-- phantom_1 -->
 <g id="node2" class="node">
-<title>_phantom_1</title>
+<title>phantom_1</title>
 </g>
-<!-- 71&#45;&gt;_phantom_1 -->
+<!-- 71&#45;&gt;phantom_1 -->
 <g id="edge2" class="edge">
-<title>71&#45;&gt;_phantom_1</title>
+<title>71&#45;&gt;phantom_1</title>
 </g>
-<!-- _phantom_2 -->
+<!-- phantom_2 -->
 <g id="node3" class="node">
-<title>_phantom_2</title>
+<title>phantom_2</title>
 </g>
-<!-- 71&#45;&gt;_phantom_2 -->
+<!-- 71&#45;&gt;phantom_2 -->
 <g id="edge3" class="edge">
-<title>71&#45;&gt;_phantom_2</title>
+<title>71&#45;&gt;phantom_2</title>
 </g>
 <!-- 59 -->
 <g id="node4" class="node">
@@ -41,13 +41,13 @@
 <title>71&#45;&gt;59</title>
 <path fill="none" stroke="black" stroke-width="1.5" d="M48.31,-62.76C40.35,-51.81 27.7,-34.39 19.79,-23.49"/>
 </g>
-<!-- _phantom_1&#45;&gt;_phantom_2 -->
+<!-- phantom_1&#45;&gt;phantom_2 -->
 <g id="edge5" class="edge">
-<title>_phantom_1&#45;&gt;_phantom_2</title>
+<title>phantom_1&#45;&gt;phantom_2</title>
 </g>
-<!-- 59&#45;&gt;_phantom_1 -->
+<!-- 59&#45;&gt;phantom_1 -->
 <g id="edge4" class="edge">
-<title>59&#45;&gt;_phantom_1</title>
+<title>59&#45;&gt;phantom_1</title>
 </g>
 </g>
 </svg>

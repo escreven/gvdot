@@ -8,7 +8,7 @@ import re
 import sys
 import textwrap
 from types import FunctionType
-from gvdot import Dot, Markup, Port
+from gvdot import Dot, Markup, Port, Nonce
 
 #
 # pyright: reportInvalidTypeForm=false
@@ -155,10 +155,11 @@ def nfa_example() -> list[_Artifact]:
         def nfa_diagram(nfa:NFA, title:str):
 
             dot = Dot(directed=True).use_theme(nfa_theme)
-            dot.graph(label=Markup(f"<b>{title}<br/></b>"))
+            dot.graph(label=Markup(f"<b>{title}</b>"))
 
-            dot.node("_init_", role="init")
-            dot.edge("_init_", nfa.start)
+            init_id = Nonce()
+            dot.node(init_id, role="init")
+            dot.edge(init_id, nfa.start)
 
             for state in nfa.final:
                 dot.node(state, role="final")
@@ -199,13 +200,35 @@ def nfa_example() -> list[_Artifact]:
 
     dot = nfa_diagram(example,"Example NFA")
 
-    return [
+    result = [
         _Image("index/nfa", dot),
         _PythonCode("index/nfa-model", model),
         _PythonCode("index/nfa-theme", theme),
         _PythonCode("index/nfa-diagram", diagram),
         _PythonCode("index/nfa-generate", generate),
     ]
+
+    #
+    # What follows is init -> start fragment that appears in the overview.
+    #
+
+    fragment_theme = (Dot().use_theme(nfa_theme)
+    .node_role("...", label="...", style="", shape="plaintext",
+               margin=0.03, width=0))
+
+    nonce = Nonce()
+    dot = Dot(directed=True).use_theme(fragment_theme)
+    dot.node(nonce,role="init")
+    dot.node("s0")
+    dot.node("r0",role="...")
+    dot.node("q0",role="...")
+    dot.edge(nonce,"s0")
+    dot.edge("s0","r0")
+    dot.edge("s0","q0")
+
+    result.append(_Image("overview/nfa-init",dot))
+
+    return result
 
 
 # ============================================================================

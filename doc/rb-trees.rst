@@ -119,7 +119,7 @@ We create a simple red-black tree implementation based on Sedgewick's paper.
 
 (We have only shown what is necessary for the discussion below.  The full
 implementation `is available on GitHub
-<https://github.com/escreven/gvdot-work/blob/work/examples/red-black-tree.ipynb>`_.)
+<https://github.com/escreven/gvdot/blob/main/examples/red-black-tree.ipynb>`_.)
 
 Now we write the generation code.
 
@@ -137,15 +137,12 @@ Now we write the generation code.
         #
         # Add a child of node to the diagram, a phantom if child is None.
         #
-        phantom_index = 1
-        def link(node:RBNode, child:RBNode|None) -> int|str:
+        def link(node:RBNode, child:RBNode|None) -> ID:
             if child is not None:
                 dot.edge(node.key, child.key)
                 return child.key
             else:
-                nonlocal phantom_index
-                phantom_id = "_phantom_" + str(phantom_index)
-                phantom_index += 1
+                phantom_id = Nonce("phantom")
                 dot.node(phantom_id, role="phantom")
                 dot.edge(node.key, phantom_id, role="phantom")
                 return phantom_id
@@ -235,42 +232,42 @@ The DOT language of our final tree diagram is
         edge [penwidth=1.5 arrowhead=none]
 
         59 [fillcolor="#001122"]
-        _phantom_1 [style=invisible label=""]
+        phantom_1 [style=invisible label=""]
         51 [fillcolor="#f31020"]
-        _phantom_2 [style=invisible label=""]
+        phantom_2 [style=invisible label=""]
         34 [fillcolor="#001122"]
-        _phantom_3 [style=invisible label=""]
+        phantom_3 [style=invisible label=""]
         18 [fillcolor="#f31020"]
         43 [fillcolor="#f31020"]
         58 [fillcolor="#001122"]
         71 [fillcolor="#001122"]
 
         59 -> 51
-        59 -> _phantom_1 [style=invisible]
+        59 -> phantom_1 [style=invisible]
         59 -> 71
         51 -> 34
-        51 -> _phantom_2 [style=invisible]
+        51 -> phantom_2 [style=invisible]
         51 -> 58
         34 -> 18
-        34 -> _phantom_3 [style=invisible]
+        34 -> phantom_3 [style=invisible]
         34 -> 43
 
         subgraph {
             rank=same
-            51 -> _phantom_1 [style=invisible]
-            _phantom_1 -> 71 [style=invisible]
+            51 -> phantom_1 [style=invisible]
+            phantom_1 -> 71 [style=invisible]
         }
 
         subgraph {
             rank=same
-            34 -> _phantom_2 [style=invisible]
-            _phantom_2 -> 58 [style=invisible]
+            34 -> phantom_2 [style=invisible]
+            phantom_2 -> 58 [style=invisible]
         }
 
         subgraph {
             rank=same
-            18 -> _phantom_3 [style=invisible]
-            _phantom_3 -> 43 [style=invisible]
+            18 -> phantom_3 [style=invisible]
+            phantom_3 -> 43 [style=invisible]
         }
     }
 
@@ -291,3 +288,8 @@ displays
     :alt: Red-black tree diagram with phantoms visible
 
 |br|
+
+
+This example is available as a `notebook on GitHub
+<https://github.com/escreven/gvdot/blob/main/examples/red-black-tree.ipynb>`_
+.
