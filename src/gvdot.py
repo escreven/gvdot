@@ -13,7 +13,7 @@ from subprocess import CalledProcessError, TimeoutExpired
 from typing import Any, Hashable, Self
 import re
 
-__version__ = "1.2.0dev1"
+__version__ = "1.2.0"
 
 __all__ = (
     "Markup", "Nonce", "Port", "Dot", "InvocationException",
@@ -77,8 +77,9 @@ class Nonce(Hashable):
 
 
     Applications use Nonce objects to create identifiers that do not conflict
-    with each other or with IDs derived from input values.  For example, an
-    application might complete an illustration of a linked list with
+    with each other or with identifiers derived from input values.  For
+    example, an application might complete an illustration of a linked list
+    with
 
     .. code-block:: python
 
