@@ -383,22 +383,28 @@ def test_edge_identity():
     dot.edge("a","b",a2=2)
     dot.edge("a","b","x",a3=3)
     dot.edge("a","b","y",a4=4)
-    dot.edge("a","b","x",a5=5)
-    dot.edge("a","b","y",a6=6)
+    dot.edge("c","d","x",a5=5)
+    dot.edge("a","b","x",a6=6)
+    dot.edge("a","b","y",a7=7)
     assert not dot.edge_is_defined("a","b")
     assert not dot.edge_is_defined("b","a")
+    assert not dot.edge_is_defined("c","d")
+    assert not dot.edge_is_defined("d","c")
     assert dot.edge_is_defined("a","b","x")
     assert dot.edge_is_defined("a","b","y")
     assert dot.edge_is_defined("b","a","x")
     assert dot.edge_is_defined("b","a","y")
+    assert dot.edge_is_defined("c","d","x")
+    assert dot.edge_is_defined("d","c","x")
     assert not dot.edge_is_defined("a","b","z")
     expect_str(dot,
     """
     graph {
         a -- b [a1=1]
         a -- b [a2=2]
-        a -- b [a3=3 a5=5]
-        a -- b [a4=4 a6=6]
+        a -- b [a3=3 a6=6]
+        a -- b [a4=4 a7=7]
+        c -- d [a5=5]
     }
     """)
     dot = Dot(directed=True, multigraph=True)
@@ -582,3 +588,47 @@ def test_no_block_create():
     The class Block cannot be instantiated directly.
     """
     expect_ex(RuntimeError, lambda: Block())
+
+
+def test_readability():
+    """
+    DOT output should have reasonable indentation and blank lines between
+    sections of blocks there have more than a few statements.
+    blank lines for non-trivial graphs.
+    """
+    #
+    # This test is fragile.  Many changes to the output format that still
+    # preserve readability can cause it to fail.  Nonetheless, it serves as
+    # guard against accidental changes.
+    #
+    dot = Dot(id="Root")
+    dot.graph_default(dpi=72)
+    dot.node_default(shape="box")
+    dot.edge_default(color="blue")
+    dot.graph(rankdir="LR", label="Title")
+    dot.node("a")
+    dot.node("b")
+    dot.edge("a", "b")
+    dot.subgraph("Sub").node("x")
+
+    assert str(dot) == (
+        "graph Root {\n"
+        "\n"
+        "    graph [dpi=72]\n"
+        "    node [shape=box]\n"
+        "    edge [color=blue]\n"
+        "\n"
+        "    rankdir=LR\n"
+        "\n"
+        "    a\n"
+        "    b\n"
+        "\n"
+        "    a -- b\n"
+        "\n"
+        "    subgraph Sub {\n"
+        "        x\n"
+        "    }\n"
+        "\n"
+        "    label=\"Title\"\n"
+        "}\n"
+    )
