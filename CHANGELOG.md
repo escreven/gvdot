@@ -1,5 +1,17 @@
 ## Unreleased
 
+## [1.2.0] - 2026-02-17
+
+#### Added
+- Added class `Nonce`.  Nonces are placeholders that class `Dot` resolves to
+  unique DOT language IDs when generating DOT language representations.
+  Applications can use Nonces to create identifiers that do not conflict with
+  each other or with identifiers derived from input values.
+
+#### Changed
+- Type union `ID` now includes `Nonce`.
+- Examples updated to use `Nonce`.
+
 ## [1.1.0] - 2026-02-13
 
 #### Added
