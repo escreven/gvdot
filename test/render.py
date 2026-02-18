@@ -29,6 +29,7 @@ def test_to_rendered():
 
     ex = expect_ex(InvocationException, lambda: dot.to_rendered("doesnotexist"))
     assert "doesnotexist" in str(ex)
+    assert ex.program == "doesnotexist"
 
     path = shutil.which('dot')
 
@@ -41,15 +42,20 @@ def test_to_rendered():
     assert image_format(data) == 'PNG'
 
     ex = expect_ex(TimeoutException,lambda: dot.to_rendered(
-        directory=tmpdir(), program=dotsleep(), timeout=0.001))
+        directory=tmpdir(), program=dotsleep(), timeout=0.01))
 
     assert "timed out" in str(ex)
+    assert ex.program.endswith(dotsleep())
+    assert ex.timeout == 0.01
+    assert type(ex.stderr) is str
 
     ex = expect_ex(ProcessException,lambda: dot.to_rendered(
         directory=tmpdir(), program=doterror()))
 
     assert "exited with status" in str(ex)
+    assert ex.program.endswith(doterror())
     assert ex.status == 1 and "ErrorText" in ex.stderr
+    assert type(ex.stderr) is str
 
     #
     # The rendered output should be smaller if we use a coarse resolution.
@@ -92,6 +98,17 @@ def test_to_rendered():
     assert "-Gsize=1,1" in data
 
 
+def test_to_rendered_downcase():
+    """
+    to_rendered() should downcase the format before forming the -T argument.
+    """
+    dot = Dot().edge("a", "b")
+    text = dot.to_rendered(
+        format="PnG", directory=tmpdir(), program=dotecho()).decode()
+    assert "-Tpng" in text
+    assert "-TPnG" not in text
+
+
 def test_to_svg():
     """
     Method to_svg() should invoke the specified graphviz program to render the
@@ -123,6 +140,7 @@ def test_to_svg():
 
     ex = expect_ex(InvocationException, lambda: dot.to_svg("doesnotexist"))
     assert "doesnotexist" in str(ex)
+    assert ex.program == "doesnotexist"
 
     path = shutil.which('dot')
 
@@ -134,13 +152,19 @@ def test_to_svg():
     svg = dot.to_svg(program="dot",directory=pathdir)
     assert likely_full_svg(svg)
 
-    expect_ex(TimeoutException,lambda: dot.to_svg(
+    ex = expect_ex(TimeoutException,lambda: dot.to_svg(
         directory=tmpdir(), program=dotsleep(), timeout=0.01))
+
+    assert ex.program.endswith(dotsleep())
+    assert ex.timeout == 0.01
+    assert type(ex.stderr) is str
 
     ex = expect_ex(ProcessException,lambda: dot.to_svg(
         directory=tmpdir(), program=doterror()))
 
+    assert ex.program.endswith(doterror())
     assert ex.status == 1 and "ErrorText" in ex.stderr
+    assert type(ex.stderr) is str
 
     # Returned string is the echoed command line
     svg = dot.to_svg(
@@ -189,6 +213,7 @@ def test_save():
     ex = expect_ex(InvocationException, lambda:
                    dot.save(test_png,"doesnotexist"))
     assert "doesnotexist" in str(ex)
+    assert ex.program == "doesnotexist"
 
     path = shutil.which('dot')
 
@@ -200,13 +225,19 @@ def test_save():
     dot.save(test_png, program="dot", directory=pathdir)
     assert image_file_format(test_png) == 'PNG'
 
-    expect_ex(TimeoutException,lambda: dot.save(test_png,
+    ex = expect_ex(TimeoutException,lambda: dot.save(test_png,
         directory=tmpdir(), program=dotsleep(), timeout=0.01))
+
+    assert ex.program.endswith(dotsleep())
+    assert ex.timeout == 0.01
+    assert type(ex.stderr) is str
 
     ex = expect_ex(ProcessException,lambda: dot.save(test_png,
         directory=tmpdir(), program=doterror()))
 
+    assert ex.program.endswith(doterror())
     assert ex.status == 1 and "ErrorText" in ex.stderr
+    assert type(ex.stderr) is str
 
     # Written data is the echoed command line
     dot.save(test_png,
@@ -228,3 +259,24 @@ def test_inferred_formats():
     dir = tmpdir()
     for extension in ('svg','png','jpg','jpeg','gif','pdf'):
         dot.save(f"{dir}/supported.{extension}")
+
+
+def test_inferred_case_insensitive():
+    """
+    save() should infer format from file extension by case-insensitive
+    comparison.
+    """
+    dot = Dot().edge("a", "b")
+    svg_file = f"{tmpdir()}/casecheck.SvG"
+    jpg_file = f"{tmpdir()}/casecheck.JPeG"
+
+    dot.save(svg_file, directory=tmpdir(), program=dotecho())
+    dot.save(jpg_file, directory=tmpdir(), program=dotecho())
+
+    with open(svg_file, "rb") as f:
+        text = f.read().decode()
+        assert "-Tsvg" in text
+
+    with open(jpg_file, "rb") as f:
+        text = f.read().decode()
+        assert "-Tjpeg" in text
