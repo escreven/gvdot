@@ -3,10 +3,11 @@
     def nfa_diagram(nfa:NFA, title:str):
     
         dot = Dot(directed=True).use_theme(nfa_theme)
-        dot.graph(label=Markup(f"<b>{title}<br/></b>"))
+        dot.graph(label=Markup(f"<b>{title}</b>"))
     
-        dot.node("_init_", role="init")
-        dot.edge("_init_", nfa.start)
+        init_id = Nonce()
+        dot.node(init_id, role="init")
+        dot.edge(init_id, nfa.start)
     
         for state in nfa.final:
             dot.node(state, role="final")

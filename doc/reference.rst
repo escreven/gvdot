@@ -86,6 +86,7 @@ Supporting Types
 
 .. autotype:: ID
 .. autoclass:: Markup
+.. autoclass:: Nonce
 .. autoclass:: Port
 
 

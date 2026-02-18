@@ -1,6 +1,6 @@
 .. currentmodule:: gvdot
 
-Entity-Relationship Diagram
+Entity Relationship Diagram
 ===========================
 
 The Graphviz gallery includes `a Chen-style entity relationship diagram
@@ -151,13 +151,12 @@ and maintain.
 
     def er_diagram(model:Model, title:str, theme:Dot) -> Dot:
         dot = Dot().use_theme(theme)
-        attribute_id = 0
         for entity in model.entities:
             dot.node(entity.name, role="entity")
             for attribute in entity.attributes:
+                attribute_id = Nonce("attribute")
                 dot.node(attribute_id, role="attribute", label=attribute)
                 dot.edge(entity.name, attribute_id, role="a-to-e")
-                attribute_id += 1
         for relationship in model.relationships:
             dot.node(relationship.name, role="relationship")
             for participant in relationship.participants:
@@ -169,10 +168,8 @@ and maintain.
     diagram = er_diagram(example_model, "Generated Using gvdot", er_gallery_theme)
     diagram.show(size="5,5")
 
-Notice the code assigns role ``a-to-e`` to attribute-entity edges, even though
-that role has no attributes specified as part of the theme.  That practice
-means we can later style attribute-entity edges without having to modify the
-generating code.
+Notice we use :class:`Nonce` objects to identify attribute nodes.  We can't use
+attribute names because attribute names are not unique within a model.
 
 .. figure:: _static/examples/er-generated-bw.svg
     :align: center
@@ -209,24 +206,24 @@ which displays
         fontsize=16
 
         course [shape=box]
-        0 [label="name" shape=ellipse]
-        1 [label="code" shape=ellipse]
+        attribute_1 [label="name" shape=ellipse]
+        attribute_2 [label="code" shape=ellipse]
         institute [shape=box]
-        2 [label="name" shape=ellipse]
+        attribute_3 [label="name" shape=ellipse]
         student [shape=box]
-        3 [label="name" shape=ellipse]
-        4 [label="number" shape=ellipse]
-        5 [label="grade" shape=ellipse]
+        attribute_4 [label="name" shape=ellipse]
+        attribute_5 [label="number" shape=ellipse]
+        attribute_6 [label="grade" shape=ellipse]
         "C-I" [shape=diamond style=filled color=lightgrey]
         "S-I" [shape=diamond style=filled color=lightgrey]
         "S-C" [shape=diamond style=filled color=lightgrey]
 
-        course -- 0
-        course -- 1
-        institute -- 2
-        student -- 3
-        student -- 4
-        student -- 5
+        course -- attribute_1
+        course -- attribute_2
+        institute -- attribute_3
+        student -- attribute_4
+        student -- attribute_5
+        student -- attribute_6
         "C-I" -- course [label="n" len=1.0]
         "C-I" -- institute [label="1" len=1.0]
         "S-I" -- institute [label="1" len=1.0]
@@ -235,6 +232,7 @@ which displays
         "S-C" -- student [label="m" len=1.0]
 
         label="\nGenerated Using gvdot"
+    }
 
 The gallery theme is quite plain looking.  Let's render something with color.
 All we need to do is change the theme – we don't even need to rebuild the
@@ -265,5 +263,5 @@ Let's save this one.
     diagram.save("er-diagram.svg")
 
 You can run this example yourself by downloading the `notebook
-<https://github.com/escreven/gvdot-work/blob/work/examples/er-diagram.ipynb>`_
+<https://github.com/escreven/gvdot/blob/main/examples/er-diagram.ipynb>`_
 from GitHub.
