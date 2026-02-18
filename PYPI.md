@@ -1,4 +1,3 @@
-[![PyPI Version](https://img.shields.io/pypi/v/gvdot.svg)](https://pypi.org/project/gvdot/)
 [![Test Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/escreven/gvdot/blob/main/.github/workflows/test.yml)
 [![Read the Docs Status](https://readthedocs.org/projects/gvdot/badge/?version=latest)](https://gvdot.readthedocs.io)
 [![View on GitHub](https://img.shields.io/badge/Source-GitHub-blue?logo=github)](https://github.com/escreven/gvdot)
@@ -32,8 +31,8 @@ class NFA:
     start    : str
 ```
 
-where `delta["q"][0]` is the list of states reached from state $q$ by epsilon
-transitions, and `delta["q"][i]` is the list of states reached from $q$ by
+where `delta["q"][0]` is the list of states reached from state *q* by epsilon
+transitions, and `delta["q"][i]` is the list of states reached from *q* by
 symbol `alphabet[i-1]`.
 
 We start by defining a theme, a normal `Dot` object from which other dot
@@ -109,14 +108,9 @@ example](https://github.com/escreven/gvdot/blob/main/examples/nfa.ipynb) and
 others in the [examples](https://github.com/escreven/gvdot/tree/main/examples)
 directory.
 
-## Documentation
-
-See [gvdot.readthedocs.io](https://gvdot.readthedocs.io) for an overview and
-reference.
-
 ## Installation
 
-You can install gvdot from PyPI with
+Using Python 3.12 or greater, you can install gvdot with
 
 ```bash
 $ pip install gvdot
@@ -127,16 +121,6 @@ To ensure the optional notebook support is enabled, use
 ```bash
 $ pip install gvdot[ipython]
 ```
-
-You can also clone the repository and install it directly.
-
-```bash
-$ git clone https://github.com/escreven/gvdot.git
-$ cd gvdot
-$ pip install .
-```
-
-Package gvdot requires Python 3.12 or greater.
 
 [Rendering](https://gvdot.readthedocs.io/en/latest/overview.html#rendering)
  requires a Graphviz installation.  You can determine if one is in your `PATH`
@@ -156,8 +140,3 @@ MacOS, Linux, and Windows with Python 3.12, 3.13, and 3.14.  See [the GitHub
 workflow](https://github.com/escreven/gvdot/blob/main/.github/workflows/test.yml)
 for details.
 
-If you have the source, you can run the tests yourself with
-
-```bash
-$ python test/main.py
-```
