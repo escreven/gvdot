@@ -225,10 +225,10 @@ representation of that object.  Method call order is for the most part
 irrelevant, and amendments to already defined elements do not create additional
 DOT language statements; they change the one statement ultimately emitted.
 
-Similarly, :class:`Role`, :class:`Theme`, and :class:`Nonce` objects are not
-resolved until a DOT language representation is required, and those resolutions
-are ephemeral --- further changes to the Dot object, roles, or themes can lead
-to different resolutions if a DOT language representation is required again.
+Similarly, roles, themes, and nonces are not resolved until a DOT language
+representation is required, and those resolutions are ephemeral --- further
+changes to the Dot object, roles, or themes can lead to different resolutions
+if a DOT language representation is required again.
 
 ------
 
