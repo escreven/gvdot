@@ -213,6 +213,7 @@ between endpoints.  Discriminants allow those edges to be amended.
         :align: center
 
 
+.. rubric:: Keep in Mind
 
 While several :class:`Dot` methods correspond to DOT language statements, gvdot
 is not a DOT language format printer, streaming out DOT language statements
