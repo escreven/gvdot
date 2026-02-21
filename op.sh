@@ -203,7 +203,7 @@ function require_git_clean {
 #
 
 function require_deployable_README {
-    $PYTHON README-check.py || fail "README.md is not deployable"
+    $PYTHON PYPI-check.py || fail "PYPI.md is not deployable"
 }
 
 #
