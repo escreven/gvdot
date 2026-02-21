@@ -106,7 +106,8 @@ nfa_diagram(example,"Example NFA").show()
 You can find this [NFA
 example](https://github.com/escreven/gvdot/blob/main/examples/nfa.ipynb) and
 others in the [examples](https://github.com/escreven/gvdot/tree/main/examples)
-directory.
+directory.  The documentation includes a [Quick
+Tour](https://gvdot.readthedocs.io/en/latest/quicktour.html)
 
 ## Installation
 
@@ -122,7 +123,7 @@ To ensure the optional notebook support is enabled, use
 $ pip install gvdot[ipython]
 ```
 
-[Rendering](https://gvdot.readthedocs.io/en/latest/overview.html#rendering)
+[Rendering](https://gvdot.readthedocs.io/en/latest/discussion.html#rendering)
  requires a Graphviz installation.  You can determine if one is in your `PATH`
  with
 
@@ -135,8 +136,8 @@ To install Graphviz, see
 
 ## Reliability
 
-gvdot includes automated tests with 100% code coverage, which are run on
-MacOS, Linux, and Windows with Python 3.12, 3.13, and 3.14.  See [the GitHub
+gvdot includes automated tests with 100% code coverage, which are run on MacOS,
+Linux, and Windows with Python 3.12, 3.13, and 3.14.  See [the GitHub
 workflow](https://github.com/escreven/gvdot/blob/main/.github/workflows/test.yml)
 for details.
 

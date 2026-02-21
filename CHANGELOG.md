@@ -1,5 +1,8 @@
 ## Unreleased
 
+#### Changed
+- Documentation.
+
 ## [1.2.0] - 2026-02-17
 
 #### Added

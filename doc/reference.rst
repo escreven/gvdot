@@ -13,6 +13,16 @@ Dot and Block
 
 .. autoclass:: Block
 
+Several :class:`Dot` and :class:`Block` methods accept graph, node, or edge
+attribute value assignments as keyword arguments. Assigning ``None`` deletes
+the attribute if it was previously specified, and is ignored otherwise.  The
+methods strip one trailing underscore from attribute name keywords if present;
+that allows applications to assign values to the Graphviz attribute ``class``.
+
+The attribute ``role`` is reserved for assigning roles to graphs, nodes, and
+edges.  A role need not be defined before it is assigned, however it must be
+defined when :class:`Dot` generates a DOT language representation.
+
 .. container:: custom-box
 
     **NOTE**: The methods of :class:`Dot` and :class:`Block` described below

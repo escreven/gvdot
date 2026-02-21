@@ -23,5 +23,16 @@ You can also clone the repo and install it directly.
     $ cd gvdot
     $ pip install .
 
-Package gvdot requires Python 3.12 or greater and IPython 7.23.1 or greater.
+
+Package gvdot requires Python 3.12 or greater.
+
+`Rendering <https://gvdot.readthedocs.io/en/latest/discussion.html#rendering>`_
+requires a Graphviz installation.  You can determine if one is in your ``PATH``
+with
+
+.. code:: console
+
+    $ dot -V
+
+To install Graphviz, see `<https://graphviz.org/download>`_.
 

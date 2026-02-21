@@ -1,14 +1,14 @@
-from abc import abstractmethod
 from argparse import ArgumentParser
 from collections import defaultdict
 from dataclasses import dataclass
-import inspect
-from pathlib import PurePath
+import nbformat
+from pathlib import Path
 import re
-import sys
-import textwrap
 from types import FunctionType
+from typing import Any
 from gvdot import Dot, Markup, Port, Nonce
+from artifacts import Artifact, Image, PythonCode, DotCode, save_artifacts
+
 
 #
 # pyright: reportInvalidTypeForm=false
@@ -17,117 +17,11 @@ from gvdot import Dot, Markup, Port, Nonce
 # as values, then use them in example code as types.
 #
 
-#
-# Generate a rst code block string for the given text in the specified
-# language.  The input lines are dedented, and any blank lines at the beginning
-# or end are deleted.
-#
-# If language is "python", lines that look like
-#
-#   <whitespace>#+<anything>
-#
-# are included as
-#
-#   <whitespace><anything>
-#
-# and lines that end with #-<whitespace> as well as a last line like
-# <whitespace>return<anything> are excluded.
-#
-
-def _code_block(language:str, text:str):
-
-    text  = textwrap.dedent(text)
-    lines = text.splitlines()
-
-    while lines and re.fullmatch(r"\s*", lines[0]):
-        del lines[0]
-
-    while lines and re.fullmatch(r"\s*", lines[-1]):
-        del lines[-1]
-
-    if language == 'python':
-        if lines and re.fullmatch(r"\s*return.*",lines[-1]):
-            del lines[-1]
-        transformed = []
-        for line in lines:
-            if match := re.fullmatch(r"(\s*)#\+\s*(.*)", line):
-                transformed.append(match[1] + match[2])
-            elif not re.fullmatch(r".*#-\s*", line):
-                transformed.append(line)
-        lines = transformed
-
-    assert lines
-
-    return f".. code-block:: {language}\n\n" + "".join(
-        "    " + line + "\n" for line in lines)
-
-
-#
-# Examples can have images, python source code, and dot source code, all of
-# which is optional.  _save_examples() generates these artifacts and stores
-# them in doc/_static.
-#
-# NOTE: This module must be in directory util/ relative to repo root.
-#
-
-@dataclass
-class _Artifact:
-    name : str
-
-    @abstractmethod
-    def save(self, dir:PurePath):
-        ...
-
-@dataclass
-class _Image(_Artifact):
-    dot : Dot
-
-    def save(self, dir:PurePath):
-        name = self.name
-        dot = self.dot
-        dot.save(dir / f"_static/{name}.svg")
-        dot.save(dir / f"_static/{name}.png", dpi=300)
-
-@dataclass
-class _DotCode(_Artifact):
-    dot : Dot
-
-    def save(self, dir:PurePath):
-        with open(dir / f"_code/{self.name}.dot.rst", "w") as f:
-            print(_code_block("graphviz",str(self.dot)), file=f, end="")
-
-@dataclass
-class _PythonCode(_Artifact):
-    code : FunctionType
-
-    def save(self, dir:PurePath):
-
-        source = inspect.getsource(self.code)
-
-        match = re.fullmatch(r"[ \t]*def [^\n]*\):[^\n]*\n(.*)",
-                             source, re.DOTALL)
-
-        if not match:
-            print(f"Unexpected source for {self.code}")
-            sys.exit(1)
-
-        with open(dir / f"_code/{self.name}.py.rst", "w") as f:
-            print(_code_block("python",match[1]), file=f, end="")
-
-
-def _save_artifacts(artifacts:list[_Artifact]):
-
-    dir = PurePath(__file__).parent.parent.joinpath("doc")
-
-    for artifact in artifacts:
-        artifact.save(dir)
-
-
 # ============================================================================
 #                            INDEX.RST ARTIFACTS
 # ============================================================================
 
-def nfa_example() -> list[_Artifact]:
+def nfa_example() -> list[Artifact]:
 
     def model():
         @dataclass
@@ -201,11 +95,11 @@ def nfa_example() -> list[_Artifact]:
     dot = nfa_diagram(example,"Example NFA")
 
     result = [
-        _Image("index/nfa", dot),
-        _PythonCode("index/nfa-model", model),
-        _PythonCode("index/nfa-theme", theme),
-        _PythonCode("index/nfa-diagram", diagram),
-        _PythonCode("index/nfa-generate", generate),
+        Image("index/nfa", dot),
+        PythonCode("index/nfa-model", model),
+        PythonCode("index/nfa-theme", theme),
+        PythonCode("index/nfa-diagram", diagram),
+        PythonCode("index/nfa-generate", generate),
     ]
 
     #
@@ -226,17 +120,17 @@ def nfa_example() -> list[_Artifact]:
     dot.edge("s0","r0")
     dot.edge("s0","q0")
 
-    result.append(_Image("overview/nfa-init",dot))
+    result.append(Image("discussion/nfa-init",dot))
 
     return result
 
 
 # ============================================================================
-#                          OVERVIEW.RST ARTIFACTS
+#                          DISCUSSION.RST ARTIFACTS
 # ============================================================================
 
 
-def rollback_example() -> list[_Artifact]:
+def rollback_example() -> list[Artifact]:
 
     def code():
         dot = Dot(directed=True)
@@ -249,13 +143,13 @@ def rollback_example() -> list[_Artifact]:
         return dot
 
     return [
-        _PythonCode("overview/rollback", code),
-        _DotCode("overview/rollback", dot := code()),
-        _Image("overview/rollback", dot),
+        PythonCode("discussion/rollback", code),
+        DotCode("discussion/rollback", dot := code()),
+        Image("discussion/rollback", dot),
     ]
 
 
-def attrs_example() -> list[_Artifact]:
+def attrs_example() -> list[Artifact]:
 
     def code():
         dot = Dot(directed=True)
@@ -280,13 +174,13 @@ def attrs_example() -> list[_Artifact]:
         return dot
 
     return [
-        _PythonCode("overview/attrs", code),
-        _DotCode("overview/attrs", dot := code()),
-        _Image("overview/attrs", dot),
+        PythonCode("discussion/attrs", code),
+        DotCode("discussion/attrs", dot := code()),
+        Image("discussion/attrs", dot),
     ]
 
 
-def change_mind_example() -> list[_Artifact]:
+def change_mind_example() -> list[Artifact]:
 
     dot1 : Dot
 
@@ -308,9 +202,9 @@ def change_mind_example() -> list[_Artifact]:
     assert dot1  #type:ignore
 
     return [
-        _PythonCode("overview/change-mind",code),
-        _Image("overview/change-mind-1", dot1),
-        _Image("overview/change-mind-2", dot2),
+        PythonCode("discussion/change-mind",code),
+        Image("discussion/change-mind-1", dot1),
+        Image("discussion/change-mind-2", dot2),
     ]
 
 
@@ -318,7 +212,7 @@ def change_mind_example() -> list[_Artifact]:
 # Generates artifacts used in both Roles and Themes.
 #
 
-def project_example() -> list[_Artifact]:
+def project_example() -> list[Artifact]:
 
     def model():
         @dataclass
@@ -369,9 +263,9 @@ def project_example() -> list[_Artifact]:
         return task_diagram(example)
 
     artifacts = [
-        _PythonCode("overview/project-model", model),
-        _PythonCode("overview/project-roles-code", roles_code),
-        _Image(     "overview/project-roles-image", roles_code()),
+        PythonCode("discussion/project-model", model),
+        PythonCode("discussion/project-roles-code", roles_code),
+        Image(     "discussion/project-roles-image", roles_code()),
     ]
 
     #
@@ -422,18 +316,18 @@ def project_example() -> list[_Artifact]:
     dot2 = themes_code2()
 
     artifacts.extend([
-        _PythonCode("overview/project-themes-theme1", theme1),
-        _PythonCode("overview/project-themes-code1", themes_code1),
-        _Image(     "overview/project-themes-image1", dot1),
-        _PythonCode("overview/project-themes-theme2", theme2),
-        _PythonCode("overview/project-themes-code2", themes_code2),
-        _Image(     "overview/project-themes-image2", dot2),
+        PythonCode("discussion/project-themes-theme1", theme1),
+        PythonCode("discussion/project-themes-code1", themes_code1),
+        Image(     "discussion/project-themes-image1", dot1),
+        PythonCode("discussion/project-themes-theme2", theme2),
+        PythonCode("discussion/project-themes-code2", themes_code2),
+        Image(     "discussion/project-themes-image2", dot2),
     ])
 
     return artifacts
 
 
-def multigraph_example() -> list[_Artifact]:
+def multigraph_example() -> list[Artifact]:
 
     def code1():
         dot = Dot().graph(rankdir="LR")
@@ -460,16 +354,91 @@ def multigraph_example() -> list[_Artifact]:
         return dot
 
     return [
-        _PythonCode("overview/multigraph-stage1", code1),
-        _PythonCode("overview/multigraph-stage2", code2),
-        _PythonCode("overview/multigraph-stage3", code3),
-        _DotCode(   "overview/multigraph-stage1", code1()),
-        _DotCode(   "overview/multigraph-stage2", code2()),
-        _DotCode(   "overview/multigraph-stage3", code3()),
-        _Image(     "overview/multigraph-stage1", code1()),
-        _Image(     "overview/multigraph-stage2", code2()),
-        _Image(     "overview/multigraph-stage3", code3()),
+        PythonCode("discussion/multigraph-stage1", code1),
+        PythonCode("discussion/multigraph-stage2", code2),
+        PythonCode("discussion/multigraph-stage3", code3),
+        DotCode(   "discussion/multigraph-stage1", code1()),
+        DotCode(   "discussion/multigraph-stage2", code2()),
+        DotCode(   "discussion/multigraph-stage3", code3()),
+        Image(     "discussion/multigraph-stage1", code1()),
+        Image(     "discussion/multigraph-stage2", code2()),
+        Image(     "discussion/multigraph-stage3", code3()),
     ]
+
+
+# ============================================================================
+#                                QUICK TOUR
+# ============================================================================
+
+def _example_cell_code(cell:dict[str,Any]) -> str|None:
+    if not cell['cell_type'] == 'code':
+        return None
+    source:str = cell['source']
+    if "dot = Dot(" not in source:
+        return None
+    lines = source.splitlines()
+    while lines and lines[-1].strip() in (
+            "dot.show()", "dot.show_source()", ""):
+        lines.pop()
+    return "\n".join(lines)
+
+def _example_section_tag(cell:dict[str,Any]) -> str|None:
+    if not cell['cell_type'] == 'markdown':
+        return None
+    source:str = cell['source']
+    match = re.match(r"##\s+([a-zA-Z0-9 ]+)$", source, re.MULTILINE)
+    if not match:
+        return None
+    section = match[1]
+    return section.lower().replace(' ','-')
+
+def quicktour_example() -> list[Artifact]:
+
+    artifacts = []
+
+    #
+    # Read the Quick Tour notebook
+    #
+
+    path  = Path(__file__).parent.parent.joinpath("examples")
+    nb    = nbformat.read(path / "quicktour.ipynb",4)
+    cells = nb.cells
+
+    section_tag = None
+    section_use = 0
+
+    for cell in cells:
+
+        if (tag := _example_section_tag(cell)) is not None:
+            section_tag = tag
+            section_use = 0
+            continue
+
+        if not (source := _example_cell_code(cell)):
+            continue
+
+        if section_tag is None:
+            raise RuntimeError("Section tag is None")
+
+        section_use += 1
+
+        env = dict(Dot=Dot, Markup=Markup, Port=Port, Nonce=Nonce)
+        exec(source,env)
+        dot = env['dot']
+        assert isinstance(dot,Dot)
+
+        name = f"quicktour/{section_tag}"
+
+        if section_use > 1:
+            name += f"_{section_use}"
+
+        artifacts.extend([
+            PythonCode(name,source),
+            DotCode(name,dot),
+            Image(name,dot)
+        ])
+
+    return artifacts
 
 
 # ============================================================================
@@ -479,7 +448,7 @@ def multigraph_example() -> list[_Artifact]:
 def _main():
 
     parser = ArgumentParser(
-        description="Generate example code and images for documentation.")
+        description="Generate code snippets and images for documentation.")
 
     parser.add_argument("pattern", nargs="?", default=None,
         help="Only generate artifacts for examples matching this pattern")
@@ -500,7 +469,7 @@ def _main():
     if not artifacts:
         print("No examples matched pattern")
     else:
-        _save_artifacts(artifacts)
+        save_artifacts(artifacts)
 
 if __name__ == "__main__":
 

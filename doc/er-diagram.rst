@@ -262,6 +262,7 @@ Let's save this one.
 
     diagram.save("er-diagram.svg")
 
-You can run this example yourself by downloading the `notebook
-<https://github.com/escreven/gvdot/blob/main/examples/er-diagram.ipynb>`_
-from GitHub.
+
+You can run the Entity Relationship Diagram example yourself by downloading the
+`notebook from GitHub
+<https://github.com/escreven/gvdot/blob/main/examples/er-diagram.ipynb>`_.
