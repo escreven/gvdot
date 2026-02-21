@@ -493,8 +493,7 @@ statements
     _nonce_1 -> s0
 
 Suppose the NFA definition is modified so that one of the states is named
-``"_nonce_1"`` (maliciously, almost certainly).  Then those statements would
-become
+``"_nonce_1"``.  Then those statements would become
 
 .. code-block:: graphviz
 
