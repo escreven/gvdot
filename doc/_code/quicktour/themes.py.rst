@@ -5,8 +5,8 @@
     list_theme.node_default(shape="box", width=0, height=0, style="filled")
     list_theme.edge_default(arrowsize=0.75)
     list_theme.node_role("element", margin=0.05, fillcolor="khaki")
-    list_theme.node_role("nil", label="NIL", fontname="sans-serif", fontsize=8,
-                         style="filled", margin=0.02, width=0)
+    list_theme.node_role("nil", label="NIL", fontname="sans-serif",
+                         fontsize=8, margin=0.02)
     list_theme.edge_role("link", color="#333")
     list_theme.edge_role("nil", style="dashed")
     list_theme.graph(rankdir="LR")

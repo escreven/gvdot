@@ -5,6 +5,11 @@
 Reference
 =========
 
+Many methods accept identifier and attribute value assignment parameters.  See
+the :ref:`discussion_ids`, :ref:`discussion_attributes`, and
+:ref:`discussion_roles` discussions.  The terms *define*, *establish*, and
+*amend* are :ref:`defined here<discussion_terms>`.
+
 Dot and Block
 -------------
 
@@ -12,16 +17,6 @@ Dot and Block
     :show-inheritance:
 
 .. autoclass:: Block
-
-Several :class:`Dot` and :class:`Block` methods accept graph, node, or edge
-attribute value assignments as keyword arguments. Assigning ``None`` deletes
-the attribute if it was previously specified, and is ignored otherwise.  The
-methods strip one trailing underscore from attribute name keywords if present;
-that allows applications to assign values to the Graphviz attribute ``class``.
-
-The attribute ``role`` is reserved for assigning roles to graphs, nodes, and
-edges.  A role need not be defined before it is assigned, however it must be
-defined when :class:`Dot` generates a DOT language representation.
 
 .. container:: custom-box
 
@@ -34,6 +29,8 @@ Theme Methods
 ~~~~~~~~~~~~~
 
 .. automethod:: Dot.use_theme
+
+    See also the :ref:`discussion_themes` discussion.
 
 Graph Methods
 ~~~~~~~~~~~~~
@@ -58,6 +55,9 @@ Edge Methods
 .. automethod:: Dot.edge_role
 .. automethod:: Block.edge_default
 .. automethod:: Block.edge
+
+    See also the :ref:`discussion_multigraphs` discussion.
+
 .. automethod:: Block.edge_define
 .. automethod:: Block.edge_update
 .. automethod:: Block.edge_is_defined
@@ -66,6 +66,9 @@ Subgraph Methods
 ~~~~~~~~~~~~~~~~
 
 .. automethod:: Block.subgraph
+
+    See also the :ref:`discussion_subgraphs` discussion.
+
 .. automethod:: Block.subgraph_define
 .. automethod:: Block.subgraph_update
 
@@ -73,6 +76,10 @@ Render Methods
 ~~~~~~~~~~~~~~
 
 .. automethod:: Dot.__str__
+
+    See also the :ref:`DOT language representation <discussion_str>`
+    discussion.
+
 .. automethod:: Dot.to_rendered
 .. automethod:: Dot.to_svg
 .. automethod:: Dot.save
@@ -97,6 +104,9 @@ Supporting Types
 .. autotype:: ID
 .. autoclass:: Markup
 .. autoclass:: Nonce
+
+    See also the :ref:`discussion_nonces` discussion.
+
 .. autoclass:: Port
 
 

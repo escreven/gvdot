@@ -22,6 +22,8 @@ applications convert the object to DOT language text or render it as SVG or an
 image.  Notebook users can also interactively display Dot objects in Jupyter
 notebooks.
 
+.. _discussion_str:
+
 The string representation of a Dot object is DOT language text, the same text
 used when rendering the Dot object.  For example,
 
@@ -68,6 +70,8 @@ methods are called.
 :class:`Dot` takes steps to produce readable DOT language representations:
 it indents reasonably, avoids unnecessary :type:`ID` quoting (see below), and
 separates sections with blank lines unless there are few statements.
+
+.. _discussion_ids:
 
 IDs
 ---
@@ -130,6 +134,8 @@ For convenience, because some Graphviz attributes have boolean values specified
 as ``true`` or ``false``, :class:`Dot` normalizes Python bool :type:`ID` values
 to those lowercase forms.
 
+.. _discussion_attributes:
+
 Attributes
 -----------
 
@@ -186,6 +192,7 @@ keywords if present.  Example:
 Node ``a`` will have SVG element class ``"important"`` and shape ``"circle"``.
 The underscore is required for class, and superfluous for shape.
 
+.. _discussion_roles:
 
 Roles
 -----
@@ -235,6 +242,8 @@ A role need not be defined before it is assigned.  However, :class:`Dot` raises
 an exception if an assigned role is not defined when the application creates a
 DOT language representation or rendering of a Dot object.
 
+.. _discussion_themes:
+
 Themes
 ------
 
@@ -272,6 +281,8 @@ in a notebook, we see
     :alt: Vertically compact task diagram
 
 |br|
+
+.. _discussion_subgraphs:
 
 Subgraphs
 ---------
@@ -359,6 +370,8 @@ Subgraphs are scoped to their parent.  So, the assertions below all hold.
     assert sub1.subgraph(id="sub2") is sub1_sub2
     assert dot.subgraph(id="sub2") is not sub1_sub2
 
+.. _discussion_multigraphs:
+
 Multigraphs
 -----------
 
@@ -427,6 +440,8 @@ provided need only be unique among the edges of their associated node pair.
 Discriminants are a gvdot feature.  As you can see, they don't appear in the
 DOT language representation.  We used integer discriminants in this example
 because it was convenient, but discriminants can be any :type:`ID`.
+
+.. _discussion_nonces:
 
 Nonces
 ------
@@ -552,6 +567,7 @@ resolution of 300 dots per inch.
 - :meth:`Dot.save` renders and saves to a file.
 - :meth:`Dot.show` renders and displays the result in a notebook.
 
+.. _discussion_terms:
 
 Defining and Amending
 ---------------------

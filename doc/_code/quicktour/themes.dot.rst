@@ -12,7 +12,7 @@
         Wilma [margin=0.05 fillcolor=khaki]
         Betty [margin=0.05 fillcolor=khaki]
         Barney [margin=0.05 fillcolor=khaki]
-        nil [label="NIL" fontname="sans-serif" fontsize=8 style=filled margin=0.02 width=0]
+        nil [label="NIL" fontname="sans-serif" fontsize=8 margin=0.02]
     
         Fred -> Wilma [color="#333"]
         Wilma -> Betty [color="#333"]
