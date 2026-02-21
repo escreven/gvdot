@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gvdot"
-version = "1.2.0"
+version = "1.2.1dev1"
 description = "Generate and render optionally themed Graphviz diagrams with simple, easy to maintain code."
 readme = "PYPI.md"
 authors = [{ name = "Edward Screven" }]

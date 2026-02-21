@@ -290,6 +290,5 @@ displays
 |br|
 
 
-This example is available as a `notebook on GitHub
-<https://github.com/escreven/gvdot/blob/main/examples/red-black-tree.ipynb>`_
-.
+This Red-Black Tree example is available as a `notebook on GitHub
+<https://github.com/escreven/gvdot/blob/main/examples/red-black-tree.ipynb>`_ .

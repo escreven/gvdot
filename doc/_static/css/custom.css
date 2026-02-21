@@ -17,6 +17,12 @@ css
     padding-right: 8px !important;
 }
 
+.my-col-1-header th:first-child,
+.my-col-1-header td:first-child {
+    font-weight: bold;
+    text-align: right;
+}
+
 .custom-box {
     padding: 15px;
     border: 1px solid #2980b9;

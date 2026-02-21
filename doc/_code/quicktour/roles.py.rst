@@ -1,0 +1,22 @@
+.. code-block:: python
+
+    dot = Dot(directed=True).graph(rankdir="LR")
+    dot.graph_role("library", cluster=True, bgcolor="gray80", penwidth=0)
+    dot.node_role("source", shape="box", fillcolor="cyan2")
+    dot.node_role("header", shape="box", fillcolor="orange")
+    dot.node_role("executable", shape="hexagon", fillcolor="green", margin=0.02)
+    dot.edge_role("include", color="orange", penwidth=2)
+    dot.edge_role("link", color="green", penwidth=2)
+    dot.node_default(style="filled", width=0, height=0,
+                     fontsize=10, fontname="monospace")
+    dot.node("model.h", role="header")
+    block = dot.subgraph().graph(role="library")
+    block.node("interactor.h", role="header")
+    block.node("interactor.cpp", role="source")
+    block.edge("interactor.h", "interactor.cpp", role="include")
+    dot.node("main.cpp", role="source")
+    dot.node("server", role="executable")
+    dot.edge("model.h", "main.cpp", role="include")
+    dot.edge("interactor.h", "main.cpp", role="include")
+    dot.edge("main.cpp", "server", role="link")
+    dot.edge("interactor.cpp", "server", role="link")

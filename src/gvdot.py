@@ -13,7 +13,7 @@ from subprocess import CalledProcessError, TimeoutExpired
 from typing import Any, Hashable, Self
 import re
 
-__version__ = "1.2.0"
+__version__ = "1.2.1dev1"
 
 __all__ = (
     "Markup", "Nonce", "Port", "Dot", "InvocationException",
@@ -322,7 +322,7 @@ def _integrate_role(attrs:_Attrs, roles:_Roles, what:str, identity:Any):
             if identity is not None:
                 what += " " + str(identity)
             raise RuntimeError(
-                f"Role {role_name} used by {what} not defined")
+                f"Role {role_name} assigned to {what} not defined")
     return attrs
 
 #
@@ -1289,7 +1289,8 @@ class Dot(Block):
     def use_theme(self, theme:Dot|None) -> Self:
         """
         Inherit graph, default graph, default node, default edge, and role
-        attribute values from ``theme``.
+        attribute values from ``theme``.  Any nodes, edges, or subgraphs of
+        ``theme`` are ignored.
 
         :class:`Dot` forms DOT language representations by merging inherited
         attribute values with a Dot object's own assigned values (which have
@@ -1322,6 +1323,8 @@ class Dot(Block):
     def __str__(self) -> str:
         """
         The DOT language representation of the Dot object.
+
+        :raises RuntimeError: An assigned role is not defined.
         """
         lines = []
 

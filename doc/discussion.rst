@@ -4,8 +4,8 @@
 
    <br />
 
-Overview
-========
+Discussion
+==========
 
 .. _class-dot:
 
@@ -25,11 +25,11 @@ notebooks.
 The string representation of a Dot object is DOT language text, the same text
 used when rendering the Dot object.  For example,
 
-.. include:: _code/overview/rollback.py.rst
+.. include:: _code/discussion/rollback.py.rst
 
 produces
 
-.. include:: _code/overview/rollback.dot.rst
+.. include:: _code/discussion/rollback.dot.rst
 
 and
 
@@ -39,7 +39,7 @@ and
 
 renders that DOT language text as the SVG file
 
-.. image:: _static/overview/rollback.*
+.. image:: _static/discussion/rollback.*
     :align: center
     :alt: Example rollback diagram
 
@@ -134,22 +134,22 @@ Attributes
 -----------
 
 Applications specify graph, subgraph, node, and edge attributes as keyword
-arguments to :class:`Dot` methods defining or amending those entities; defining
-roles for those entities; or setting defaults for those entity types.
+arguments to :class:`Dot` methods defining or amending those entities, defining
+roles for those entities, or setting defaults for those entity types.
 
-.. include:: _code/overview/attrs.py.rst
+.. include:: _code/discussion/attrs.py.rst
 
 Through a combination of gvdot functionality and Graphviz built-in behavior,
 the attribute values assigned above are merged together to render the Dot
 object as
 
-.. image:: _static/overview/attrs.*
+.. image:: _static/discussion/attrs.*
     :align: center
     :alt: Combination of many attributes
 
 |br| The DOT language representation of the Dot object is
 
-.. include:: _code/overview/attrs.dot.rst
+.. include:: _code/discussion/attrs.dot.rst
 
 Each keyword argument name except for ``role`` should be a Graphviz attribute
 name and each value should be an :type:`ID` or ``None``.  Value ``None``
@@ -159,17 +159,17 @@ the assignment to ``None`` has no effect.
 
 Running the following as a cell in a notebook
 
-.. include:: _code/overview/change-mind.py.rst
+.. include:: _code/discussion/change-mind.py.rst
 
 displays two images:
 
-.. image:: _static/overview/change-mind-1.*
+.. image:: _static/discussion/change-mind-1.*
     :align: center
     :alt: Unsightly edge diagram
 
 and
 
-.. image:: _static/overview/change-mind-2.*
+.. image:: _static/discussion/change-mind-2.*
     :align: center
     :alt: Better edge diagram
 
@@ -211,17 +211,17 @@ edge attributes.  Using the special attribute ``role``, applications may
 assign a role to a node, edge, or graph, causing that entity to inherit the
 role's attribute values.  Suppose we are modeling projects with
 
-.. include:: _code/overview/project-model.py.rst
+.. include:: _code/discussion/project-model.py.rst
 
 We can generate a project task diagram with
 
-.. include:: _code/overview/project-roles-code.py.rst
+.. include:: _code/discussion/project-roles-code.py.rst
 
 We assign a role to task nodes based on (and in this case with the same name
 as) the task's status.  The presentation attributes of the node are captured by
 the role.  The resulting diagram might look like
 
-.. image:: _static/overview/project-roles-image.*
+.. image:: _static/discussion/project-roles-image.*
     :align: center
     :alt: Task diagram with normal, at-risk, and critical tasks
 
@@ -247,27 +247,27 @@ irrelevant.
 We can improve our task diagrammer above by pulling all presentation attributes
 out of ``task_diagram()`` into a theme.
 
-.. include:: _code/overview/project-themes-theme1.py.rst
+.. include:: _code/discussion/project-themes-theme1.py.rst
 
 This simplifies our generator to
 
-.. include:: _code/overview/project-themes-code1.py.rst
+.. include:: _code/discussion/project-themes-code1.py.rst
 
 The revised ``task_diagram()`` generates the same diagram while allowing the
 caller to entirely specify the presentation via a theme.  Suppose that
 sometimes we want to present project status in a vertically compact way.  All
 we need is a new theme.
 
-.. include:: _code/overview/project-themes-theme2.py.rst
+.. include:: _code/discussion/project-themes-theme2.py.rst
 
 We only specified what differs because the compact theme inherits from the base
 theme.  When we run
 
-.. include:: _code/overview/project-themes-code2.py.rst
+.. include:: _code/discussion/project-themes-code2.py.rst
 
 in a notebook, we see
 
-.. image:: _static/overview/project-themes-image2.*
+.. image:: _static/discussion/project-themes-image2.*
     :align: center
     :alt: Vertically compact task diagram
 
@@ -366,7 +366,7 @@ By default, the DOT language representation of a :class:`Dot` object has no
 more than one edge statement for any pair of nodes (ordered pairs for directed
 graphs).  In the code below
 
-.. include:: _code/overview/multigraph-stage1.py.rst
+.. include:: _code/discussion/multigraph-stage1.py.rst
 
 the second and third :meth:`~Block.edge` calls amend the edge ``a -- b``,
 resulting in
@@ -376,14 +376,14 @@ resulting in
    :align: center
    :class: .gvdot-example-table
 
-   * - .. include:: _code/overview/multigraph-stage1.dot.rst
+   * - .. include:: _code/discussion/multigraph-stage1.dot.rst
 
-     - .. image:: _static/overview/multigraph-stage1.*
+     - .. image:: _static/discussion/multigraph-stage1.*
           :alt: One edge amended twice
 
 If we construct the :class:`Dot` object as a multigraph,
 
-.. include:: _code/overview/multigraph-stage2.py.rst
+.. include:: _code/discussion/multigraph-stage2.py.rst
 
 each :meth:`~Block.edge` call defines a new edge.  Now we get
 
@@ -392,9 +392,9 @@ each :meth:`~Block.edge` call defines a new edge.  Now we get
    :align: center
    :class: .gvdot-example-table
 
-   * - .. include:: _code/overview/multigraph-stage2.dot.rst
+   * - .. include:: _code/discussion/multigraph-stage2.dot.rst
 
-     - .. image:: _static/overview/multigraph-stage2.*
+     - .. image:: _static/discussion/multigraph-stage2.*
         :align: center
         :alt: Three distinct edges
 
@@ -411,16 +411,16 @@ The ``discriminant`` parameter is a value allowing an application to refer to
 multigraph edges.  Discriminants are not required in multigraphs, and if
 provided need only be unique among the edges of their associated node pair.
 
-.. include:: _code/overview/multigraph-stage3.py.rst
+.. include:: _code/discussion/multigraph-stage3.py.rst
 
 .. list-table::
    :widths: 65 35
    :align: center
    :class: .gvdot-example-table
 
-   * - .. include:: _code/overview/multigraph-stage3.dot.rst
+   * - .. include:: _code/discussion/multigraph-stage3.dot.rst
 
-     - .. image:: _static/overview/multigraph-stage3.*
+     - .. image:: _static/discussion/multigraph-stage3.*
         :align: center
         :alt: The second is now amended
 
@@ -436,7 +436,7 @@ identifiers for nodes and sometimes subgraphs.  Consider the NFA example on
 :doc:`the landing page <index>`.  To depict an arrow leading into the start
 state,
 
-.. image:: _static/overview/nfa-init.*
+.. image:: _static/discussion/nfa-init.*
     :alt: NFA start state
     :align: center
 

@@ -111,8 +111,8 @@ directory.
 
 ## Documentation
 
-See [gvdot.readthedocs.io](https://gvdot.readthedocs.io) for an overview and
-reference.
+See [gvdot.readthedocs.io](https://gvdot.readthedocs.io) which includes a
+[Quick Tour](https://gvdot.readthedocs.io/en/latest/quicktour.html)
 
 ## Installation
 
@@ -138,7 +138,7 @@ $ pip install .
 
 Package gvdot requires Python 3.12 or greater.
 
-[Rendering](https://gvdot.readthedocs.io/en/latest/overview.html#rendering)
+[Rendering](https://gvdot.readthedocs.io/en/latest/discussion.html#rendering)
  requires a Graphviz installation.  You can determine if one is in your `PATH`
  with
 
