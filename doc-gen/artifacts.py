@@ -1,5 +1,6 @@
 import re
 import sys
+import inspect
 import textwrap
 from abc import abstractmethod
 from dataclasses import dataclass

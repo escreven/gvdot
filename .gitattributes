@@ -12,3 +12,5 @@
 *.gif binary
 *.bmp binary
 *.tiff binary
+
+*.ipynb filter=ipynb-exec-null
