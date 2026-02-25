@@ -523,10 +523,9 @@ used everywhere in the gvdot API where :type:`ID` is accepted.
 
 Both the :doc:`er-diagram` and :doc:`rb-trees` examples in this document use
 Nonces.  The ER Diagram generator uses :class:`Nonce` to synthesize identifiers
-for nodes representing entity attributes.  Entity attribute names can't be
-used because they are not unique within a model.  The red-black tree generator
-creates phantom nodes with :class:`Nonce` identifiers to steer Graphviz toward
-a good tree layout.
+for nodes representing entity attributes.  The red-black tree generator creates
+phantom nodes with :class:`Nonce` identifiers to steer Graphviz toward a good
+tree layout.
 
 Rendering
 ---------

@@ -7,7 +7,7 @@
 Red-Black Trees
 ===============
 
-Our goal is to produce examples for students learning about Robert
+Our goal is to produce illustrations for students learning about Robert
 Sedgewick's `Left-leaning Red-Black Trees
 <https://sedgewick.io/wp-content/themes/sedgewick/papers/2008LLRB.pdf>`_.
 
@@ -161,7 +161,7 @@ Now we write the generation code.
 
         return dot
 
-All that is left is generating our examples.
+All that's left is generating our illustrations.
 
 .. code-block:: python
 
