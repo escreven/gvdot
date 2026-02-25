@@ -10,10 +10,10 @@ def test_to_rendered():
     """
     Method to_rendered() should invoke the specified graphviz program to render
     the dot object as bytes.  If the program isn't found, it should raise an
-    InvocationError.  If the program exits with a non-zero status, it should
-    raise a ProcessException.  If a timeout is specified, and the program times
-    out, it should raise a TimeoutException exception.  The dpi, size, and
-    ratio arguments should be passed as -G options to the program.
+    InvocationException.  If the program exits with a non-zero status, it
+    should raise a ProcessException.  If a timeout is specified, and the
+    program times out, it should raise a TimeoutException exception.  The dpi,
+    size, and ratio arguments should be passed as -G options to the program.
     """
     dot = Dot().edge("a","b").graph(label="Title")
 

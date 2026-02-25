@@ -198,8 +198,7 @@ function require_git_clean {
 }
 
 #
-# Require the top-level README.md to be in a deployable state.  For now that
-# just means it contains no relative links.
+# Require the top-level PYPI.md to be in a deployable state.
 #
 
 function require_deployable_README {
@@ -377,7 +376,7 @@ usage() {
     echo "    check-dist          Verify the distribution files"
     echo "    check-clean-main    Verify local repo is on clean main branch"
     echo "    check-source        Verify source code is releasable"
-    echo "    check-README        Verify README.md is deployable"
+    echo "    check-README        Verify PYPI.md is deployable"
     echo "    declare-release     Tag current clean main branch as a release"
     echo "    deploy-to-testpypi  Upload distribution files to TestPyPI"
     echo "    deploy-to-pypi      Upload distribution files to PyPI"

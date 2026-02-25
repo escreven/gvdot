@@ -54,10 +54,12 @@ def _code_block(language:str, text:str):
 
 #
 # Examples can have images, python source code, and dot source code, all of
-# which is optional.  save_examples() generates these artifacts and stores
+# which is optional.  save_artifacts() generates these artifacts and stores
 # them in doc/_static.
 #
-# NOTE: This module must be in directory util/ relative to repo root.
+# NOTE: This module must be in a directory at the repo root, so that
+# ${__FILE__}/../doc/_static and ${__FILE__}/../doc/_code are the target image
+# and code snippet directories.
 #
 
 @dataclass
