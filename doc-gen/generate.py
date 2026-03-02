@@ -13,8 +13,8 @@ from artifacts import Artifact, Image, PythonCode, DotCode, save_artifacts
 #
 # pyright: reportInvalidTypeForm=false
 #
-# Needed because sometimes we create classes nested functions and return them
-# as values, then use them in example code as types.
+# Needed because sometimes we create classes in nested functions and return
+# them as values, then use them in example code as types.
 #
 
 # ============================================================================
@@ -103,7 +103,7 @@ def nfa_example() -> list[Artifact]:
     ]
 
     #
-    # What follows is init -> start fragment that appears in the overview.
+    # What follows is init -> start fragment that appears in the discussion.
     #
 
     fragment_theme = (Dot().use_theme(nfa_theme)
@@ -453,6 +453,9 @@ def _main():
     parser.add_argument("pattern", nargs="?", default=None,
         help="Only generate artifacts for examples matching this pattern")
 
+    parser.add_argument("-nosave", action="store_true",
+        help="Do not save artifacts")
+
     args      = parser.parse_args()
     pattern   = args.pattern
     artifacts = []
@@ -468,6 +471,8 @@ def _main():
 
     if not artifacts:
         print("No examples matched pattern")
+    elif args.nosave:
+        print(f"Would have saved {len(artifacts)} artifacts")
     else:
         save_artifacts(artifacts)
 
