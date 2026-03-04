@@ -13,7 +13,7 @@ from subprocess import CalledProcessError, TimeoutExpired
 from typing import Any, Hashable, Self
 import re
 
-__version__ = "1.2.1"
+__version__ = "1.2.2dev1"
 
 __all__ = (
     "Markup", "Nonce", "Port", "Dot", "InvocationException",
@@ -106,7 +106,7 @@ class Nonce(Hashable):
     which a Nonce object resolves.
 
     Nonce objects are :class:`Hashable` and objects ``u`` and ``v`` compare
-    equal if and only if ``u`` is ``v``.
+    equal if and only if ``u is v``.
     """
     __slots__ = "prefix"
 
@@ -1123,8 +1123,7 @@ class Dot(Block):
     :param multigraph: Support multiple edges between the same node pair
         (ordered pair in the directed case.)  This parameter affects the
         behavior of methods :meth:`~Block.edge`, :meth:`~Block.edge_define`,
-        and :meth:`~Block.edge_update` but does not change the DOT language
-        produced from the Dot object.
+        and :meth:`~Block.edge_update`.
 
     :param id: The graph identifier.
 
