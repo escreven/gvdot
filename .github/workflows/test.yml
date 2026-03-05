@@ -16,21 +16,28 @@ env:
 jobs:
 
   canary:
+    name: Canary
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: ts-graphviz/setup-graphviz@v2
+    - name: Checkout gvdot
+      uses: actions/checkout@v4
+
+    - name: Install Graphviz
+      uses: ts-graphviz/setup-graphviz@v2
+
     - name: Setup Python 3.12
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
         cache: 'pip'
+
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip wheel setuptools
         pip install $DEPS
         pip install -e .
       shell: bash
+
     - name: Run Tests
       run: |
         dot -V
@@ -40,29 +47,40 @@ jobs:
       shell: bash
 
   full:
+    name: Full Matrix
     needs: canary
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ['3.12', '3.13', '3.14']
+        exclude:
+          - os: ubuntu-latest
+            python-version: '3.12'
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v4
-    - uses: ts-graphviz/setup-graphviz@v2
+
+    - name: Checkout gvdot
+      uses: actions/checkout@v4
+
+    - name: Install Graphviz
+      uses: ts-graphviz/setup-graphviz@v2
+
     - name: Setup Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
+
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip wheel setuptools
         pip install $DEPS
         pip install -e .
       shell: bash
+
     - name: Run Tests
       run: |
         dot -V
