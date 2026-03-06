@@ -8,9 +8,10 @@ env:
   DEPS: 'pillow coverage'
 
 #
-# Before running the full matrix of tests, we test the "canary" configuration
-# first: Python 3.12 on Linux.  Because of the nature gvdot, if the canary test
-# fails, likely many if not all of the remaining tests will fail.
+# Before running the complete matrix of tests, we test the "canary"
+# configuration first: Python 3.12 on Linux.  Because of the nature gvdot, if
+# the canary test fails, likely many if not all of the remaining tests will
+# fail.
 #
 
 jobs:
@@ -46,8 +47,8 @@ jobs:
         coverage report --include=src/gvdot.py --fail-under=100
       shell: bash
 
-  full:
-    name: Full
+  matrix:
+    name: Matrix
     needs: canary
     strategy:
       matrix:
