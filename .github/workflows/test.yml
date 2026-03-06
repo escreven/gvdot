@@ -1,4 +1,4 @@
-name: gvdot Test Suite
+name: Full Test
 
 on:
   pull_request:
@@ -16,7 +16,7 @@ env:
 jobs:
 
   canary:
-    name: Canary
+    name: Canary [ubuntu-latest, 3.12]
     runs-on: ubuntu-latest
     steps:
     - name: Checkout gvdot
@@ -47,7 +47,7 @@ jobs:
       shell: bash
 
   full:
-    name: Full Matrix
+    name: Full
     needs: canary
     strategy:
       matrix:
@@ -61,7 +61,6 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-
     - name: Checkout gvdot
       uses: actions/checkout@v4
 
