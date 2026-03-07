@@ -1,11 +1,12 @@
-name: Full Test
+name: Integration Test
 
 on:
   pull_request:
   workflow_dispatch:
 
 env:
-  DEPS: 'pillow coverage'
+  OLDEST_DEPS: 'ipython==7.23.1 notebook==5.7.0 pillow coverage'
+  LATEST_DEPS: 'ipython notebook pillow coverage'
 
 #
 # Before running the complete matrix of tests, we test the "canary"
@@ -13,12 +14,19 @@ env:
 # the canary test fails, likely many if not all of the remaining tests will
 # fail.
 #
+# "Latest" here with respect to IPython and notebook means unpinned.  The
+# specific package version depends on the Python version running the tests.
+#
 
 jobs:
 
   canary:
     name: Canary [ubuntu-latest, 3.12]
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dependencies: [ 'oldest', 'latest' ]
+      fail-fast: false
     steps:
     - name: Checkout gvdot
       uses: actions/checkout@v4
@@ -35,28 +43,37 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip wheel setuptools
-        pip install $DEPS
-        pip install -e .
+        if [ "${{ matrix.dependencies }}" = "oldest" ]; then
+          python -m pip install $OLDEST_DEPS
+        else
+          python -m pip install $LATEST_DEPS
+        fi
+        python -m pip install -e .
       shell: bash
 
     - name: Run Tests
       run: |
         dot -V
         coverage run \
-            --include src/gvdot.py test/main.py -failstop
+            --include 'src/gvdot.py' test/main.py -failstop
         coverage report --include=src/gvdot.py --fail-under=100
       shell: bash
 
-  matrix:
-    name: Matrix
+  full:
+    name: Full
     needs: canary
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ['3.12', '3.13', '3.14']
+        dependencies: [ 'oldest', 'latest' ]
         exclude:
           - os: ubuntu-latest
             python-version: '3.12'
+            dependencies: 'oldest'
+          - os: ubuntu-latest
+            python-version: '3.12'
+            dependencies: 'latest'
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -77,8 +94,12 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip wheel setuptools
-        pip install $DEPS
-        pip install -e .
+        if [ "${{ matrix.dependencies }}" = "oldest" ]; then
+          python -m pip install $OLDEST_DEPS
+        else
+          python -m pip install $LATEST_DEPS
+        fi
+        python -m pip install -e .
       shell: bash
 
     - name: Run Tests

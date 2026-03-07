@@ -22,7 +22,7 @@ on:
         type: string
 
 env:
-  DEPS: 'pillow coverage'
+  DEPS: 'liveimport notebook pillow coverage'
 
 jobs:
 
@@ -80,9 +80,9 @@ jobs:
     - name: Install gvdot and Check Version
       run: |
         if [[ "${{ inputs.repository }}" == "PyPI" ]]; then
-          pip install --no-deps gvdot
+          python -m pip install --no-deps gvdot
         else
-          pip install --no-deps -i https://test.pypi.org/simple/ gvdot
+          python -m pip install --no-deps -i https://test.pypi.org/simple/ gvdot
         fi
         installed_version="$(python -c "import importlib.metadata; print(importlib.metadata.version('gvdot'))")"
         echo "gvdot installed from ${{ inputs.repository }}" \
@@ -95,7 +95,7 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        pip install $DEPS
+        python -m pip install $DEPS
       shell: bash
 
     - name: Install Graphviz
