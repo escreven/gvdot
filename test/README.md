@@ -21,6 +21,7 @@ Use option `-h` to see usage.
 | File | Functional Area
 | - | -
 | [core.py](core.py) | Defining and amending structural elements
+| [frontend.py](frontend.py) | Display through notebook frontends
 | [dotcopy.py](dotcopy.py) | Dot object deep copy
 | [identifiers.py](identifiers.py) | IDs and their forms, including Nonces
 | [internals.py](internals.py) | Aspects that are hard to test through the public API
@@ -37,3 +38,10 @@ def test_<name>():
 ```
 
 The test runner (`main.py`) executes these functions.
+
+Both `show.py` and `frontend.py` test `gvdot` notebook functionality.  The
+difference is that `show.py` injects a mock IPython interface to test
+`Dot.show()` and `Dot.show_source()` behavior, while `frontend.py` acts as an
+IPython frontend, running `gvdot` in a real IPython kernel verifying that
+images, code blocks, and markdown blocks displayed by those methods are
+actually transmitted to the frontend.

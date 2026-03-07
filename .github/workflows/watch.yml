@@ -1,0 +1,285 @@
+#
+# Run gvdot regression tests when there is a new IPython or notebook release.
+# Because there is no way to trigger a workflow when a python package is
+# released, we poll pypi.org every twelve hours for the latest version numbers
+# of both, using the action cache as a lightweight persistent store to know if
+# they are new or not.
+#
+# If either is new, we test the latest release of gvdot with the latest
+# releases of IPython and notebook on Linux, MacOS, and Windows running Python
+# 3.12-3.14.
+#
+# We use the same canary strategy as test.yml -- no need to test the full
+# matrix if tests on Linux with Python 3.12 fail.
+#
+
+name: Dependency Watch
+
+on:
+  schedule:
+    - cron: '37 11,23 * * *'   # every 12 hours
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Run even if dependencies have not changed"
+        type: boolean
+        default: false
+
+jobs:
+  detect:
+    name: Detect
+    runs-on: ubuntu-latest
+    outputs:
+      ipython_version: ${{ steps.versions.outputs.ipython }}
+      notebook_version: ${{ steps.versions.outputs.notebook }}
+      gvdot_version: ${{ steps.versions.outputs.gvdot }}
+      cache_hit: ${{ steps.seen.outputs.cache-hit }}
+      should_run: ${{ steps.decision.outputs.should_run }}
+    steps:
+      - name: Fetch latest version numbers from PyPI
+        id: versions
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os, json, urllib.request
+          output_path = os.environ["GITHUB_OUTPUT"]
+          def latest(pkg: str) -> str:
+              url = f"https://pypi.org/pypi/{pkg}/json"
+              with urllib.request.urlopen(url, timeout=30) as r:
+                  return json.load(r)["info"]["version"]
+          ipy = latest("ipython")
+          nb  = latest("notebook")
+          gv  = latest("gvdot")
+          with open(output_path, "a", encoding="utf-8") as f:
+              f.write(f"ipython={ipy}\n")
+              f.write(f"notebook={nb}\n")
+              f.write(f"gvdot={gv}\n")
+          print(f"Latest: ipython=={ipy} notebook=={nb} gvdot=={gv}")
+          PY
+
+      - name: Determine if versions already tested
+        id: seen
+        uses: actions/cache/restore@v4
+        with:
+          path: .pypi-trigger
+          key: >-
+            pypi-ipython-${{
+            steps.versions.outputs.ipython }}-notebook-${{
+            steps.versions.outputs.notebook }}
+
+      - name: Decide whether or not to run tests
+        id: decision
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == workflow_dispatch && \
+                "${{ inputs.force }}" == true ]]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "${{ steps.seen.outputs.cache-hit }}" == true ]]; then
+            echo "No new versions detected; skipping."
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  canary:
+    name: Canary [ubuntu-latest, 3.12]
+    needs: detect
+    if: needs.detect.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout gvdot v${{ needs.detect.outputs.gvdot_version }}
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: refs/tags/v${{ needs.detect.outputs.gvdot_version }}
+
+      - name: Install Graphviz
+        uses: ts-graphviz/setup-graphviz@v2
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Dependencies (latest IPython/Notebook)
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip wheel setuptools
+          python -m pip install \
+            "ipython==${{ needs.detect.outputs.ipython_version }}" \
+            "notebook==${{ needs.detect.outputs.notebook_version }}" \
+            "gvdot==${{ needs.detect.outputs.gvdot_version }}" \
+            pillow \
+            coverage
+
+      - name: Run Tests
+        shell: bash
+        run: |
+          dot -V
+          coverage run \
+              --include 'src/gvdot.py' test/main.py -failstop
+          coverage report --include=src/gvdot.py --fail-under=100
+
+  full:
+    name: Full
+    needs: [detect, canary]
+    if: needs.detect.outputs.should_run == 'true'
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.12', '3.13', '3.14']
+        exclude:
+          - os: ubuntu-latest
+            python-version: '3.12'
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout gvdot v${{ needs.detect.outputs.gvdot_version }}
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: refs/tags/v${{ needs.detect.outputs.gvdot_version }}
+
+      - name: Install Graphviz
+        uses: ts-graphviz/setup-graphviz@v2
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install Dependencies (latest IPython/Notebook)
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip wheel setuptools
+          python -m pip install \
+            "ipython==${{ needs.detect.outputs.ipython_version }}" \
+            "notebook==${{ needs.detect.outputs.notebook_version }}" \
+            "gvdot==${{ needs.detect.outputs.gvdot_version }}" \
+            pillow \
+            coverage
+
+      - name: Run Tests
+        shell: bash
+        run: |
+          dot -V
+          coverage run \
+              --include 'src/gvdot.py' test/main.py -failstop
+          coverage report --include=src/gvdot.py --fail-under=100
+
+  mark_seen:
+    name: Mark versions as successfully tested
+    needs: [detect, canary, full]
+    if: >
+      ${{ always() &&
+      needs.detect.outputs.should_run == 'true' &&
+      needs.canary.result == 'success' &&
+      needs.full.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Save tested version pair
+        shell: bash
+        run: |
+          mkdir -p .pypi-trigger
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .pypi-trigger/first_seen_utc.txt
+
+      - name: Persist tested versions
+        uses: actions/cache/save@v4
+        with:
+          path: .pypi-trigger
+          key: >-
+            pypi-ipython-${{
+            needs.detect.outputs.ipython_version }}-notebook-${{
+            needs.detect.outputs.notebook_version }}
+
+  open_issue:
+    name: Open issue on failure when scheduled
+    needs: [detect, canary, full, mark_seen]
+    if: >
+      ${{
+        always() &&
+        github.event_name != 'workflow_dispatch' &&
+        (
+          needs.detect.result == 'failure' ||
+          needs.canary.result == 'failure' ||
+          needs.full.result == 'failure' ||
+          needs.mark_seen.result == 'failure'
+        )
+      }}
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - name: Create non-duplicate failure issue
+        uses: actions/github-script@v7
+        env:
+          IPYTHON_VERSION: >-
+            ${{ needs.detect.outputs.ipython_version || 'unknown' }}
+          NOTEBOOK_VERSION: >-
+            ${{ needs.detect.outputs.notebook_version || 'unknown' }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const ipy = process.env.IPYTHON_VERSION;
+            const nb = process.env.NOTEBOOK_VERSION;
+
+            const title = `watch.yml failed: ipython ${ipy}, notebook ${nb}`;
+            const dedupLabel = "watch-failure";
+
+            // Try to add a stable label for dedup search.
+            try {
+              await github.rest.issues.getLabel({
+                owner, repo, name: dedupLabel });
+            } catch (e) {
+              if (e.status === 404) {
+                await github.rest.issues.createLabel({
+                  owner, repo, name: dedupLabel, color: "B60205",
+                  description: "Failures from watch.yml scheduled runs"
+                });
+              } else {
+                throw e;
+              }
+            }
+
+            // Dedup: skip if an open issue already exists
+            // for this version pair.
+            const existing = await github.paginate(
+              github.rest.issues.listForRepo, {
+                owner, repo, state: "open",
+                labels: dedupLabel, per_page: 100
+            });
+
+            const duplicate = existing.find(i => i.title === title);
+            if (duplicate) {
+              core.info(`Duplicate exists: #${duplicate.number}`);
+              return;
+            }
+
+            const run = `${context.serverUrl}/${owner}/` +
+                        `${repo}/actions/runs/${context.runId}`
+
+            const body = [
+              "The dependency watch workflow run failed.",
+              "",
+              `- IPython: ${ipy}`,
+              `- notebook: ${nb}`,
+              `- Run: ${run}`,
+              "",
+            ].join("\n");
+
+            await github.rest.issues.create({
+              owner,
+              repo,
+              title,
+              body,
+              labels: [dedupLabel],
+              assignees: ["escreven"]
+            });
