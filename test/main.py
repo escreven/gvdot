@@ -1,8 +1,26 @@
 from __future__ import annotations
+
+#
+# Before we do anything else, hide IPython.  This enables testing
+# ipython-missing paths whether or not it's installed in the environment.
+#
+
+import sys
+import importlib.abc
+
+class NoIPython(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path, target=None):
+        root = fullname.split('.')[0]
+        if root == 'IPython':
+            raise ModuleNotFoundError(f"No module named 'IPython'")
+        return None
+
+sys.meta_path.insert(0, NoIPython())
+
+
 from argparse import ArgumentParser
 import io
 import re
-import sys
 import inspect
 import textwrap
 import traceback
@@ -13,8 +31,9 @@ from utility import DotMismatch, fakedots
 # Modules defining tests
 import core
 import dotcopy
+import frontend
 import identifiers
-import internals as internals
+import internals
 import render
 import show
 import styling
@@ -164,6 +183,7 @@ def _main():
     cases = []
     cases.extend(_get_cases(core))
     cases.extend(_get_cases(dotcopy))
+    cases.extend(_get_cases(frontend))
     cases.extend(_get_cases(identifiers))
     cases.extend(_get_cases(internals))
     cases.extend(_get_cases(render))
