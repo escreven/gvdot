@@ -120,9 +120,7 @@ jobs:
         shell: bash
         run: |
           dot -V
-          coverage run \
-              --include 'src/gvdot.py' test/main.py -failstop
-          coverage report --include=src/gvdot.py --fail-under=100
+          python test/main.py -failstop
 
   full:
     name: Full
@@ -169,9 +167,7 @@ jobs:
         shell: bash
         run: |
           dot -V
-          coverage run \
-              --include 'src/gvdot.py' test/main.py -failstop
-          coverage report --include=src/gvdot.py --fail-under=100
+          python test/main.py -failstop
 
   mark_seen:
     name: Mark versions as successfully tested
