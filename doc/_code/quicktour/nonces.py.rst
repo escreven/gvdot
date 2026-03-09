@@ -7,8 +7,8 @@
                     style="filled", shape="square")
     
     dot = Dot(directed=True).use_theme(theme)
-    source = Nonce("anchor")
-    sink = Nonce("anchor")
+    source = Nonce()
+    sink = Nonce()
     dot.node(source, role="anchor")
     dot.node(sink, role="anchor")
     dot.edge(source,"A").edge("A",sink)

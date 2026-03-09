@@ -5,13 +5,13 @@
         node [shape=plain]
         edge [arrowhead=none]
     
-        anchor_1 [label="" width=0.1 height=0.1 style=filled shape=square]
-        anchor_2 [label="" width=0.1 height=0.1 style=filled shape=square]
+        _nonce_1 [label="" width=0.1 height=0.1 style=filled shape=square]
+        _nonce_2 [label="" width=0.1 height=0.1 style=filled shape=square]
     
-        anchor_1 -> A
-        A -> anchor_2
-        anchor_1 -> B
-        B -> anchor_2
-        anchor_1 -> C
-        C -> anchor_2
+        _nonce_1 -> A
+        A -> _nonce_2
+        _nonce_1 -> B
+        B -> _nonce_2
+        _nonce_1 -> C
+        C -> _nonce_2
     }

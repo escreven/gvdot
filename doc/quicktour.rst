@@ -59,8 +59,8 @@ and DOT language.
     * - Use in notebooks
       - .. code-block:: python
 
-            dot.show()         # Displays rendered SVG
-            dot.show_source()  # Displays DOT language
+            dot.show()         # Display rendered SVG
+            dot.show_source()  # Display DOT language
 
 
 
