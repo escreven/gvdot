@@ -208,6 +208,50 @@ def test_attr_basics():
     """)
 
 
+def test_attr_quoted_names():
+    """
+    Attribute names must be quoted when they are not identifier-like or are a
+    DOT reserved word.
+    """
+    dot = Dot()
+    dot.node("a", **{"":1})
+    dot.node("b", _=2)
+    dot.node("c", graph=3, Subgraph=4)
+    dot.node("d", **{"a name":5})
+    expect_str(dot,
+    """
+    graph {
+        a [ ""=1 ]
+        b [ ""=2 ]
+        c [ "graph"=3 "Subgraph"=4 ]
+        d [ "a name"=5 ]
+    }
+    """)
+
+    dot = Dot()
+    dot.graph_default(_=1)
+    dot.node_default (_=2)
+    dot.edge_default (_=3)
+    dot.graph        (_=4,role="x")
+    dot.node         ("a",_=5,role="x")
+    dot.edge         ("a","b",_=6,role="x")
+    dot.graph_role   ("x",strict=7)
+    dot.node_role    ("x",strict=8)
+    dot.edge_role    ("x",strict=9)
+    expect_str(dot,
+    """
+    graph {
+        graph [ ""=1 ]
+        node [ ""=2 ]
+        edge [ ""=3 ]
+        ""=4
+        "strict"=7
+        a [ ""=5 "strict"=8 ]
+        a -- b [ ""=6 "strict"=9]
+    }
+    """)
+
+
 def test_attr_escape():
     """
     A single trailing underscore character is trimmed from attribute keyword

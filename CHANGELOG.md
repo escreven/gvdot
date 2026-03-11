@@ -1,5 +1,17 @@
 ## Unreleased
 
+## [1.2.2] - 2026-03-10
+
+#### Added
+- Methods `to_svg()`, `save()`, and `show()` accept path-like `program`
+  argument values.
+
+#### Fixed
+- Non-lowercase forms of DOT reserved words such as `Graph` or `STRICT` are
+  quoted in the DOT language representation.
+- Attribute names are quoted when required.
+
+
 ## [1.2.1] - 2026-02-20
 
 #### Changed

@@ -1,5 +1,6 @@
 import os
 import shutil
+from pathlib import Path
 from gvdot import Dot, InvocationException, ProcessException, TimeoutException
 from utility import dotecho, doterror, dotsleep, tmpdir
 from utility import expect_ex, image_format, likely_full_svg, likely_svg
@@ -280,3 +281,25 @@ def test_inferred_case_insensitive():
     with open(jpg_file, "rb") as f:
         text = f.read().decode()
         assert "-Tjpeg" in text
+
+
+def test_pathlike():
+    """
+    The program argument to to_rendered(), to_svg(), and save() can be a
+    path-like object.  The save() filename can be a path-like object.
+    """
+    pathstr = shutil.which('dot')
+    assert pathstr
+    path = Path(pathstr)
+
+    dot = Dot().edge("a","b").graph(label="Title")
+
+    data = dot.to_rendered(program=path)
+    assert image_format(data) == 'PNG'
+
+    svg = dot.to_svg(program=path)
+    assert likely_full_svg(svg)
+
+    test_png = Path(f"{tmpdir()}/test.png")
+    dot.save(test_png)
+    assert image_file_format(str(test_png)) == 'PNG'

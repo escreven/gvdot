@@ -114,6 +114,43 @@ def test_id_str_escape():
     """)
 
 
+def test_id_reserved():
+    """
+    Reserved words must be quoted when used as identifiers.  DOT reserved words
+    are not case sensitive.
+    """
+    dot = Dot()
+    dot.node("node")
+    dot.node("edge")
+    dot.node("graph")
+    dot.node("digraph")
+    dot.node("subgraph")
+    dot.node("strict")
+    dot.node("Node")
+    dot.node("eDge")
+    dot.node("graPh")
+    dot.node("digrAph")
+    dot.node("subgrAph")
+    dot.node("STRICT")
+    expect_str(dot,
+    """
+    graph {
+        "node"
+        "edge"
+        "graph"
+        "digraph"
+        "subgraph"
+        "strict"
+        "Node"
+        "eDge"
+        "graPh"
+        "digrAph"
+        "subgrAph"
+        "STRICT"
+    }
+    """)
+
+
 def test_prefer_quotes():
     """
     Attribute values that are general text are always quoted, even if the ID
