@@ -8,9 +8,8 @@
 
 #### Fixed
 - Non-lowercase forms of DOT reserved words such as `Graph` or `STRICT` are
-  quoted in the DOT language representation.
+  quoted.
 - Attribute names are quoted when required.
-
 
 ## [1.2.1] - 2026-02-20
 

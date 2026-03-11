@@ -2,13 +2,16 @@ from __future__ import annotations
 import os
 import time
 import textwrap
+from copy import deepcopy
 from typing import Any
 from jupyter_client import KernelManager  #type:ignore
 
 #
-# This module acts as a frontend to Dot.show() and Dot.show_source() tests run
-# in a real IPython kernel.  The tests are not exhaustive with respect to
-# show() and show_source() behavior -- show.py takes care of that.
+# This module acts as a frontend to an IPython kernel running cells that are
+# Dot.show() and Dot.show_source() tests.  Those tests are not exhaustive with
+# respect to show() and show_source() behavior -- show.py takes care of that --
+# but they do verify that expected show() and show_source() output is available
+# through a notebook UI.
 #
 # We use a long timeout because GitHub Windows runners can be very slow,
 # especially when launching Graphviz programs in a subprocess.
@@ -63,11 +66,11 @@ class _Kernel:
     def run_cell(self, code:str) -> tuple[
             dict[str,str]|None,  # display message data, if any
             dict[str,Any]|None   # error message content, if any
-            ]:
+        ]:
         """
-        Send code to the kernel, returning any display and error message
+        Send code to the kernel, returning any display data and error message
         received.  `run_cell()` raises a `RuntimeError` if it receives more
-        than one display_data message, more than once error message, or any
+        than one display_data message, more than one error message, or any
         stream data.
         """
         code = textwrap.dedent(code)
@@ -105,10 +108,11 @@ class _Kernel:
                     "Message wait from kernel failed (timeout likely)") from ex
 
             #
-            # Dispatch the message.  There are only three things we care about:
-            # receiving stdout (the cell printed something), receiving markdown
-            # text (reloads are markdown), and when the kernel becomes idle
-            # meaning it is done running the cell.
+            # Dispatch the message.  As a general matter, IPython cells can
+            # generate multiple stream and display messages.  However, to
+            # simplify the interface, we require cells to generate no stream
+            # data (no writes to stdout/stderr), and no more than one display
+            # data message (at most one call to display()).
             #
 
             mtype   = msg['msg_type']
@@ -134,14 +138,14 @@ class _Kernel:
                 for mimetype, text in data.items():
                     _trace(f".... {mimetype}")
                     _trace_multiline(text)
-                display = data.copy()
+                display = deepcopy(data)
 
             elif mtype == 'error':
                 if error is not None:
                     raise RuntimeError("Multiple error messages for cell")
                 _trace(f".... ename={content['ename']}")
                 _trace(f".... value={content['evalue']}")
-                error = content.copy()
+                error = deepcopy(content)
 
             elif mtype == 'status':
                 state = content['execution_state']
