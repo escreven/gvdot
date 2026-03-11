@@ -13,7 +13,7 @@ from subprocess import CalledProcessError, TimeoutExpired
 from typing import Any, Hashable, Self
 import re
 
-__version__ = "1.2.2dev1"
+__version__ = "1.2.2"
 
 __all__ = (
     "Markup", "Nonce", "Port", "Dot", "InvocationException",
@@ -105,8 +105,8 @@ class Nonce(Hashable):
     DOT language representation.  Changing a Dot object may change the ID to
     which a Nonce object resolves.
 
-    Nonce objects are :class:`Hashable` and objects ``u`` and ``v`` compare
-    equal if and only if ``u is v``.
+    Nonce objects are :class:`~collections.abc.Hashable` and objects ``u`` and
+    ``v`` compare equal if and only if ``u is v``.
     """
     __slots__ = "prefix"
 
@@ -171,6 +171,17 @@ _RESERVED_IDS = {
 
 _NEEDESCAPE_RE = re.compile(r'["\n\r\\]')
 
+def _quote_if_needed(s:str) -> str:
+    if _SIMPLE_ID_RE.fullmatch(s) and s.lower() not in _RESERVED_IDS:
+        return s
+    else:
+        if _NEEDESCAPE_RE.search(s):
+            s = s.replace('\\','\\\\')
+            s = s.replace('"','\\"')
+            s = s.replace('\r\n','\\n')
+            s = s.replace('\n','\\n')
+        return '"' + s + '"'
+
 def _normalize(id:Any, what:str) -> _NormID:
     match id:
         case Nonce():
@@ -180,16 +191,7 @@ def _normalize(id:Any, what:str) -> _NormID:
         case Markup():
             return '<' + id.markup + '>'
         case str() | int() | float():
-            s = str(id)
-            if _SIMPLE_ID_RE.fullmatch(s) and s not in _RESERVED_IDS:
-                return s
-            else:
-                if _NEEDESCAPE_RE.search(s):
-                    s = s.replace('\\','\\\\')
-                    s = s.replace('"','\\"')
-                    s = s.replace('\r\n','\\n')
-                    s = s.replace('\n','\\n')
-                return '"' + s + '"'
+            return _quote_if_needed(str(id))
         case _:
             raise ValueError(f"{what} {repr(id)} is not an ID")
 
@@ -297,8 +299,9 @@ type _Roles = dict[_NormID,_Attrs]
 
 def _set_attrs(target:_Attrs, attrargs:dict[str,Any], permit_role=False):
     for name, value in attrargs.items():
-        if name[-1] == '_':
+        if name and name[-1] == '_':
             name = name[:-1]
+        name = _quote_if_needed(name)
         if not permit_role and name == 'role':
             raise ValueError(f"Attribute 'role' is reserved")
         if value is None:
@@ -1445,7 +1448,7 @@ class Dot(Block):
 
         return completed.stdout
 
-    def to_svg(self, program="dot", *, inline=False,
+    def to_svg(self, program:str|PathLike="dot", *, inline=False,
                dpi:float|None=None, size:int|float|str|None=None,
                ratio:float|str|None=None, timeout:float|None=None,
                directory:str|PathLike|None=None) -> str:
@@ -1467,7 +1470,7 @@ class Dot(Block):
 
         return data.decode()
 
-    def save(self, filename:str|PathLike, program="dot", *,
+    def save(self, filename:str|PathLike, program:str|PathLike="dot", *,
              exclusive:bool=False, format:str|None=None,
              dpi:float|None=None, size:int|float|str|None=None,
              ratio:float|str|None=None, timeout:float|None=None,
@@ -1518,7 +1521,7 @@ class Dot(Block):
         with open(filepath,mode) as f:
             f.write(data)
 
-    def show(self, program="dot", *, format:str="svg",
+    def show(self, program:str|PathLike="dot", *, format:str="svg",
              dpi:float|None=None, size:int|float|str|None=None,
              ratio:float|str|None=None, timeout:float|None=None,
              directory:str|PathLike|None=None) -> None:
@@ -1554,19 +1557,19 @@ class Dot(Block):
                 cause = ex.__cause__
                 assert cause
                 display(Markdown(_SHOW_BAD_INVOKE_HTML.format(
-                    program=html_escape(program),
+                    program=html_escape(str(program)),
                     excl=html_escape(cause.__class__.__name__),
                     exmsg=html_escape(str(cause)))))
                 raise ShowException() from None
             except ProcessException as ex:
-                display(Markdown(s := _SHOW_BAD_EXIT_HTML.format(
-                    program=html_escape(program),
+                display(Markdown(_SHOW_BAD_EXIT_HTML.format(
+                    program=html_escape(str(program)),
                     status=html_escape(str(ex.status)),
                     stderr=html_escape(ex.stderr))))
                 raise ShowException() from None
             except TimeoutException as ex:
                 display(Markdown(_SHOW_TIMEOUT_HTML.format(
-                    program=html_escape(program),
+                    program=html_escape(str(program)),
                     timeout=html_escape(str(timeout)))))
                 raise ShowException() from None
         else:

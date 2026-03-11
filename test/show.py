@@ -1,4 +1,6 @@
+from pathlib import Path
 import re
+import shutil
 from typing import Any
 from gvdot import Dot, ShowException
 import gvdot
@@ -183,6 +185,58 @@ def test_show():
             assert re.search("IPython.*install", str(ex))
         try:
             Dot().show_source()
+            assert False
+        except RuntimeError as ex:
+            assert re.search("IPython.*install", str(ex))
+
+
+def test_pathlike():
+    """
+    The program argument to show() can be a path-like object.  show() failure
+    habdling paths should work when program is a path-like object.
+    """
+    pathstr = shutil.which('dot')
+    assert pathstr
+    pathdot = Path(pathstr)
+    pathdne = Path(tmpdir(),"doesnotexist")
+    pathsleep = Path(tmpdir(),dotsleep())
+    patherror = Path(tmpdir(),doterror())
+
+    with _MockIPython() as mock:
+        dot = Dot().graph(fontsize=32)
+        dot.edge("a","b").edge("b","c").edge("c","d")
+
+        dot.show(program=pathdot, format="svg")
+        displayed = mock.take()
+        assert len(displayed) == 1
+        assert displayed[0][0] == "SVG"
+        assert likely_full_svg(displayed[0][1])
+
+        ex = expect_ex(ShowException, lambda: dot.show(
+            program=pathdne, format="svg"))
+        displayed = mock.take()
+        assert len(displayed) == 1
+        assert displayed[0][0] == "Markdown"
+        assert "could not be invoked" in displayed[0][1]
+        assert "could not complete" in str(ex)
+
+        expect_ex(ShowException,lambda: dot.show(
+            program=pathsleep, timeout=0.01))
+        displayed = mock.take()
+        assert len(displayed) == 1
+        assert displayed[0][0] == "Markdown"
+        assert "timed out" in displayed[0][1]
+
+        expect_ex(ShowException,lambda: dot.show(
+            program=patherror))
+        displayed = mock.take()
+        assert len(displayed) == 1
+        assert displayed[0][0] == "Markdown"
+        assert "exited with status" in displayed[0][1]
+
+    with _NoIPython():
+        try:
+            Dot().show(program=pathdot)
             assert False
         except RuntimeError as ex:
             assert re.search("IPython.*install", str(ex))
