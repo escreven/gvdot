@@ -29,13 +29,13 @@ jobs:
       fail-fast: false
     steps:
     - name: Checkout gvdot
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Install Graphviz
       uses: ts-graphviz/setup-graphviz@v2
 
     - name: Setup Python 3.12
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3.12'
         cache: 'pip'
@@ -80,13 +80,13 @@ jobs:
 
     steps:
     - name: Checkout gvdot
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Install Graphviz
       uses: ts-graphviz/setup-graphviz@v2
 
     - name: Setup Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
