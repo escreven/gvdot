@@ -169,7 +169,7 @@ _RESERVED_IDS = {
     "strict", "graph", "digraph", "node", "edge", "subgraph"
 }
 
-_NEEDESCAPE_RE = re.compile(r'["\n\r\\]')
+_NEEDESCAPE_RE = re.compile(r'["\n\\]')
 
 def _quote_if_needed(s:str) -> str:
     if _SIMPLE_ID_RE.fullmatch(s) and s.lower() not in _RESERVED_IDS:

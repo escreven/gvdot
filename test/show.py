@@ -193,7 +193,7 @@ def test_show():
 def test_pathlike():
     """
     The program argument to show() can be a path-like object.  show() failure
-    habdling paths should work when program is a path-like object.
+    handling paths should work when program is a path-like object.
     """
     pathstr = shutil.which('dot')
     assert pathstr
