@@ -10,6 +10,11 @@ the :ref:`discussion_ids`, :ref:`discussion_attributes`, and
 :ref:`discussion_roles` discussions.  The terms *define*, *establish*, and
 *amend* are :ref:`defined here<discussion_terms>`.
 
+Assigning a default graph, node, or edge value for reserved attribute ``role``
+is not permitted.  Neither is assigning a value for ``role`` to a graph, node,
+or edge role.  Attempting either raises a :exc:`ValueError`.
+
+
 Dot and Block
 -------------
 
@@ -107,6 +112,7 @@ Supporting Types
 
     See also the :ref:`discussion_nonces` discussion.
 
+.. autotype:: CompassPoint
 .. autoclass:: Port
 
 
