@@ -13,7 +13,7 @@ from subprocess import CalledProcessError, TimeoutExpired
 from typing import Any, Hashable, Literal, Self
 import re
 
-__version__ = "1.2.3"
+__version__ = "1.2.4dev1"
 
 __all__ = (
     "Markup", "Nonce", "Port", "Dot", "InvocationException",

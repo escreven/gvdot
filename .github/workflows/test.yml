@@ -32,7 +32,7 @@ jobs:
       uses: actions/checkout@v5
 
     - name: Install Graphviz
-      uses: ts-graphviz/setup-graphviz@v2
+      uses: $/.github/actions/install-graphviz
 
     - name: Setup Python 3.12
       uses: actions/setup-python@v6
@@ -83,7 +83,7 @@ jobs:
       uses: actions/checkout@v5
 
     - name: Install Graphviz
-      uses: ts-graphviz/setup-graphviz@v2
+      uses: $/.github/actions/install-graphviz
 
     - name: Setup Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6
