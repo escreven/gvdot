@@ -19,4 +19,4 @@ runs:
     - name: Install Graphviz on Windows
       if: runner.os == 'Windows'
       shell: pwsh
-      run: choco install graphviz --yes
+      run: choco install graphviz --yes --no-progress
