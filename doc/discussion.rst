@@ -293,11 +293,12 @@ a container for node, edge, and subgraph definitions.  It is the base class of
 :class:`Block` methods.  You can think about class :class:`Block` as being an
 analogue of ``graph`` and ``subgraph`` curly brackets in the DOT language.
 
-Methods :meth:`~Block.subgraph` and :meth:`~Block.subgraph_define` return Block
-objects.  A Dot object created by the :class:`Dot` constructor with descendant
-Block objects created through methods :meth:`subgraph` or
-:meth:`subgraph_define` form a tree.  That tree is mirrored by the ``subgraph``
-statement hierarchy of the DOT language representation of the Dot object.
+Methods :meth:`~Block.subgraph` and :meth:`~Block.subgraph_define` return
+possibly new Block objects.  A Dot object created by the :class:`Dot`
+constructor with descendant Block objects created through methods
+:meth:`subgraph` or :meth:`subgraph_define` is a tree.  That tree is mirrored
+by the ``subgraph`` statement hierarchy of the DOT language representation of
+the Dot object.
 
 Node and edge identities are global within a Dot object.  They may only be
 defined once, but can be amended any number of times through the Dot object or

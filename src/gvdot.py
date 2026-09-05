@@ -10,10 +10,10 @@ from os import PathLike
 from pathlib import Path, PurePath
 import subprocess
 from subprocess import CalledProcessError, TimeoutExpired
-from typing import Any, Hashable, Self
+from typing import Any, Hashable, Literal, Self
 import re
 
-__version__ = "1.2.3dev1"
+__version__ = "1.2.3"
 
 __all__ = (
     "Markup", "Nonce", "Port", "Dot", "InvocationException",
@@ -74,7 +74,6 @@ class Nonce(Hashable):
     :param prefix: :class:`Dot` will resolve the Nonce to an ID of the form
         *prefix_n* where *prefix* is the given value and *n* is a small
         positive integer.
-
 
     Applications use Nonce objects to create identifiers that do not conflict
     with each other or with identifiers derived from input values.  For
@@ -208,6 +207,15 @@ def _prefer_quoted(id:str):
         return id
 
 
+type CompassPoint = Literal[
+    "n", "ne", "e", "se", "s", "sw", "w", "nw", "c", "_" ]
+"""
+    An edge aimpoint with respect to a port.  In DOT language, compass point
+    "\\_" is equivalent to not specifying a compass point; it's included for
+    completeness.
+"""
+
+
 @dataclass(slots=True)
 class Port:
     """
@@ -220,20 +228,17 @@ class Port:
 
     :param name: The optional port name.
 
-    :param cp: The optional compass point, which must be one of "n", "ne" "e",
-        "se", "s", "sw", "w", "nw", "c", or "\\_".  Compass point "\\_" appears
-        in the DOT grammar and is equivalent to None; it's included for
-        completeness.
+    :param cp: The optional compass point.
     """
     node : ID
-    name : ID  | None = None
-    cp   : str | None = None
+    name : ID | None = None
+    cp   : CompassPoint | None = None
 
 #
-# The allowed compass points.
+# The operating compass points.
 #
 
-_COMPASS_PT = { "n", "ne", "e", "se", "s", "sw", "w", "nw", "c" }
+_COMPASS_PT = set(CompassPoint.__value__.__args__) - { '_' }
 
 #
 # Normalized, validated, and application mutation safe version of a Port.
@@ -299,11 +304,11 @@ type _Roles = dict[_NormID,_Attrs]
 
 def _set_attrs(target:_Attrs, attrargs:dict[str,Any], permit_role=False):
     for name, value in attrargs.items():
+        if not permit_role and name == 'role':
+            raise ValueError("Attribute 'role' not permitted here")
         if name and name[-1] == '_':
             name = name[:-1]
         name = _quote_if_needed(name)
-        if not permit_role and name == 'role':
-            raise ValueError(f"Attribute 'role' is reserved")
         if value is None:
             target.pop(name,None)
         else:
@@ -794,6 +799,8 @@ class Block:
 
         :param attrs: New or amending attribute value assignments.
 
+        :raises ValueError: Discriminant specified for a non-multigraph.
+
         The Block object through which an edge is defined determines where in
         the DOT language representation the corresponding edge statement will
         appear.  However, edge identity is global, so an edge may be amended
@@ -884,6 +891,7 @@ class Block:
         :param point2: See :meth:`edge`.
         :param discriminant: See :meth:`edge`.
         :raises RuntimeError: The edge is already defined.
+        :raises ValueError: Discriminant specified for a non-multigraph.
         """
         return self._edge(point1,point2,discriminant,attrs,must_not_exist=True)
 
@@ -896,6 +904,7 @@ class Block:
         :param point2: See :meth:`edge`.
         :param discriminant: See :meth:`edge`.
         :raises RuntimeError: The edge is not defined.
+        :raises ValueError: Discriminant specified for a non-multigraph.
         """
         return self._edge(point1,point2,discriminant,attrs,must_exist=True)
 
@@ -907,6 +916,7 @@ class Block:
         :param point1: See :meth:`edge`.
         :param point2: See :meth:`edge`.
         :param discriminant: See :meth:`edge`.
+        :raises ValueError: Discriminant specified for a non-multigraph.
         """
         key, _, _, _ = self._edge_preamble(point1,point2,discriminant)
         return key in self._dot.edgemap
@@ -1384,6 +1394,8 @@ class Dot(Block):
 
         :return: The output bytes of the specified program.
 
+        :raises RuntimeError: An assigned role is not defined.
+
         :raises InvocationException: Could not invoke the program, likely
             because it wasn't found.
 
@@ -1536,7 +1548,8 @@ class Dot(Block):
             :class:`ShowException`, it also displays a ``Markdown`` block
             explaining why it could not complete.
 
-        :raises RuntimeError: IPython is not installed.
+        :raises RuntimeError: IPython is not installed, or an assigned role is
+            not defined.
 
         For the parameters, see :meth:`to_rendered`.  The ``size`` parameter
         can be especially useful: a value such as ``"5,5"`` can help ensure the
@@ -1580,7 +1593,8 @@ class Dot(Block):
         Display the Dot object's DOT language representation in a Jupyter
         notebook as an IPython ``Code`` object.
 
-        :raises RuntimeError: IPython is not installed.
+        :raises RuntimeError: IPython is not installed, or an assigned role is
+            not defined.
         """
         if display and Code:
             display(Code(str(self),language="graphviz"))
