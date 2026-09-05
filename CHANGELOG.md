@@ -1,5 +1,7 @@
 ## Unreleased
 
+## [1.2.3] - 2026-09-04
+
 #### Added
 - Type `CompassPoint` for the values allowed as the last component of a DOT
   language port specification.
