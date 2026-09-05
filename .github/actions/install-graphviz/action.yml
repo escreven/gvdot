@@ -1,0 +1,22 @@
+name: Install Graphviz
+description: Install Graphviz on Linux, macOS, or Windows
+
+runs:
+  using: composite
+  steps:
+    - name: Install Graphviz on Ubuntu
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install --yes graphviz
+
+    - name: Install Graphviz on macOS
+      if: runner.os == 'macOS'
+      shell: bash
+      run: brew install graphviz
+
+    - name: Install Graphviz on Windows
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: choco install graphviz --yes

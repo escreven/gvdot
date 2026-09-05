@@ -99,7 +99,7 @@ jobs:
       shell: bash
 
     - name: Install Graphviz
-      uses: ts-graphviz/setup-graphviz@v2
+      uses: $/.github/actions/install-graphviz
 
     - name: Run Tests
       run: |
