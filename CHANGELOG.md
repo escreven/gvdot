@@ -1,5 +1,10 @@
 ## Unreleased
 
+#### Changed
+- [Coverage](https://coverage.readthedocs.io/en/7.16.1/) option ``--branch`` is
+  now used for the `op.sh` coverage reports and GitHub workflows, strengthening
+  code coverage assurance.
+
 ## [1.2.3] - 2026-09-04
 
 #### Added

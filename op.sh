@@ -211,7 +211,7 @@ function require_deployable_README {
 
 function report_coverage {
 
-    $PYTHON -m coverage run \
+    $PYTHON -m coverage run --branch \
         --include 'src/gvdot.py' test/main.py
 
     $PYTHON -m coverage report -m

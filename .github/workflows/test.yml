@@ -54,7 +54,7 @@ jobs:
     - name: Run Tests
       run: |
         dot -V
-        coverage run \
+        coverage run --branch \
             --include 'src/gvdot.py' test/main.py -failstop
         coverage report --include=src/gvdot.py --fail-under=100
       shell: bash
@@ -105,7 +105,7 @@ jobs:
     - name: Run Tests
       run: |
         dot -V
-        coverage run \
+        coverage run --branch \
             --include 'src/gvdot.py' test/main.py -failstop
         coverage report --include=src/gvdot.py --fail-under=100
       shell: bash
