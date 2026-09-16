@@ -7,7 +7,7 @@
 #
 # If either is new, we test the latest release of gvdot with the latest
 # releases of IPython and notebook on Linux, MacOS, and Windows running Python
-# 3.12-3.14.
+# 3.12-3.15.
 #
 # We use the same canary strategy as test.yml -- no need to test the full
 # matrix if tests on Linux with Python 3.12 fail.
@@ -103,6 +103,7 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+          allow-prereleases: true
           cache: 'pip'
 
       - name: Install Dependencies (latest IPython/Notebook)
@@ -150,6 +151,7 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
+          allow-prereleases: true
           cache: 'pip'
 
       - name: Install Dependencies (latest IPython/Notebook)
