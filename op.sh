@@ -409,7 +409,7 @@ grep -qE 'name\s*=\s*"gvdot"' pyproject.toml \
 # Dispatch
 #
 
-if [[ $# -lt 1 ]]; then
+if [[ $# != 1 ]]; then
     usage
 fi
 
