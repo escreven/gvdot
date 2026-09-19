@@ -1,5 +1,11 @@
 ## Unreleased
 
+#### Fixed
+- Extraneous op.sh command line arguments are disallowed.
+
+#### Changed
+- IPython kernel warnings during testing are suppressed.
+
 ## [1.2.4] - 2026-09-16
 
 #### Added
