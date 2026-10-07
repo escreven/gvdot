@@ -10,12 +10,17 @@ env:
 
 #
 # Before running the complete matrix of tests, we test the "canary"
-# configuration first: Python 3.12 on Linux.  Because of the nature gvdot, if
-# the canary test fails, likely many if not all of the remaining tests will
-# fail.
+# configuration: Python 3.12 on Linux using both the oldest and latest versions
+# of IPython and notebook.  Because of the nature gvdot, if the canary
+# tests fail, likely many if not all of the remaining tests will fail.
 #
 # "Latest" here with respect to IPython and notebook means unpinned.  The
 # specific package version depends on the Python version running the tests.
+#
+# We rotate the setup-python pip cache key weekly and also use separate keys
+# for oldest vs latest dependencies.  Rotation makes sense because caches are
+# write once -- newer versions of packages will not be cached until the key
+# changes.
 #
 
 jobs:
@@ -34,12 +39,20 @@ jobs:
     - name: Install Graphviz
       uses: $/.github/actions/install-graphviz
 
+    - name: Prepare Pip Cache Key
+      shell: bash
+      run: |
+        # Make cache specific to oldest/latest and refresh it weekly.
+        date -u +'%G-%V' > .pip-cache-key
+        echo "${{ matrix.dependencies }}" >> .pip-cache-key
+
     - name: Setup Python 3.12
       uses: actions/setup-python@v6
       with:
         python-version: '3.12'
-        allow-prereleases: true
         cache: 'pip'
+        cache-dependency-path: |
+          .pip-cache-key
 
     - name: Install Dependencies
       run: |
@@ -86,12 +99,21 @@ jobs:
     - name: Install Graphviz
       uses: $/.github/actions/install-graphviz
 
+    - name: Prepare Pip Cache Key
+      shell: bash
+      run: |
+        # Refresh unpinned dependencies weekly while reusing previous downloads.
+        date -u +'%G-%V' > .pip-cache-key
+        echo "${{ matrix.dependencies }}" >> .pip-cache-key
+
     - name: Setup Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
         allow-prereleases: true
         cache: 'pip'
+        cache-dependency-path: |
+          .pip-cache-key
 
     - name: Install Dependencies
       run: |

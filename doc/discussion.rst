@@ -92,7 +92,7 @@ where :class:`Markup` is a gvdot class delineating HTML strings and
 Graphviz does not differentiate between the quoted and unquoted forms of
 non-HTML IDs; in DOT language, ``1.23`` and ``"1.23"`` are two ways to write
 the same thing.  Accordingly, :class:`Dot` methods normalize non-Markup
-:type:`ID` values to strings, making these two calls equivalent:
+:type:`ID` values, making these two calls equivalent:
 
 .. code-block:: python
 

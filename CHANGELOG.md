@@ -1,10 +1,13 @@
 ## Unreleased
 
-#### Fixed
-- Extraneous op.sh command line arguments are disallowed.
-
 #### Changed
 - IPython kernel warnings during testing are suppressed.
+- Verify PyPI workflow tests oldest dependencies as well as latest.
+- Verify PyPI workflow uses canary jobs
+
+#### Fixed
+- Extraneous op.sh command line arguments are disallowed.
+- Dependency Watch workflow now tests Python 3.15
 
 ## [1.2.4] - 2026-09-16
 
