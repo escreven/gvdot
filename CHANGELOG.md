@@ -1,5 +1,7 @@
 ## Unreleased
 
+## [1.2.5] - 2026-10-08
+
 #### Changed
 - IPython kernel warnings during testing are suppressed.
 - Verify PyPI workflow tests oldest dependencies as well as latest.
