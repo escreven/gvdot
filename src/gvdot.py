@@ -13,7 +13,7 @@ from subprocess import CalledProcessError, TimeoutExpired
 from typing import Any, Hashable, Literal, Self
 import re
 
-__version__ = "1.2.5dev1"
+__version__ = "1.2.5"
 
 __all__ = (
     "Markup", "Nonce", "Port", "Dot", "InvocationException",
@@ -287,13 +287,35 @@ class _NormPort:
         return self
 
 #
+# _ROLE_REF is a distinguished value that identifies an element's role in its
+# attribute list (if the element has a role).
+#
+
+class _RoleRef:
+    __slots__ = ()
+
+    def __repr__(self):
+        return "%%role%%"
+
+    def __hash__(self):
+        return hash("%%role%%")
+
+    def __eq__(self, other):
+        return other is self
+
+    def __deepcopy__(self, memo):
+        return self
+
+_ROLE_REF:_RoleRef = globals().get('_ROLE_REF',_RoleRef())
+
+#
 # Graphs, nodes, and edges all have attributes.  While from the grammar an
 # attribute can be any ID, all attributes supported by Graphviz have names that
 # are lexically identifiers in Python, and through this API are specified via
 # keyword parameter names.
 #
 
-type _Attrs = dict[str,_NormID]
+type _Attrs = dict[str|_RoleRef,_NormID]
 
 type _Roles = dict[_NormID,_Attrs]
 
@@ -304,11 +326,14 @@ type _Roles = dict[_NormID,_Attrs]
 
 def _set_attrs(target:_Attrs, attrargs:dict[str,Any], permit_role=False):
     for name, value in attrargs.items():
-        if not permit_role and name == 'role':
-            raise ValueError("Attribute 'role' not permitted here")
-        if name and name[-1] == '_':
-            name = name[:-1]
-        name = _quote_if_needed(name)
+        if name == 'role':
+            if not permit_role:
+                raise ValueError("Attribute 'role' not permitted here")
+            name = _ROLE_REF
+        else:
+            if name and name[-1] == '_':
+                name = name[:-1]
+            name = _quote_if_needed(name)
         if value is None:
             target.pop(name,None)
         else:
@@ -319,13 +344,13 @@ def _set_attrs(target:_Attrs, attrargs:dict[str,Any], permit_role=False):
 #
 
 def _integrate_role(attrs:_Attrs, roles:_Roles, what:str, identity:Any):
-    if (role_name := attrs.get('role')) is not None:
+    if (role_name := attrs.get(_ROLE_REF)) is not None:
         if (role_attrs := roles.get(role_name)) is not None:
             attrs = attrs.copy()
             for name, value in role_attrs.items():
                 if name not in attrs:
                     attrs[name] = value
-            del attrs['role']
+            del attrs[_ROLE_REF]
         else:
             if identity is not None:
                 what += " " + str(identity)

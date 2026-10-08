@@ -105,6 +105,49 @@ def test_roles_limited():
     expect_ex(ValueError, lambda: dot.edge_role("recurse",role="test"))
 
 
+def test_role_attr_escape():
+    """
+    The reserved attribute name 'role' can be underscore escaped.
+    """
+    dot = Dot()
+    dot.graph_default(role_="gdval")
+    dot.node_default(role_="ndval")
+    dot.edge_default(role_="edval")
+    dot.graph_role("recurse",role_="rgval")
+    dot.node_role("recurse",role_="rnval")
+    dot.edge_role("recurse",role_="reval")
+    subdot1 = dot.subgraph("sub1")
+    subdot1.graph(role_="gval")
+    subdot1.node("a",role_="nval")
+    subdot1.node("b",role_="nval")
+    subdot1.edge("a","b",role_="eval")
+    subdot2 = dot.subgraph("sub2")
+    subdot2.graph(role="recurse")
+    subdot2.node("x",role="recurse")
+    subdot2.node("y",role="recurse")
+    subdot2.edge("x","y",role="recurse")
+
+    expect_str(dot,"""
+    graph {
+        graph [ role=gdval ]
+        node [ role=ndval ]
+        edge [ role=edval ]
+        subgraph sub1 {
+            role=gval
+            a [ role=nval ]
+            b [ role=nval ]
+            a -- b [ role=eval ]
+        }
+        subgraph sub2 {
+            role=rgval
+            x [ role=rnval ]
+            y [ role=rnval ]
+            x -- y [ role=reval ]
+        }
+    }
+    """)
+
+
 def test_unusual_role_names():
     """
     Role names are strings, but they are not limited to being identifier-like.
