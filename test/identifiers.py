@@ -247,7 +247,7 @@ def test_compass_points():
     }
     """)
 
-    expect_ex(ValueError, lambda:Dot().edge("a",Port("b",cp="x")))
+    expect_ex(ValueError, lambda:Dot().edge("a",Port("b",cp="x"))) #type:ignore
 
 
 def test_nonce():

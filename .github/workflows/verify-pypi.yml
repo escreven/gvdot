@@ -114,7 +114,7 @@ jobs:
         dot -V
         python test/main.py -failstop
 
-  install_and_test:
+  full:
     name: Full
     needs: canary
     strategy:

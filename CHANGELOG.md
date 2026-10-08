@@ -8,6 +8,7 @@
 #### Fixed
 - Extraneous op.sh command line arguments are disallowed.
 - Dependency Watch workflow now tests Python 3.15
+- Underscore escaped `role_` attributes are no longer equivalent to `role`.
 
 ## [1.2.4] - 2026-09-16
 
