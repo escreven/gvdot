@@ -1,11 +1,8 @@
-name: Verify PyPI
+#
+# See .github/workflows/README.md.
+#
 
-#
-# There is a lag between uploading to [Test]PyPI and when the distribution
-# becomes visible to pip running in a GitHub VM.  To avoid wasting time, we
-# install gvdot and check the version first before installing
-# dependencies.
-#
+name: Verify PyPI
 
 on:
   workflow_dispatch:
@@ -21,6 +18,10 @@ on:
         required: true
         type: string
 
+defaults:
+  run:
+    shell: bash
+
 env:
   OLDEST_DEPS: 'liveimport ipython==7.23.1 notebook==5.7.0 pillow coverage'
   LATEST_DEPS: 'liveimport ipython notebook pillow coverage'
@@ -35,7 +36,6 @@ jobs:
       run: |
         echo "Will install gvdot from ${{ inputs.repository }}."
         echo "Expecting version ${{ inputs.version }}."
-      shell: bash
     - uses: actions/checkout@v5
       with:
         fetch-depth: 0
@@ -48,18 +48,18 @@ jobs:
           exit 1
         fi
         echo "Release tag exists"
-      shell: bash
 
   canary:
     name: Canary [ubuntu-latest, 3.12]
     needs: preamble
-    runs-on: ubuntu-latest
     strategy:
       matrix:
+        python-version: ['3.12']
         dependencies: [ 'oldest', 'latest' ]
       fail-fast: false
+    runs-on: ubuntu-latest
 
-    steps:
+    steps: &test-steps
     - name: Checkout gvdot v${{ inputs.version }}
       uses: actions/checkout@v5
       with:
@@ -67,23 +67,21 @@ jobs:
         ref: refs/tags/v${{ inputs.version }}
 
     - name: Prepare Pip Cache Key
-      shell: bash
       run: |
         date -u +'%G-%V' > .pip-cache-key
         echo "${{ matrix.dependencies }}" >> .pip-cache-key
 
-    - name: Setup Python 3.12
+    - name: Setup Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6
       with:
-        python-version: '3.12'
+        python-version: ${{ matrix.python-version }}
+        allow-prereleases: true
         cache: 'pip'
-        cache-dependency-path: |
-          .pip-cache-key
+        cache-dependency-path: .pip-cache-key
 
     - name: Upgrade Pip, Wheel, and Setuptools
       run: |
         python -m pip install --upgrade pip wheel setuptools
-      shell: bash
 
     - name: Install gvdot and Check Version
       run: |
@@ -99,7 +97,6 @@ jobs:
           echo "Expected ${{ inputs.version }}"
           exit 1
         fi
-      shell: bash
 
     - name: Install Dependencies
       run: |
@@ -108,7 +105,6 @@ jobs:
         else
           python -m pip install $LATEST_DEPS
         fi
-      shell: bash
 
     - name: Install Graphviz
       uses: $/.github/actions/install-graphviz
@@ -117,7 +113,6 @@ jobs:
       run: |
         dot -V
         python test/main.py -failstop
-      shell: bash
 
   install_and_test:
     name: Full
@@ -130,71 +125,6 @@ jobs:
         exclude:
           - os: ubuntu-latest
             python-version: '3.12'
-            dependencies: 'oldest'
-          - os: ubuntu-latest
-            python-version: '3.12'
-            dependencies: 'latest'
       fail-fast: false
-
     runs-on: ${{ matrix.os }}
-
-    steps:
-    - name: Checkout gvdot v${{ inputs.version }}
-      uses: actions/checkout@v5
-      with:
-        fetch-depth: 0
-        ref: refs/tags/v${{ inputs.version }}
-
-    - name: Prepare Pip Cache Key
-      shell: bash
-      run: |
-        date -u +'%G-%V' > .pip-cache-key
-        echo "${{ matrix.dependencies }}" >> .pip-cache-key
-
-    - name: Setup Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v6
-      with:
-        python-version: ${{ matrix.python-version }}
-        allow-prereleases: true
-        cache: 'pip'
-        cache-dependency-path: |
-          .pip-cache-key
-
-    - name: Upgrade Pip, Wheel, and Setuptools
-      run: |
-        python -m pip install --upgrade pip wheel setuptools
-      shell: bash
-
-    - name: Install gvdot and Check Version
-      run: |
-        if [[ "${{ inputs.repository }}" == "PyPI" ]]; then
-          python -m pip install --no-deps gvdot
-        else
-          python -m pip install --no-deps -i https://test.pypi.org/simple/ gvdot
-        fi
-        installed_version="$(python -c "import importlib.metadata; print(importlib.metadata.version('gvdot'))")"
-        echo "gvdot installed from ${{ inputs.repository }}" \
-              "is version $installed_version"
-        if [[ ! $installed_version == "${{ inputs.version }}" ]]; then
-          echo "Expected ${{ inputs.version }}"
-          exit 1
-        fi
-      shell: bash
-
-    - name: Install Dependencies
-      run: |
-        if [[ "${{ matrix.dependencies }}" == "oldest" ]]; then
-          python -m pip install $OLDEST_DEPS
-        else
-          python -m pip install $LATEST_DEPS
-        fi
-      shell: bash
-
-    - name: Install Graphviz
-      uses: $/.github/actions/install-graphviz
-
-    - name: Run Tests
-      run: |
-        dot -V
-        python test/main.py -failstop
-      shell: bash
+    steps: *test-steps

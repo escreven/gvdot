@@ -1,19 +1,5 @@
 #
-# Run gvdot regression tests when there is a new IPython or notebook release.
-# Because there is no way to trigger a workflow when a python package is
-# released, we poll pypi.org every twelve hours for the latest version numbers
-# of both, using the action cache as a lightweight persistent store to know if
-# they are new or not.
-#
-# If either is new, we test the latest release of gvdot with the latest
-# releases of IPython and notebook on Linux, MacOS, and Windows running Python
-# 3.12-3.15.
-#
-# We use the same canary strategy as test.yml -- no need to test the full
-# matrix if tests on Linux with Python 3.12 fail.
-#
-# We also use the same setup-python pip cache keys as test.yml -- rotated
-# weekly and always for "latest".
+# See .github/workflows/README.md.
 #
 
 name: Dependency Watch
@@ -28,6 +14,10 @@ on:
         type: boolean
         default: false
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   detect:
     name: Detect
@@ -36,12 +26,10 @@ jobs:
       ipython_version: ${{ steps.versions.outputs.ipython }}
       notebook_version: ${{ steps.versions.outputs.notebook }}
       gvdot_version: ${{ steps.versions.outputs.gvdot }}
-      cache_hit: ${{ steps.seen.outputs.cache-hit }}
       should_run: ${{ steps.decision.outputs.should_run }}
     steps:
       - name: Fetch latest version numbers from PyPI
         id: versions
-        shell: bash
         run: |
           python - <<'PY'
           import os, json, urllib.request
@@ -72,7 +60,6 @@ jobs:
 
       - name: Decide whether or not to run tests
         id: decision
-        shell: bash
         run: |
           if [[ "${{ github.event_name }}" == workflow_dispatch && \
                 "${{ inputs.force }}" == true ]]; then
@@ -91,8 +78,12 @@ jobs:
     name: Canary [ubuntu-latest, 3.12]
     needs: detect
     if: needs.detect.outputs.should_run == 'true'
+    strategy:
+      matrix:
+        python-version: ['3.12']
     runs-on: ubuntu-latest
-    steps:
+
+    steps: &test-steps
       - name: Checkout gvdot v${{ needs.detect.outputs.gvdot_version }}
         uses: actions/checkout@v5
         with:
@@ -103,21 +94,19 @@ jobs:
         uses: $/.github/actions/install-graphviz
 
       - name: Prepare Pip Cache Key
-        shell: bash
         run: |
           date -u +'%G-%V' > .pip-cache-key
           echo "latest" >> .pip-cache-key
 
-      - name: Setup Python 3.12
+      - name: Setup Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: ${{ matrix.python-version }}
+          allow-prereleases: true
           cache: 'pip'
-          cache-dependency-path: |
-            .pip-cache-key
+          cache-dependency-path: .pip-cache-key
 
       - name: Install Dependencies (latest IPython/Notebook)
-        shell: bash
         run: |
           python -m pip install --upgrade pip wheel setuptools
           python -m pip install \
@@ -128,7 +117,6 @@ jobs:
             coverage
 
       - name: Run Tests
-        shell: bash
         run: |
           dot -V
           python test/main.py -failstop
@@ -146,48 +134,7 @@ jobs:
             python-version: '3.12'
       fail-fast: false
     runs-on: ${{ matrix.os }}
-
-    steps:
-      - name: Checkout gvdot v${{ needs.detect.outputs.gvdot_version }}
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-          ref: refs/tags/v${{ needs.detect.outputs.gvdot_version }}
-
-      - name: Install Graphviz
-        uses: $/.github/actions/install-graphviz
-
-      - name: Prepare Pip Cache Key
-        shell: bash
-        run: |
-          date -u +'%G-%V' > .pip-cache-key
-          echo "latest" >> .pip-cache-key
-
-      - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ matrix.python-version }}
-          allow-prereleases: true
-          cache: 'pip'
-          cache-dependency-path: |
-            .pip-cache-key
-
-      - name: Install Dependencies (latest IPython/Notebook)
-        shell: bash
-        run: |
-          python -m pip install --upgrade pip wheel setuptools
-          python -m pip install \
-            "ipython==${{ needs.detect.outputs.ipython_version }}" \
-            "notebook==${{ needs.detect.outputs.notebook_version }}" \
-            "gvdot==${{ needs.detect.outputs.gvdot_version }}" \
-            pillow \
-            coverage
-
-      - name: Run Tests
-        shell: bash
-        run: |
-          dot -V
-          python test/main.py -failstop
+    steps: *test-steps
 
   mark_seen:
     name: Mark versions as successfully tested
@@ -200,7 +147,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Save tested version pair
-        shell: bash
         run: |
           mkdir -p .pypi-trigger
           date -u +"%Y-%m-%dT%H:%M:%SZ" > .pypi-trigger/first_seen_utc.txt
@@ -217,17 +163,10 @@ jobs:
   open_issue:
     name: Open issue on failure when scheduled
     needs: [detect, canary, full, mark_seen]
-    if: >
-      ${{
-        always() &&
-        github.event_name != 'workflow_dispatch' &&
-        (
-          needs.detect.result == 'failure' ||
-          needs.canary.result == 'failure' ||
-          needs.full.result == 'failure' ||
-          needs.mark_seen.result == 'failure'
-        )
-      }}
+    if: >-
+      always() &&
+      github.event_name != 'workflow_dispatch' &&
+      contains(needs.*.result, 'failure')
     runs-on: ubuntu-latest
     permissions:
       issues: write
