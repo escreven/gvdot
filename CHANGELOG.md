@@ -1,5 +1,9 @@
 ## Unreleased
 
+#### Added
+- `op.sh` now accepts a python interpreter specification option
+  (`--python=PYTHON`).
+
 ## [1.2.5] - 2026-10-08
 
 #### Changed

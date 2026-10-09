@@ -13,7 +13,7 @@ from subprocess import CalledProcessError, TimeoutExpired
 from typing import Any, Hashable, Literal, Self
 import re
 
-__version__ = "1.2.5"
+__version__ = "1.2.6dev1"
 
 __all__ = (
     "Markup", "Nonce", "Port", "Dot", "InvocationException",
@@ -287,8 +287,8 @@ class _NormPort:
         return self
 
 #
-# _ROLE_REF is a distinguished value that identifies an element's role in its
-# attribute list (if the element has a role).
+# _ROLE_REF is the key for role assignments among entity attributes.  "role"
+# cannot be used directly because of underscore escapes.
 #
 
 class _RoleRef:
@@ -340,7 +340,7 @@ def _set_attrs(target:_Attrs, attrargs:dict[str,Any], permit_role=False):
             target[name] = _normalize(value,f"Attribute {name} value")
 
 #
-# Return the flattened attributes of the possibly role-bearing object.
+# Return the flattened attributes of a possibly role-bearing entity.
 #
 
 def _integrate_role(attrs:_Attrs, roles:_Roles, what:str, identity:Any):
