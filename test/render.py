@@ -68,7 +68,7 @@ def test_to_rendered():
     assert coarse_png_len < base_png_len
 
     #
-    # And it should be larger again with an extreme extreme aspect ratio.
+    # And it should be larger again with an extreme aspect ratio.
     #
 
     data = dot.to_rendered(dpi=30, ratio=20)
@@ -285,14 +285,23 @@ def test_inferred_case_insensitive():
 
 def test_pathlike():
     """
-    The program argument to to_rendered(), to_svg(), and save() can be a
-    path-like object.  The save() filename can be a path-like object.
+    The program and directory arguments to to_rendered(), to_svg(), and save()
+    can be a path-like object.  The save() filename can be a path-like object.
     """
     pathstr = shutil.which('dot')
     assert pathstr
+
     path = Path(pathstr)
+    name = path.name
+    parent = path.parent
+
+    test_png = Path(f"{tmpdir()}/test.png")
 
     dot = Dot().edge("a","b").graph(label="Title")
+
+    #
+    # program is a path, directory unspecified
+    #
 
     data = dot.to_rendered(program=path)
     assert image_format(data) == 'PNG'
@@ -300,6 +309,53 @@ def test_pathlike():
     svg = dot.to_svg(program=path)
     assert likely_full_svg(svg)
 
-    test_png = Path(f"{tmpdir()}/test.png")
-    dot.save(test_png)
+    dot.save(test_png, program=path)
+    assert image_file_format(str(test_png)) == 'PNG'
+
+    #
+    # program is a path and directory is a path
+    #
+
+    name = path.name
+    parent = path.parent
+
+    data = dot.to_rendered(program=name, directory=parent)
+    assert image_format(data) == 'PNG'
+
+    svg = dot.to_svg(program=name, directory=parent)
+    assert likely_full_svg(svg)
+
+    dot.save(test_png, program=name, directory=parent)
+    assert image_file_format(str(test_png)) == 'PNG'
+
+    #
+    # program is a str and directory is a path
+    #
+
+    name = path.name
+    parent = path.parent
+
+    data = dot.to_rendered(program=str(name), directory=parent)
+    assert image_format(data) == 'PNG'
+
+    svg = dot.to_svg(program=str(name), directory=parent)
+    assert likely_full_svg(svg)
+
+    dot.save(test_png, program=str(name), directory=parent)
+    assert image_file_format(str(test_png)) == 'PNG'
+
+    #
+    # program is a path and directory is a str
+    #
+
+    name = path.name
+    parent = path.parent
+
+    data = dot.to_rendered(program=name, directory=str(parent))
+    assert image_format(data) == 'PNG'
+
+    svg = dot.to_svg(program=name, directory=str(parent))
+    assert likely_full_svg(svg)
+
+    dot.save(test_png, program=name, directory=str(parent))
     assert image_file_format(str(test_png)) == 'PNG'
