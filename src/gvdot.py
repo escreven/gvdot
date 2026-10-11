@@ -635,6 +635,8 @@ class Block:
         Establish or amend default graph attributes.
 
         :param attrs: New or amending attribute value assignments.
+
+        :raises ValueError: Role assignment specified as a default attribute.
         """
         _set_attrs(self.d_grapha,attrs)
         return self
@@ -653,6 +655,8 @@ class Block:
         Establish or amend default node attributes.
 
         :param attrs: New or amending attribute value assignments.
+
+        :raises ValueError: Role assignment specified as a default attribute.
         """
         _set_attrs(self.d_nodea,attrs)
         return self
@@ -743,6 +747,8 @@ class Block:
         Establish or amend default edge attributes.
 
         :param attrs: New or amending attribute value assignments.
+
+        :raises ValueError: Role assignment specified as a default attribute.
         """
         _set_attrs(self.d_edgea,attrs)
         return self
@@ -1039,6 +1045,8 @@ class Block:
             block.graph_default(**attrs)
             block.node_default(**attrs)
             block.edge_default(**attrs)
+
+        :raises ValueError: Role assignment specified as a default attribute.
         """
         _set_attrs(self.d_grapha,attrs)
         _set_attrs(self.d_nodea,attrs)
@@ -1255,6 +1263,8 @@ class Dot(Block):
 
         :param role: The graph role to define or amend.
         :param attrs: New or amending attribute value assignments.
+
+        :raises ValueError: Role assignment specified for a role.
         """
         #
         # NOTE: Even though role names are limited to str, we normalize them
@@ -1269,6 +1279,8 @@ class Dot(Block):
 
         :param role: The node role to define or amend.
         :param attrs: New or amending attribute value assignments.
+
+        :raises ValueError: Role assignment specified for a role.
         """
         _set_attrs(self.noderoles[_normalize(role,"Role name")],attrs)
         return self
@@ -1279,6 +1291,8 @@ class Dot(Block):
 
         :param role: The edge role to define or amend.
         :param attrs: New or amending attribute value assignments.
+
+        :raises ValueError: Role assignment specified for a role.
         """
         _set_attrs(self.edgeroles[_normalize(role,"Role name")],attrs)
         return self
@@ -1296,6 +1310,8 @@ class Dot(Block):
             dot.graph_role(role, **attrs)
             dot.node_role(role, **attrs)
             dot.edge_role(role, **attrs)
+
+        :raises ValueError: Role assignment specified for roles.
         """
         normrole = _normalize(role,"Role name")
         _set_attrs(self.graphroles[normrole],attrs)
