@@ -24,6 +24,7 @@ Use option `-h` to see usage.
 | [frontend.py](frontend.py) | Display through notebook frontends
 | [dotcopy.py](dotcopy.py) | Dot object deep copy
 | [identifiers.py](identifiers.py) | IDs and their forms, including Nonces
+| [impose_order.py](impose_order.py) | The impose_order() function
 | [internals.py](internals.py) | Aspects that are hard to test through the public API
 | [render.py](render.py) | Rendering to files, image bytes, and SVG
 | [show.py](show.py) | Showing Dot object images and source in notebooks

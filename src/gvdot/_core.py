@@ -1,6 +1,3 @@
-"""
-Generate and render Graphviz diagrams with clear, maintainable code by separating presentation from structure.
-"""
 from __future__ import annotations
 from collections import defaultdict
 from copy import deepcopy

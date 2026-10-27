@@ -593,7 +593,6 @@ example, the code below
 produces
 
 .. image:: _static/discussion/impose-order-default.*
-    :scale: 7%
     :align: center
     :alt: Default dot program output for graph
 
@@ -608,11 +607,10 @@ with splines enabled to avoid overlapping nodes and edges,
 we get a result that is good in many ways:
 
 .. image:: _static/discussion/impose-order-neato.*
-    :scale: 7%
     :align: center
     :alt: Program neato output for graph
 
-|br| But the depiction is sparse, unrelated edges pass very near :math:`n`,
+|br| But the depiction is sparse, edges pass very near nodes :math:`n`,
 :math:`e`, and :math:`b`, and nodes :math:`i`, :math:`e`, and :math:`b` are
 close together even though the paths between them are long.  Other Graphviz
 undirected graph layout engines have similar issues.
@@ -623,7 +621,6 @@ directions in a way that produces better results for many graphs when rendered
 by program :program:`dot`.
 
 .. image:: _static/discussion/impose-order-improved.*
-    :scale: 7%
     :align: center
     :alt: Program dot output for graph after impose_order
 
