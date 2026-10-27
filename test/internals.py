@@ -1,5 +1,6 @@
 from typing import Any
-from gvdot import Dot, _NormPort, _Edge, _RoleRef
+from gvdot import Dot, _NormPort, _Edge, _RoleRef, _Digraph
+from utility import expect_ex
 
 
 def test_reprs():
@@ -29,15 +30,11 @@ def test_dot_deepcopy():
     assert memo[id(dot1)] is dot2
 
 
-def test_role_ref_eq():
+def test_digraph_self_loop():
     """
-    _RoleRef must implement __eq__ to be hashable.  At the same time, gvdot
-    carefully avoids every creating more than one instance, and since Python
-    dictionaries avoid calling __eq__ when keys are identical, __eq__ is never
-    called.  We test the method here.
+    The _Digraph.add_arc() method used by impose_order() should raise an
+    exception if given a self-loop.  Because impose_order() filters out
+    self-loops while constructing the graph, we must test that here.
     """
-    ref1 = _RoleRef()
-    ref2 = _RoleRef()
-    assert ref1 == ref1
-    assert ref2 == ref2
-    assert ref1 != ref2
+    digraph = _Digraph()
+    expect_ex(AssertionError,lambda: digraph.add_arc("a","a"))

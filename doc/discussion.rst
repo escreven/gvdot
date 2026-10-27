@@ -318,7 +318,7 @@ therefore, the set of default attributes which apply to the node or edge.
 
     dot.node("a")
     dot.edge("a","b")
-    subsub.node("b")
+    subsub.node("c")
     subsub.edge("b","c")
 
     dot.node_default(fontsize=10).edge_default(fontsize=10)
@@ -340,20 +340,22 @@ The :class:`Dot` instance defined above has the DOT language representation
             subgraph SubSub {
                 node [penwidth=2]
                 edge [penwidth=2]
-                b
+                c
                 b -- c
             }
         }
     }
 
 Node ``a`` and edge ``a -- b`` have ``fontsize`` 10 with ``color`` and
-``penwidth`` unspecified, whereas node ``b`` and edge ``b -- c`` have
-``fontsize`` 10, and also ``color`` green and ``penwidth`` 2.
+``penwidth`` unspecified, whereas node ``c`` and edge ``b -- c`` have
+``fontsize`` 10, and also ``color`` green and ``penwidth`` 2.  Because it's
+first mentioned before the subgraphs, under Graphviz's default attribute rules,
+``b`` will have ``fontsize`` 10 with ``color`` and ``penwidth`` unspecified.
 
 If a subgraph is a cluster, some Graphviz layout engines (including the default
-engine, dot) will place all nodes defined within the subgraph together in the
-layout.  Therefore, the Block object through which a node is defined may
-determine its placement.
+engine, :program:`dot`) will place all nodes defined within the subgraph
+together in the layout.  Therefore, the Block object through which a node is
+defined may determine its placement.
 
 Roles are also global within a Dot object.  They may be assigned to any entity
 of the associated kind without regard to the Block object through which the
@@ -419,7 +421,7 @@ But what if we want to amend a multigraph edge?  For that we use
 .. code-block:: python
 
     def edge(self, point1:ID|Port, point2:ID|Port,
-             discriminant:ID|None=None, /, **attrs:ID|None) -> Dot:
+             discriminant:ID|None=None, /, **attrs:ID|None) -> Self:
 
 The ``discriminant`` parameter is a value allowing an application to refer to
 multigraph edges.  Discriminants are not required in multigraphs, and if
@@ -557,8 +559,8 @@ writes to stdout.
     data = dot.to_rendered(dpi=300)
     assert type(data) is bytes
 
-Here we ran the default program ``dot`` to render the task diagram into the
-default format ``png``.   We specified the image should be generated with a
+Here we ran the default program :program:`dot` to render the task diagram into
+the default format ``png``.   We specified the image should be generated with a
 resolution of 300 dots per inch.
 
 :class:`Dot` includes three other rendering methods which all call :meth:`~Dot.to_rendered`:
@@ -566,6 +568,74 @@ resolution of 300 dots per inch.
 - :meth:`Dot.to_svg` renders to SVG and returns the result as a string.
 - :meth:`Dot.save` renders and saves to a file.
 - :meth:`Dot.show` renders and displays the result in a notebook.
+
+.. _imposing_order:
+
+Imposing Order
+--------------
+
+The default Graphviz program :program:`dot` is designed to depict directed
+graphs.  While it also accepts undirected input, the result sometimes has an
+undesirable aspect ratio, long edges, and a disorganized appearance.  For
+example, the code below
+
+.. code-block:: python
+
+    # A biconnected graph
+    edges = [ (('a', 'q'), ('a', 'o'), ('a', 'h'), ..., ('t', 'h')) ]
+
+    dot = Dot().use_theme(graph_theme)
+    for u, v in edges:
+        dot.edge(u,v)
+
+    dot.save("default.svg")  # Renders to a file using default program dot.
+
+produces
+
+.. image:: _static/discussion/impose-order-default.*
+    :scale: 7%
+    :align: center
+    :alt: Default dot program output for graph
+
+|br| The Graphviz suite includes other programs such as :program:`neato`
+specifically designed to depict undirected graphs.  If we use :program:`neato`
+with splines enabled to avoid overlapping nodes and edges,
+
+.. code-block:: python
+
+    dot.copy().graph(splines=True).save("neato.svg", program="neato")
+
+we get a result that is good in many ways:
+
+.. image:: _static/discussion/impose-order-neato.*
+    :scale: 7%
+    :align: center
+    :alt: Program neato output for graph
+
+|br| But the depiction is sparse, unrelated edges pass very near :math:`n`,
+:math:`e`, and :math:`b`, and nodes :math:`i`, :math:`e`, and :math:`b` are
+close together even though the paths between them are long.  Other Graphviz
+undirected graph layout engines have similar issues.
+
+Package gvdot includes an alternative: the function :func:`impose_order`
+returns a directed deep copy of an undirected Dot object, assigning edge
+directions in a way that produces better results for many graphs when rendered
+by program :program:`dot`.
+
+.. image:: _static/discussion/impose-order-improved.*
+    :scale: 7%
+    :align: center
+    :alt: Program dot output for graph after impose_order
+
+|br| The graph above was rendered by
+
+.. code-block:: python
+
+    impose_order(dot).save("imposed-order.svg")
+
+Notice the edges do not indicate direction even though :program:`dot` rendered
+it as a directed graph.  That's because :func:`impose_order` hides arrowheads
+by default.
 
 .. _discussion_terms:
 
@@ -599,6 +669,6 @@ and amend it otherwise.  Variants :meth:`~Block.node_define`,
 :meth:`~Block.edge_define`, and :meth:`~Block.subgraph_define` raise exceptions
 if the entity is already defined, while :meth:`~Block.node_update`,
 :meth:`~Block.edge_update`, and :meth:`~Block.subgraph_update` raise exceptions
-if it is not.  The "define and amend" versions have the advantage of giving
+if it is not.  The "define or amend" versions have the advantage of giving
 code a clean, declarative feel.  The ``..._define`` and ``..._update`` variants
 can make buggy code fail faster.

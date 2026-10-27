@@ -13,7 +13,7 @@ from subprocess import CalledProcessError, TimeoutExpired
 from typing import Any, Hashable, Literal, Self
 import re
 
-__version__ = "1.2.6dev1"
+__version__ = "1.3.0dev1"
 
 __all__ = (
     "Markup", "Nonce", "Port", "Dot", "InvocationException",
@@ -55,7 +55,7 @@ class Markup:
 
 
 #
-# In addition to being a publicly available for creating unique IDs, nonces are
+# In addition to being publicly available for creating unique IDs, nonces are
 # used as edge discriminants in the multi-graph case when none is provided by
 # the application.
 #
@@ -288,7 +288,8 @@ class _NormPort:
 
 #
 # _ROLE_REF is the key for role assignments among entity attributes.  "role"
-# cannot be used directly because of underscore escapes.
+# cannot be used directly because of underscore escapes.  We depend on default
+# identity semantics use using _ROLE_REF as a dict key.
 #
 
 class _RoleRef:
@@ -296,12 +297,6 @@ class _RoleRef:
 
     def __repr__(self):
         return "%%role%%"
-
-    def __hash__(self):
-        return hash("%%role%%")
-
-    def __eq__(self, other):
-        return other is self
 
     def __deepcopy__(self, memo):
         return self
@@ -377,7 +372,7 @@ _TEXT_ATTRS = { "label", "headlabel", "taillabel", "xlabel", "comment" }
 
 #
 # We normalize discriminants to _NormIDs if they are given, otherwise (when
-# given as None) they are normalized to _Nonces for multigraphs and None for
+# given as None) they are normalized to _Nonce for multigraphs and None for
 # non-multigraphs.
 #
 
@@ -386,7 +381,7 @@ type _NormDisc = _NormID | None
 #
 # Identify nodes, edges, and subgraphs internally.  Node keys and subgraph keys
 # are normalized IDs.  Edge keys are normalized (node1,node2,discriminant)
-# triples.  For non-directed graphs, node1 <= node2.
+# triples.  For non-directed graphs, _id_key(node1) <= _id_key(node2).
 #
 
 type _NodeKey = _NormID
@@ -513,7 +508,7 @@ class _Mien:
 
 
 #
-# Return a list of all _NormIDs values in a Dot object and its _Mien, including
+# Return a list of all _NormID values in a Dot object and its _Mien, including
 # None.  (Including None simplifies the collection code, and they're filtered
 # out for free when used.)
 #
@@ -684,7 +679,7 @@ class Block:
             sub1.node("a", fontsize=10)
             dot.node("a", color="blue")
 
-        has the Dot language representation
+        has the DOT language representation
 
         .. code-block:: graphviz
 
@@ -837,7 +832,7 @@ class Block:
         appear.  However, edge identity is global, so an edge may be amended
         through any Block object.
 
-        Consistent with the DOT language, only the ``id`` portion of a
+        Consistent with the DOT language, only the ``node`` portion of a
         :class:`Port` is relevant to edge identification.  In the code below,
         the first :meth:`edge` call defines an edge, and the second amends the
         same edge's attributes.
@@ -1095,7 +1090,7 @@ class Block:
                 blanklines += 1
 
         blankline()
-        if type(self) is Dot:
+        if isinstance(self,Dot):
             d_grapha = mien.d_grapha
             d_nodea  = mien.d_nodea
             d_edgea  = mien.d_edgea
@@ -1113,7 +1108,7 @@ class Block:
         edgeroles  = mien.edgeroles
         nodemap    = self._dot.nodemap
         graphid    = self.graphid
-        grapha     = _integrate_role(mien.grapha if type(self) is Dot
+        grapha     = _integrate_role(mien.grapha if isinstance(self,Dot)
                                      else self.grapha, graphroles,
                                      "graph",graphid)
 
@@ -1408,9 +1403,9 @@ class Dot(Block):
         Render the Dot object by invoking a Graphviz program.  The input to the
         program is the object's DOT language representation.
 
-        :param program: Which Graphviz program to use (dot by default).
-            ``program`` should either be the name of the program or a path to
-            the program.
+        :param program: Which Graphviz program to use (:program:`dot` by
+            default).  ``program`` should either be the name of the program or
+            a path to the program.
 
         :param format: The output format desired (png by default).
             :meth:`to_rendered` converts the specified value to lowercase if it

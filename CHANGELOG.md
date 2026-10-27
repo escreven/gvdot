@@ -1,8 +1,22 @@
 ## Unreleased
 
 #### Added
+- Function `impose_order()` which can improve the layout of undirected graphs
+  rendered by program `dot`.
 - `op.sh` now accepts a python interpreter specification option
   (`--python=PYTHON`).
+- Custom style for the doc `:program:` role.
+
+#### Changed
+- Improved test harness DOT language analysis for testing impose_order().
+- Restructured package from a single module to multiple files.
+
+#### Fixed
+- Catch `Exception` instead of `BaseException` in the test harness.
+- Theme graph and and default attributes now inherited correctly if an
+  application subclasses `Dot`.
+- Description of default attribute inheritance for node `b` in the Discussion
+  &Gt; Subgraphs section of the doc.
 
 ## [1.2.5] - 2026-10-08
 
@@ -100,14 +114,14 @@
 - Significantly revised docstrings throughout.
 - Switched to using term "establish" instead of "specify" for first assignment
   to default and graph attributes; "specify" is too common.
-- Harmonized the parameters of the `to_rendered`, `to_svg`, and `show`
+- Harmonized the parameters of `to_rendered`, `to_svg`, and `show`
 - All render methods now call `to_rendered` to do the real work.
 - Render methods throw `ProcessException` and `TimeoutException` instead of the
   similar `subprocess` exceptions.
 - The "show source" capability of `show()` is now separated out as
   `show_source()`.
 - Method `show()` now catches Graphviz program execution related exceptions and
-  displays HTML via `Markdown` objects decribing the issue, then raises a
+  displays HTML via `Markdown` objects describing the issue, then raises a
   sanitized `ShowException`.
 
 #### Fixed

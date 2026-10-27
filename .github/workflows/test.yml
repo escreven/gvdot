@@ -61,8 +61,8 @@ jobs:
       run: |
         dot -V
         coverage run --branch \
-            --include 'src/gvdot.py' test/main.py -failstop
-        coverage report --include=src/gvdot.py --fail-under=100
+            --include 'src/gvdot/*.py' test/main.py -failstop
+        coverage report --include='src/gvdot/*.py' --fail-under=100
 
   full:
     name: Full

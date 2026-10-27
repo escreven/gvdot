@@ -26,7 +26,7 @@ As usual, we begin by creating a theme.
         .edge_role("phantom", style="invisible"))
 
 Before we write the generation code, let's see how this looks by building a
-tree by hand.  To ensure ``dot`` lays out the tree correctly, we use subgraphs
+tree by hand.  To ensure :program:`dot` lays out the tree correctly, we use subgraphs
 and phantom (invisible) edges to ensure sibling nodes are on the same rank
 and ordered correctly.
 
@@ -291,4 +291,4 @@ displays
 
 
 This Red-Black Tree example is available as a `notebook on GitHub
-<https://github.com/escreven/gvdot/blob/main/examples/red-black-tree.ipynb>`_ .
+<https://github.com/escreven/gvdot/blob/main/examples/red-black-tree.ipynb>`_.

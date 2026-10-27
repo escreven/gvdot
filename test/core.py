@@ -389,7 +389,7 @@ def test_def_vs_update():
 def test_edge_identity():
     """
     Only the node id part of port specifications matters for edge identity.
-    With respect to identify, non-directed graph endpoints are unordered,
+    With respect to identity, non-directed graph endpoints are unordered,
     however order is preserved and can be amended because it can matter to
     graphviz.  For multigraphs, discriminants are required for complete edge
     identity.  Multigraph edges without discriminants are always distinct.
@@ -525,10 +525,9 @@ def test_subgraph_identity():
 
 def test_subgraph_scoping():
     """
-    Nodes and edges are scoped to the root dot object, but appear in the graph
-    or subgraph in which they are first defined.  Roles are also scoped to the
-    root dot object, but may be defined or amended in the root or any subgraph.
-    Default attributes are specific to the graph or subgraph.
+    Nodes and edges are scoped to the dot object, but appear in the graph or
+    subgraph in which they are first defined.  Roles are also scoped to the dot
+    object and can be used in any subgraph.
     """
     def add_defaults(cx:Block, value:str):
         cx.graph_default(a1=value)
@@ -609,7 +608,7 @@ def test_subgraph_scoping():
 
 def test_parent_and_dot():
     """
-    Method parent() should return a blocks's parent, if any.  dot() should
+    Method parent() should return a block's parent, if any.  dot() should
     return the enveloping Dot object.
     """
     dot = Dot()
@@ -620,11 +619,11 @@ def test_parent_and_dot():
     assert sub.dot() is dot
 
 
-def test_child_str():
+def test_block_str():
     """
-    The string representation of a child Dot object is a default __repr__.
+    The string representation of a Block object is a default __repr__.
     """
-    assert "gvdot.Block" in str(Dot().subgraph())
+    assert "gvdot._core.Block" in str(Dot().subgraph())
 
 
 def test_no_block_create():
@@ -637,12 +636,11 @@ def test_no_block_create():
 def test_readability():
     """
     DOT output should have reasonable indentation and blank lines between
-    sections of blocks there have more than a few statements.
-    blank lines for non-trivial graphs.
+    sections of blocks that have more than a few statements.
     """
     #
     # This test is fragile.  Many changes to the output format that still
-    # preserve readability can cause it to fail.  Nonetheless, it serves as
+    # preserve readability can cause it to fail.  Nonetheless, it serves as a
     # guard against accidental changes.
     #
     dot = Dot(id="Root")

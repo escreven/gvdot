@@ -56,7 +56,7 @@ function sdist_file {
 
 #
 # Succeed iff all version markers in the project are identical (currently in
-# pyproject.toml and gvdot.py.)  Output is the consistent version.
+# pyproject.toml and gvdot/_core.py.)  Output is the consistent version.
 #
 
 function require_consistent_version {
@@ -71,14 +71,14 @@ function require_consistent_version {
     local python_version
     python_version=$(\
         sed -n 's/^__version__ = "\([^"][^"]*\)"/\1/p' \
-            src/gvdot.py)
+            src/gvdot/_core.py)
 
     [[ -z $python_version ]] \
-        && fail "Could not find version in src/gvdot.py"
+        && fail "Could not find version in src/gvdot/_core.py"
 
     [[ $pyproject_version == "$python_version" ]] \
         || fail "Version mismatch: pyproject.toml ($pyproject_version)" \
-                "!= src/gvdot.py ($python_version)"
+                "!= src/gvdot/_core.py ($python_version)"
 
     echo "$python_version"
 }
@@ -209,7 +209,7 @@ function require_deployable_README {
 function report_coverage {
 
     $PYTHON -m coverage run --branch \
-        --include 'src/gvdot.py' test/main.py
+        --include 'src/gvdot/*.py' test/main.py
 
     $PYTHON -m coverage report -m
 
@@ -244,7 +244,7 @@ function clean_coverage {
 
 function build_doc {
     make -C doc html
-    echo "Documentation root is $(pwd)/doc/_build/html/index.html"
+    echo "Documentation root is file://$(pwd)/doc/_build/html/index.html"
 }
 
 #

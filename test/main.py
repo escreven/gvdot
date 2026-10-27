@@ -34,6 +34,7 @@ import dotcopy
 import frontend
 import identifiers
 import internals
+import impose_order
 import render
 import show
 import styling
@@ -108,7 +109,7 @@ def _run(cases:list[_Case], failstop:bool):
                 fn()
             print("OK")
             correct += 1
-        except BaseException as failure:
+        except Exception as failure:
             print("FAILED")
             print()
             if (docstr := inspect.getdoc(fn)):
@@ -186,6 +187,7 @@ def _main():
     cases.extend(_get_cases(frontend))
     cases.extend(_get_cases(identifiers))
     cases.extend(_get_cases(internals))
+    cases.extend(_get_cases(impose_order))
     cases.extend(_get_cases(render))
     cases.extend(_get_cases(show))
     cases.extend(_get_cases(styling))

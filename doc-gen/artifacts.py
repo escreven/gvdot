@@ -9,7 +9,7 @@ from types import FunctionType
 from gvdot import Dot
 
 #
-# Generate a rst code block string for the given text in the specified
+# Generate an rst code block string for the given text in the specified
 # language.  The input lines are dedented, and any blank lines at the beginning
 # or end are deleted.
 #
@@ -59,7 +59,7 @@ def _code_block(language:str, text:str):
 # them in doc/_static or doc/_code.
 #
 # NOTE: This module must be in a directory at the repo root, so that
-# ${__FILE__}/../doc/_static and ${__FILE__}/../doc/_code are the target image
+# {__file__}/../doc/_static and {__file__}/../doc/_code are the target image
 # and code snippet directories.
 #
 
@@ -73,12 +73,14 @@ class Artifact:
 
 @dataclass
 class Image(Artifact):
-    dot : Dot
+    dot     : Dot
+    program : str = "dot"
 
     def save(self, dir:PurePath):
         name = self.name
         dot = self.dot
-        dot.save(dir / f"_static/{name}.svg")
+        program = self.program
+        dot.save(dir / f"_static/{name}.svg", program=program)
 
 @dataclass
 class DotCode(Artifact):

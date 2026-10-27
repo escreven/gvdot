@@ -33,3 +33,10 @@ css
 .custom-box p {
     margin-bottom: 0px;
 }
+
+/* Style for the :program: roles */
+.program {
+    font-family: "Courier New", Courier, monospace;
+    font-weight: bold;
+    padding: 2px 2px;
+}
