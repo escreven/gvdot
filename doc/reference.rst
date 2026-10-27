@@ -98,7 +98,6 @@ Other Methods
 .. automethod:: Block.parent
 .. automethod:: Block.dot
 
-
 Supporting Types
 ----------------
 
@@ -111,6 +110,13 @@ Supporting Types
 .. autotype:: CompassPoint
 .. autoclass:: Port
 
+
+Functions
+---------
+
+.. autofunction:: impose_order
+
+    See also the :ref:`imposing_order` discussion.
 
 Exceptions
 ----------

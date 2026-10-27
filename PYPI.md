@@ -136,7 +136,7 @@ To install Graphviz, see
 
 ## Reliability
 
-gvdot includes automated tests with 100% code coverage, which are run on MacOS,
+gvdot includes automated tests with 100% code coverage, which are run on macOS,
 Linux, and Windows with Python 3.12, 3.13, 3.14, and 3.15.  See [the GitHub
 workflow](https://github.com/escreven/gvdot/blob/main/.github/workflows/test.yml)
 for details.

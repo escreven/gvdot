@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 from gvdot import Dot, InvocationException, ProcessException, TimeoutException
 from utility import dotecho, doterror, dotsleep, tmpdir
-from utility import expect_ex, image_format, likely_full_svg, likely_svg
+from utility import expect_ex, image_format, likely_full_svg, svg_parse
 from utility import image_file_format
 
 
@@ -89,7 +89,7 @@ def test_to_rendered():
     # Check the command line too.
     #
 
-    # Returned date is the echoed command line
+    # Returned data is the echoed command line
     data = dot.to_rendered(
         dpi=30, ratio=20, size="1,1",
         directory=tmpdir(), program=dotecho()).decode()
@@ -114,10 +114,10 @@ def test_to_svg():
     """
     Method to_svg() should invoke the specified graphviz program to render the
     dot object as SVG.  If the program isn't found, it should raise an
-    InvocationError.  If the program exits with a non-zero status, it should
-    raise a ProcessException.  If a timeout is specified, and the program times
-    out, it should raise a TimeoutException exception.  The dpi, size, and
-    ratio arguments should be passed as -G options to the program.
+    InvocationException.  If the program exits with a non-zero status, it
+    should raise a ProcessException.  If a timeout is specified, and the
+    program times out, it should raise a TimeoutException exception.  The dpi,
+    size, and ratio arguments should be passed as -G options to the program.
     """
     dot = Dot().edge("a","b")
 
@@ -126,18 +126,18 @@ def test_to_svg():
 
     #
     # Older versions of Graphviz do not support the -Tsvg_inline option.
-    # Therefore, we accept either the correct line SVG result or a
+    # Therefore, we accept either the correct inline SVG result or a
     # ProcessException mentioning svg_inline.
     #
 
     try:
         svg = dot.to_svg(inline=True)
-        assert likely_svg(svg) and not likely_full_svg(svg)
+        assert svg_parse(svg) and not likely_full_svg(svg)
     except ProcessException as ex:
         assert "svg_inline" in ex.stderr
 
     svg = dot.to_svg("neato")
-    assert likely_full_svg(svg)
+    assert svg_parse(svg) and likely_full_svg(svg)
 
     ex = expect_ex(InvocationException, lambda: dot.to_svg("doesnotexist"))
     assert "doesnotexist" in str(ex)
@@ -181,8 +181,8 @@ def test_save():
     """
     Method save() should invoke the specified graphviz program to save the dot
     object as bytes.  It should infer the format from the file extension if not
-    given, if given the format should take precedence over the extension.  If
-    the program isn't found, it should raise an InvocationError.  If the
+    given; if given the format should take precedence over the extension.  If
+    the program isn't found, it should raise an InvocationException.  If the
     program exits with a non-zero status, it should raise a ProcessException.
     If a timeout is specified, and the program times out, it should raise a
     TimeoutException exception.

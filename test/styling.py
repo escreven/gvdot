@@ -94,7 +94,7 @@ def test_all_role():
 
 def test_roles_limited():
     """
-    Roles may not be assignd to default attributes or other roles.
+    Roles may not be assigned to default attributes or other roles.
     """
     dot = Dot()
     expect_ex(ValueError, lambda: dot.graph_default(role="test"))
@@ -151,7 +151,7 @@ def test_role_attr_escape():
 def test_unusual_role_names():
     """
     Role names are strings, but they are not limited to being identifier-like.
-    They can contain spaces, double-quotes, and anything else and ID str can
+    They can contain spaces, double-quotes, and anything else an ID str can
     contain.
     """
     dot = Dot()
@@ -172,8 +172,8 @@ def test_unusual_role_names():
 
 def test_roles_must_be_defined():
     """
-    Assigned roles must eventually be defined, but not need to be defined
-    before the DOT language representation is created.
+    Assigned roles must eventually be defined, but need not be defined until
+    the DOT language representation is created.
     """
 
     dot1 = Dot().graph(role="test")

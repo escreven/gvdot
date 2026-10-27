@@ -3,9 +3,9 @@ import re
 import shutil
 from typing import Any
 from gvdot import Dot, ShowException
-import gvdot
+from gvdot import _core
 from utility import doterror, dotsleep, expect_ex, image_format
-from utility import likely_full_svg, tmpdir
+from utility import svg_parse, svg_dimensions, likely_full_svg, tmpdir
 
 
 class _MockIPython:
@@ -43,48 +43,48 @@ class _MockIPython:
         return "Code", data
 
     def __enter__(self):
-        self.old_display = gvdot.display
-        self.old_Markdown = gvdot.Markdown
-        self.old_SVG = gvdot.SVG
-        self.old_Image = gvdot.Image
-        self.old_Code = gvdot.Code
-        gvdot.display = self.display
-        gvdot.Markdown = self.Markdown
-        gvdot.SVG = self.SVG
-        gvdot.Image = self.Image
-        gvdot.Code = self.Code
+        self.old_display = _core.display
+        self.old_Markdown = _core.Markdown
+        self.old_SVG = _core.SVG
+        self.old_Image = _core.Image
+        self.old_Code = _core.Code
+        _core.display = self.display
+        _core.Markdown = self.Markdown
+        _core.SVG = self.SVG
+        _core.Image = self.Image
+        _core.Code = self.Code
         return self
 
     def __exit__(self, exc_type, exc, tb):
-        gvdot.display = self.old_display
-        gvdot.Markdown = self.old_Markdown
-        gvdot.SVG = self.old_SVG
-        gvdot.Image = self.old_Image
-        gvdot.Code = self.old_Code
+        _core.display = self.old_display
+        _core.Markdown = self.old_Markdown
+        _core.SVG = self.old_SVG
+        _core.Image = self.old_Image
+        _core.Code = self.old_Code
         return False
 
 
 class _NoIPython:
 
     def __enter__(self):
-        self.old_display = gvdot.display
-        self.old_Markdown = gvdot.Markdown
-        self.old_SVG = gvdot.SVG
-        self.old_Image = gvdot.Image
-        self.old_Code = gvdot.Code
-        gvdot.display = None
-        gvdot.Markdown = None
-        gvdot.SVG = None
-        gvdot.Image = None
-        gvdot.Code = None
+        self.old_display = _core.display
+        self.old_Markdown = _core.Markdown
+        self.old_SVG = _core.SVG
+        self.old_Image = _core.Image
+        self.old_Code = _core.Code
+        _core.display = None
+        _core.Markdown = None
+        _core.SVG = None
+        _core.Image = None
+        _core.Code = None
         return self
 
     def __exit__(self, exc_type, exc, tb):
-        gvdot.display = self.old_display
-        gvdot.Markdown = self.old_Markdown
-        gvdot.SVG = self.old_SVG
-        gvdot.Image = self.old_Image
-        gvdot.Code = self.old_Code
+        _core.display = self.old_display
+        _core.Markdown = self.old_Markdown
+        _core.SVG = self.old_SVG
+        _core.Image = self.old_Image
+        _core.Code = self.old_Code
         return False
 
 
@@ -116,7 +116,7 @@ def test_show():
         displayed = mock.take()
         assert len(displayed) == 1
         assert displayed[0][0] == "SVG"
-        assert likely_full_svg(displayed[0][1])
+        assert svg_parse(displayed[0][1]) and likely_full_svg(displayed[0][1])
 
         dot.show(format="png")
         displayed = mock.take()
@@ -175,7 +175,8 @@ def test_show():
         displayed = mock.take()
         assert len(displayed) == 1
         assert displayed[0][0] == "SVG"
-        assert 'height="72pt"' in displayed[0][1]
+        _, height, unit = svg_dimensions(svg_parse(displayed[0][1]))
+        assert height == 72 and unit == 'pt'
 
     with _NoIPython():
         try:
@@ -210,7 +211,7 @@ def test_pathlike():
         displayed = mock.take()
         assert len(displayed) == 1
         assert displayed[0][0] == "SVG"
-        assert likely_full_svg(displayed[0][1])
+        assert svg_parse(displayed[0][1]) and likely_full_svg(displayed[0][1])
 
         ex = expect_ex(ShowException, lambda: dot.show(
             program=pathdne, format="svg"))

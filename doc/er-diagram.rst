@@ -126,7 +126,7 @@ roles as well.
 .. code:: python
 
     er_base_theme = (Dot()
-        .graph(layout="neato")
+        .graph(layout="neato", fontsize=16)
         .all_default(fontname="Helvetica,Arial,sans-serif")
         .node_role("entity", shape="box")
         .node_role("attribute", shape="ellipse")
@@ -162,7 +162,7 @@ and maintain.
             for participant in relationship.participants:
                 dot.edge(relationship.name,participant.entity,
                         label=participant.cardinality, role="e-to-r")
-        dot.graph(fontsize=16, label=f"\n{title}")
+        dot.graph(label=f"\n{title}")
         return dot
 
     diagram = er_diagram(example_model, "Generated Using gvdot", er_gallery_theme)
@@ -176,7 +176,7 @@ attribute names because attribute names are not unique within a model.
     :width: 60%
     :alt: Generated Black and White ER-diagram
 
-    The layout differs because neato depends on statement order.
+    The layout differs because :program:`neato` depends on statement order.
 
 The generated diagram is equivalent to the transcribed version.  We can see how
 gvdot incorporated the theme and roles by examining its DOT language

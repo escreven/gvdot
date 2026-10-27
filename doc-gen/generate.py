@@ -6,7 +6,7 @@ from pathlib import Path
 import re
 from types import FunctionType
 from typing import Any
-from gvdot import Dot, Markup, Port, Nonce
+from gvdot import Dot, Markup, Port, Nonce, impose_order
 from artifacts import Artifact, Image, PythonCode, DotCode, save_artifacts
 
 
@@ -103,7 +103,8 @@ def nfa_example() -> list[Artifact]:
     ]
 
     #
-    # What follows is init -> start fragment that appears in the discussion.
+    # What follows is the init -> start fragment that appears in the
+    # discussion.
     #
 
     fragment_theme = (Dot().use_theme(nfa_theme)
@@ -365,6 +366,37 @@ def multigraph_example() -> list[Artifact]:
         Image(     "discussion/multigraph-stage3", code3()),
     ]
 
+def impose_order_example() -> list[Artifact]:
+
+    edges = [
+        ('a', 'h'), ('a', 'c'), ('a', 'm'), ('b', 'c'), ('b', 'r'),
+        ('c', 'o'), ('c', 'b'), ('c', 'a'), ('d', 'j'), ('d', 'p'),
+        ('e', 'j'), ('e', 'o'), ('f', 'l'), ('f', 'q'), ('f', 'n'),
+        ('g', 's'), ('g', 'k'), ('g', 'q'), ('g', 'i'), ('h', 'p'),
+        ('h', 'a'), ('h', 'i'), ('i', 'g'), ('i', 'h'), ('j', 'r'),
+        ('j', 'e'), ('j', 'd'), ('k', 'g'), ('k', 't'), ('l', 'm'),
+        ('l', 'o'), ('l', 'f'), ('m', 'l'), ('m', 'a'), ('n', 'o'),
+        ('n', 'f'), ('n', 't'), ('o', 'l'), ('o', 'c'), ('o', 'n'),
+        ('o', 'e'), ('p', 'd'), ('p', 'h'), ('q', 'g'), ('q', 'f'),
+        ('r', 'b'), ('r', 'j'), ('r', 's'), ('s', 'r'), ('s', 'g'),
+        ('t', 'k'), ('t', 'n') ]
+
+    theme = (Dot()
+        .graph(ranksep=0.30, labelloc='t', size="6,6")
+        .node_default(style="filled", fillcolor="lightblue",
+                    shape="circle", margin=0, width=0.1, height=0.1))
+
+    dot = Dot().use_theme(theme)
+    for u, v in edges:
+        dot.edge(u,v)
+
+    ndot = dot.copy().graph(splines=True)
+
+    return [
+        Image("discussion/impose-order-default",  dot),
+        Image("discussion/impose-order-neato",    ndot, program="neato"),
+        Image("discussion/impose-order-improved", impose_order(dot))
+    ]
 
 # ============================================================================
 #                                QUICK TOUR

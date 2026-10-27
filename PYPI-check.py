@@ -1,5 +1,5 @@
 #
-# Verify PYPI.md is a deployable state.
+# Verify PYPI.md is in a deployable state.
 #
 # PyPI incorporates PYPI.md into the pypi.org gvdot package description page
 # as-is.  It doesn't correct relative GitHub links, so links in PYPI.md must
@@ -28,8 +28,8 @@ for link in link_re.findall(pypi_md):
         sys.exit(1)
 
 if match := math_re.search(pypi_md):
-    print(f"PYPI.md may contain LaTex {match[0].strip()}",file=sys.stderr)
-    print("PyPI does not support embedded LaTex.",file=sys.stderr)
+    print(f"PYPI.md may contain LaTeX {match[0].strip()}",file=sys.stderr)
+    print("PyPI does not support embedded LaTeX.",file=sys.stderr)
     sys.exit(1)
 
 if Path("README.md").stat().st_mtime > Path("PYPI.md").stat().st_mtime:

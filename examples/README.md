@@ -5,7 +5,7 @@
   then shows how to generate equivalent diagrams from models using themes,
   roles, and nonces.
 
-* **[nfa.ipynb](nfa.ipynb)** — Demonstrates nondetermistic finite automata
+* **[nfa.ipynb](nfa.ipynb)** — Demonstrates nondeterministic finite automata
   diagram generation from an NFA definition.
 
 * **[quicktour.ipynb](quicktour.ipynb)** — Walks concisely through gvdot.
