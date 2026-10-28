@@ -20,3 +20,19 @@
 
 When run, the example notebooks save generated images to directory
 `images/` if it exists.
+
+### Requirements
+
+Notebooks **[nfa.ipynb](nfa.ipynb)**, **[quicktour.ipynb](quicktour.ipynb)**,
+and **[red-black-tree.ipynb](red-black-tree.ipynb)** require Graphviz program
+`dot` to be on the path, while **[er-diagram.ipynb](er-diagram.ipynb)**
+requires `neato` to be on the path.  Both Graphviz programs must be configured
+to produce SVG output.
+
+The `neato` layout engine is not always installed with Graphviz on Linux,
+including recent versions of Ubuntu.  To enable these notebooks on Ubuntu 26.04
+or later, install Graphviz with
+
+```bash
+$ sudo apt-get install --yes graphviz libgvplugin-neato-layout8
+```

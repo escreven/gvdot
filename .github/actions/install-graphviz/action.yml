@@ -9,7 +9,7 @@ runs:
       shell: bash
       run: |
         sudo apt-get update
-        sudo apt-get install --yes graphviz
+        sudo apt-get install --yes graphviz libgvplugin-neato-layout8
 
     - name: Install Graphviz on macOS
       if: runner.os == 'macOS'
