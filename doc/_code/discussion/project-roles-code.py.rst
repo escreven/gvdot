@@ -10,7 +10,7 @@
         dot.node_role("critical", color="#c00000", fontcolor="#e8e8e8")
         for id, task in project.tasks.items():
             dot.node(id, label=task.name,
-                    role=task.status)
+                     role=task.status)    # <-- role assigned here
             for other in task.requires:
                 dot.edge(other, id)
         return dot

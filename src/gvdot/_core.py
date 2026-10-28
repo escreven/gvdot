@@ -15,6 +15,7 @@ __version__ = "1.3.0"
 __all__ = (
     "Markup", "Nonce", "Port", "Dot", "InvocationException",
     "ProcessException", "TimeoutException", "ShowException",
+    "ID", "CompassPoint"
 )
 
 #
@@ -230,6 +231,17 @@ class Port:
     node : ID
     name : ID | None = None
     cp   : CompassPoint | None = None
+
+
+type NodeExpression = (
+    ID |
+    tuple[ID, dict[str,ID|None]])
+
+type EdgeExpression = (
+    tuple[ID|Port, ID|Port] |
+    tuple[ID|Port, ID|Port, ID] |
+    tuple[ID|Port, ID|Port, dict[str,ID|None]] |
+    tuple[ID|Port, ID|Port, ID, dict[str,ID|None]])
 
 #
 # The operating compass points.

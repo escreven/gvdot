@@ -101,13 +101,13 @@ Other Methods
 Supporting Types
 ----------------
 
-.. autotype:: ID
+.. autotype:: gvdot._core.ID
 .. autoclass:: Markup
 .. autoclass:: Nonce
 
     See also the :ref:`discussion_nonces` discussion.
 
-.. autotype:: CompassPoint
+.. autotype:: gvdot._core.CompassPoint
 .. autoclass:: Port
 
 
