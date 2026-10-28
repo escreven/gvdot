@@ -1,7 +1,7 @@
 ## Unreleased
 
 #### Fixed
-- Inclusion of `ID` and `CompassPoint` reference documentation.
+- Inclusion of `ID` and `CompassPoint` text in reference documentation.
 
 ## [1.3.0] - 2026-10-27
 

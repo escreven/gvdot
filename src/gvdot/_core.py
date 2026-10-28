@@ -10,13 +10,9 @@ from subprocess import CalledProcessError, TimeoutExpired
 from typing import Any, Hashable, Literal, Self
 import re
 
-__version__ = "1.3.0"
+__version__ = "1.3.1"
 
-__all__ = (
-    "Markup", "Nonce", "Port", "Dot", "InvocationException",
-    "ProcessException", "TimeoutException", "ShowException",
-    "ID", "CompassPoint"
-)
+__all__ = ()
 
 #
 # Optional notebook support.
@@ -231,17 +227,6 @@ class Port:
     node : ID
     name : ID | None = None
     cp   : CompassPoint | None = None
-
-
-type NodeExpression = (
-    ID |
-    tuple[ID, dict[str,ID|None]])
-
-type EdgeExpression = (
-    tuple[ID|Port, ID|Port] |
-    tuple[ID|Port, ID|Port, ID] |
-    tuple[ID|Port, ID|Port, dict[str,ID|None]] |
-    tuple[ID|Port, ID|Port, ID, dict[str,ID|None]])
 
 #
 # The operating compass points.
