@@ -640,11 +640,11 @@ def impose_order(dot:Dot, *, hide_arrow:bool=True, version:int=1) -> Dot:
     Endpoint Attribute Preservation
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    The edge attributes below are specific to edge endpoint order even in
-    undirected graphs.  (In the case of an undirected graph, "tail" means first
-    and "head" means second.)  If :func:`impose_order` changes the endpoint
-    order of an edge, it rewrites these attributes using converse names so that
-    specified values still apply to the same endpoint.
+    The edge attributes below apply to only one endpoint of an edge.  (In the
+    case of an undirected graph, "tail" means first and "head" means second.)
+    If :func:`impose_order` changes the endpoint order of an edge, it rewrites
+    these attributes using converse names so that specified values still apply
+    to the intended endpoint.
 
     .. list-table::
         :align: center
@@ -690,7 +690,7 @@ def impose_order(dot:Dot, *, hide_arrow:bool=True, version:int=1) -> Dot:
     theme and role attributes have been integrated, roles are no longer defined
     or assigned, order sensitive edge attributes have been moved to edges, and
     what are undirected edges of the input are now unpredictably directed in
-    the returned object.  A simple approach to handle edge order is
+    the returned object.  A simple approach to handle that last concern is
 
     .. code-block:: python
 

@@ -195,9 +195,9 @@ def test_roles_must_be_defined():
 
 def test_theme_precedence():
     """
-    Using the theme of another dot object should apply its default attributes,
+    Using the theme of another Dot object should apply its default attributes,
     graph attributes, and roles, but not its nodes, edges, and subgraphs.
-    Assigned attribute values of the target dot object should prevail over
+    Assigned attribute values of the target Dot object should prevail over
     theme values.
     """
     def add_attrs(dot:Dot, name:str, source:str):
@@ -253,7 +253,7 @@ def test_theme_dynamics():
     """
     Using themes shouldn't modify the base object.  Switching themes should
     cause the DOT language representation to shift to the new theme.
-    Modifications to a theme should be immediately reflected in all dot objects
+    Modifications to a theme should be immediately reflected in all Dot objects
     inheriting from the theme.
     """
     theme1 = Dot().node_default(a=1,b=1,c=1)
@@ -316,7 +316,7 @@ def test_theme_dynamics():
 def test_theme_errors():
     """
     Attempting to form a theme cycle should raise an exception.  Themes and the
-    dot objects that use them must be root objects.
+    Dot objects that use them must be root objects.
     """
     theme1 = Dot().node_role("test",a=1,b=1,c=1)
     theme2 = Dot().node_role("test",b=2,c=2)
@@ -340,7 +340,7 @@ def test_theme_errors():
 def test_subgraphs_see_theme_roles():
     """
     Inherited roles should be assignable to entities defined through subgraph
-    dot objects.
+    Dot objects.
     """
     theme = Dot().all_role("test",x=1)
     dot = Dot().use_theme(theme)

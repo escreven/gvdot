@@ -10,7 +10,7 @@ from utility import image_file_format
 def test_to_rendered():
     """
     Method to_rendered() should invoke the specified graphviz program to render
-    the dot object as bytes.  If the program isn't found, it should raise an
+    the Dot object as bytes.  If the program isn't found, it should raise an
     InvocationException.  If the program exits with a non-zero status, it
     should raise a ProcessException.  If a timeout is specified, and the
     program times out, it should raise a TimeoutException exception.  The dpi,
@@ -113,7 +113,7 @@ def test_to_rendered_downcase():
 def test_to_svg():
     """
     Method to_svg() should invoke the specified graphviz program to render the
-    dot object as SVG.  If the program isn't found, it should raise an
+    Dot object as SVG.  If the program isn't found, it should raise an
     InvocationException.  If the program exits with a non-zero status, it
     should raise a ProcessException.  If a timeout is specified, and the
     program times out, it should raise a TimeoutException exception.  The dpi,
@@ -179,7 +179,7 @@ def test_to_svg():
 
 def test_save():
     """
-    Method save() should invoke the specified graphviz program to save the dot
+    Method save() should invoke the specified graphviz program to save the Dot
     object as bytes.  It should infer the format from the file extension if not
     given; if given the format should take precedence over the extension.  If
     the program isn't found, it should raise an InvocationException.  If the

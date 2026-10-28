@@ -9,10 +9,12 @@ from itertools import combinations
 from collections import defaultdict
 from dataclasses import replace
 from typing import Iterable, Iterator
-from gvdot import Dot, Port, _impose, impose_order, _AVAILABLE_VERSIONS
+from gvdot import Dot, Port, Nonce, impose_order
+from gvdot import _impose, _AVAILABLE_VERSIONS
 from utility import expect_ex, parse, svg_parse, svg_dimensions
 from utility import GraphLine, DotLine, NodeLine, EdgeLine
 from utility import SubgraphLine, EndLine, EdgeDAttrLine
+from utility import expect_node, expect_edge, endpoint_nodeid, graph_line
 
 #
 # Multigraphs can have multiple identical edges, and for tests below, the
@@ -41,15 +43,7 @@ class _EdgeBag(list[EdgeLine]):
         return not self.__eq__(other)
 
 #
-# Extract the node portion of an endpoint string.  Tests are not allowed to
-# have quoted node names or HTML node names.
-#
-
-def _endpoint_node(endpoint:str):
-    return endpoint.split(':',maxsplit=1)[0]
-
-#
-# Parse a dot object's DOT lines into a body with node and edge statements
+# Parse a Dot object's DOT lines into a body with node and edge statements
 # removed, a located node dictionary, and a located edge dictionary.
 #
 # A location is a tuple expressing where in the DOT language an entity appears
@@ -90,8 +84,8 @@ def _separate(lines:list[DotLine]) -> tuple[
                 nodes[tuple(location),nodeid] = line
 
             case EdgeLine(endpoint1,endpoint2):
-                node1 = _endpoint_node(endpoint1)
-                node2 = _endpoint_node(endpoint2)
+                node1 = endpoint_nodeid(endpoint1)
+                node2 = endpoint_nodeid(endpoint2)
                 edges[tuple(location),node1,node2].append(line)
 
             case _:
@@ -111,8 +105,8 @@ def _normalize_orientation(edges:_LocEdgeDict) -> _LocEdgeDict:
     for (loc, _, _), lines in edges.items():
         newlines = _EdgeBag()
         for line in lines:
-            node1 = _endpoint_node(line.endpoint1)
-            node2 = _endpoint_node(line.endpoint2)
+            node1 = endpoint_nodeid(line.endpoint1)
+            node2 = endpoint_nodeid(line.endpoint2)
             if node1 > node2:
                 node1, node2 = node2, node1
                 newline = replace(line,
@@ -129,17 +123,6 @@ def _normalize_orientation(edges:_LocEdgeDict) -> _LocEdgeDict:
             result[loc, node1, node2] = newlines
 
     return result
-
-#
-# Find the GraphLine.  (It might not be first -- it can follow comments).
-#
-
-def _graph_line(lines:list[DotLine]) -> GraphLine:
-    for line in lines:
-        match line:
-            case GraphLine():
-                return line
-    raise AssertionError("Body has no GraphLine")
 
 #
 # Find and return the arrowhead attribute value in the top-level default edge
@@ -161,40 +144,6 @@ def _pop_arrowhead(lines:list[DotLine]):
                             del lines[i]
                         return value
     return None
-
-#
-# When multigraph is False, raise AssertionError unless there is exactly one
-# EdgeLine with the specified endpoints and that EdgeLine has the given
-# attributes.
-#
-# When multigraph is True, raise AssertionError unless there is at least one
-# EdgeLine with the specified endpoints and given attributes.
-#
-
-def _require_edge_attrs(lines:list[DotLine], endpoint1:str, endpoint2:str,
-                        attrs:dict[str,str], multigraph=False):
-    found_endpoints = False
-    found_attrs = False
-
-    for line in lines:
-        if (type(line) is EdgeLine
-                and line.endpoint1 == endpoint1
-                and line.endpoint2 == endpoint2):
-            if not multigraph:
-                assert not found_endpoints
-            found_endpoints = True
-            if line.attrs == attrs:
-                found_attrs = True
-            elif not multigraph:
-                raise AssertionError(
-                    f"For {endpoint1}->{endpoint2} found {line.attrs} "
-                    f"expected {attrs}")
-
-    assert found_endpoints, (
-        f"Found no edge for {endpoint1}->{endpoint2}")
-
-    assert found_attrs, (
-        f"Found no {endpoint1}->{endpoint2} with {attrs} ")
 
 #
 # Strip order sensitive edge attributes.
@@ -254,8 +203,8 @@ def _require_da(dot:Dot, odot:Dot, arrowhead:str|None='none'):
     # dot must be undirected, while odot must be directed.
     #
 
-    dot_graph_line = _graph_line(dot_lines)
-    odot_graph_line = _graph_line(odot_lines)
+    dot_graph_line = graph_line(dot_lines)
+    odot_graph_line = graph_line(odot_lines)
     assert not dot_graph_line.directed
     assert odot_graph_line.directed
 
@@ -331,13 +280,13 @@ def _require_da(dot:Dot, odot:Dot, arrowhead:str|None='none'):
     arcs = set((node1,node2)
                for lines in odot_edges.values()
                for line in lines
-               if (node1 := _endpoint_node(line.endpoint1)) !=
-                  (node2 := _endpoint_node(line.endpoint2)))
+               if (node1 := endpoint_nodeid(line.endpoint1)) !=
+                  (node2 := endpoint_nodeid(line.endpoint2)))
 
     for lines in odot_edges.values():
         for line in lines:
-            assert (_endpoint_node(line.endpoint2),
-                    _endpoint_node(line.endpoint1)) not in arcs, (
+            assert (endpoint_nodeid(line.endpoint2),
+                    endpoint_nodeid(line.endpoint1)) not in arcs, (
                         f"Inconsistent direction for {line}")
 
 #
@@ -775,8 +724,8 @@ def test_endpoint_attrs():
     _require_da(dot,odot)
 
     lines = parse(str(odot))
-    _require_edge_attrs(lines,"b","a",quoted_reversed_OSA_VALUES)
-    _require_edge_attrs(lines,"b","c",quoted_OSA_VALUES)
+    expect_edge(lines,"b","a",quoted_reversed_OSA_VALUES)
+    expect_edge(lines,"b","c",quoted_OSA_VALUES)
 
     #
     # Default edge attributes.
@@ -790,8 +739,8 @@ def test_endpoint_attrs():
     _require_da(dot,odot,arrowhead=None)
 
     lines = parse(str(odot))
-    _require_edge_attrs(lines,"b","a",quoted_reversed_OSA_VALUES)
-    _require_edge_attrs(lines,"b","c",quoted_OSA_VALUES)
+    expect_edge(lines,"b","a",quoted_reversed_OSA_VALUES)
+    expect_edge(lines,"b","c",quoted_OSA_VALUES)
 
     #
     # Default edge attributes inherited into subgraph.
@@ -806,8 +755,8 @@ def test_endpoint_attrs():
     _require_da(dot,odot,arrowhead=None)
 
     lines = parse(str(odot))
-    _require_edge_attrs(lines,"b","a",quoted_reversed_OSA_VALUES)
-    _require_edge_attrs(lines,"b","c",quoted_OSA_VALUES)
+    expect_edge(lines,"b","a",quoted_reversed_OSA_VALUES)
+    expect_edge(lines,"b","c",quoted_OSA_VALUES)
 
     #
     # Edge role attributes.
@@ -821,8 +770,8 @@ def test_endpoint_attrs():
     _require_da(dot,odot)
 
     lines = parse(str(odot))
-    _require_edge_attrs(lines,"b","a",quoted_reversed_OSA_VALUES)
-    _require_edge_attrs(lines,"b","c",quoted_OSA_VALUES)
+    expect_edge(lines,"b","a",quoted_reversed_OSA_VALUES)
+    expect_edge(lines,"b","c",quoted_OSA_VALUES)
 
     #
     # Theme default edge attributes.
@@ -836,8 +785,8 @@ def test_endpoint_attrs():
     _require_da(dot,odot,arrowhead=None)
 
     lines = parse(str(odot))
-    _require_edge_attrs(lines,"b","a",quoted_reversed_OSA_VALUES)
-    _require_edge_attrs(lines,"b","c",quoted_OSA_VALUES)
+    expect_edge(lines,"b","a",quoted_reversed_OSA_VALUES)
+    expect_edge(lines,"b","c",quoted_OSA_VALUES)
 
     #
     # Theme role edge attributes.
@@ -851,8 +800,8 @@ def test_endpoint_attrs():
     _require_da(dot,odot)
 
     lines = parse(str(odot))
-    _require_edge_attrs(lines,"b","a",quoted_reversed_OSA_VALUES)
-    _require_edge_attrs(lines,"b","c",quoted_OSA_VALUES)
+    expect_edge(lines,"b","a",quoted_reversed_OSA_VALUES)
+    expect_edge(lines,"b","c",quoted_OSA_VALUES)
 
     #
     # We now know dir="forward" becomes dir="back".  Test the converse.
@@ -865,8 +814,8 @@ def test_endpoint_attrs():
     _require_da(dot,odot)
 
     lines = parse(str(odot))
-    _require_edge_attrs(lines,"b","a",{ "dir": "forward" })
-    _require_edge_attrs(lines,"b","c",{ "dir": "back" })
+    expect_edge(lines,"b","a",{ "dir": "forward" })
+    expect_edge(lines,"b","c",{ "dir": "back" })
 
     #
     # Only values "forward" and "back" of dir are changed.
@@ -879,8 +828,8 @@ def test_endpoint_attrs():
     _require_da(dot,odot)
 
     lines = parse(str(odot))
-    _require_edge_attrs(lines,"b","a",{ "dir": "both" })
-    _require_edge_attrs(lines,"b","c",{ "dir": "none" })
+    expect_edge(lines,"b","a",{ "dir": "both" })
+    expect_edge(lines,"b","c",{ "dir": "none" })
 
 
 def test_default_merge_precedence():
@@ -919,13 +868,13 @@ def test_default_merge_precedence():
     _require_da(dot,odot)
 
     lines = parse(str(odot))
-    _require_edge_attrs(lines,"b","a",{
+    expect_edge(lines,"b","a",{
         "headclip": "false", "tailclip": "true",
         "headhref": "taillink", "tailhref": "headlink",
         "headlabel": '"tail"', "taillabel": '"head"',
         "headport": "s", "tailport": "n",
     })
-    _require_edge_attrs(lines,"b","c",{
+    expect_edge(lines,"b","c",{
         "headclip": "true", "tailclip": "false",
         "headhref": "headlink", "tailhref": "taillink",
         "headlabel": '"head"', "taillabel": '"tail"',
@@ -953,7 +902,7 @@ def test_multigraph_endpoint_attrs():
     lines = parse(str(odot))
 
     def check_attrs(endpoint1,endpoint2,**kwargs):
-        _require_edge_attrs(lines,endpoint1,endpoint2,kwargs,multigraph=True)
+        expect_edge(lines,endpoint1,endpoint2,kwargs,multigraph=True)
 
     check_attrs("b","a",tailclip="true")
     check_attrs("b","a",headhref="taillink")
@@ -967,7 +916,7 @@ def test_multigraph_endpoint_attrs():
 
 def test_unaliased():
     """
-    Elements of a dot object and its directed analogue are not aliased.
+    Elements of a Dot object and its directed analogue are not aliased.
     """
     def edge(dot:Dot,node1,node2,**kwargs):
         if dot.edge_is_defined(node1,node2):
@@ -1033,6 +982,58 @@ def test_unaliased():
     dot_str = str(dot)
     modify(odot)
     assert str(dot) == dot_str
+
+
+def test_nonce_interaction():
+    """
+    Order can be imposed on Dot objects with nonces identifying nodes and
+    edges.
+    """
+    #
+    # To make verification tractable, we use distinct prefixes per Nonce and
+    # count on the implementation's Nonce sequence numbering.
+    #
+    nonce_a = Nonce("nonce_a")
+    nonce_b = Nonce("nonce_b")
+    nonce_c = Nonce("nonce_c")
+
+    dot = Dot()
+    dot.node(nonce_a,label="A")
+    dot.node(nonce_b,label="B")
+    dot.node(nonce_c,label="C")
+    dot.edge(nonce_a,nonce_b,label="A--B")
+    dot.edge(nonce_b,nonce_c,label="B--C")
+    odot = impose_order(dot)
+    lines = parse(str(odot))
+    expect_node(lines,"nonce_a_1",dict(label='"A"'))
+    expect_node(lines,"nonce_b_1",dict(label='"B"'))
+    expect_node(lines,"nonce_c_1",dict(label='"C"'))
+    expect_edge(lines,"nonce_b_1","nonce_a_1",dict(label='"A--B"'))
+    expect_edge(lines,"nonce_b_1","nonce_c_1",dict(label='"B--C"'))
+
+    expect_edge_mg = lambda lines,endpoint1,endpoint2,attrs: (
+        expect_edge(lines,endpoint1,endpoint2,attrs,multigraph=True))
+
+    dot = Dot(multigraph=True)
+    nonce_a = Nonce("nonce_a")
+    nonce_b = Nonce("nonce_b")
+    nonce_c = Nonce("nonce_c")
+    dot.node(nonce_a,label="A")
+    dot.node(nonce_b,label="B")
+    dot.node(nonce_c,label="C")
+    dot.edge(nonce_a,nonce_b,label="A--B:1")
+    dot.edge(nonce_a,nonce_b,label="A--B:2")
+    dot.edge(nonce_b,nonce_c,label="B--C:1")
+    dot.edge(nonce_b,nonce_c,label="B--C:2")
+    odot = impose_order(dot)
+    lines = parse(str(odot))
+    expect_node(lines,"nonce_a_1",dict(label='"A"'))
+    expect_node(lines,"nonce_b_1",dict(label='"B"'))
+    expect_node(lines,"nonce_c_1",dict(label='"C"'))
+    expect_edge_mg(lines,"nonce_b_1","nonce_a_1", dict(label='"A--B:1"'))
+    expect_edge_mg(lines,"nonce_b_1","nonce_a_1", dict(label='"A--B:2"'))
+    expect_edge_mg(lines,"nonce_b_1","nonce_c_1", dict(label='"B--C:1"'))
+    expect_edge_mg(lines,"nonce_b_1","nonce_c_1", dict(label='"B--C:2"'))
 
 
 def test_stability():

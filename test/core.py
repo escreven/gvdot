@@ -525,8 +525,8 @@ def test_subgraph_identity():
 
 def test_subgraph_scoping():
     """
-    Nodes and edges are scoped to the dot object, but appear in the graph or
-    subgraph in which they are first defined.  Roles are also scoped to the dot
+    Nodes and edges are scoped to the Dot object, but appear in the graph or
+    subgraph in which they are first defined.  Roles are also scoped to the Dot
     object and can be used in any subgraph.
     """
     def add_defaults(cx:Block, value:str):

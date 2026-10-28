@@ -382,7 +382,7 @@ def impose_order_example() -> list[Artifact]:
         ('t', 'k'), ('t', 'n') ]
 
     theme = (Dot()
-        .graph(ranksep=0.30, labelloc='t', size="6,6")
+        .graph(ranksep=0.30, labelloc='t')
         .node_default(style="filled", fillcolor="lightblue",
                     shape="circle", margin=0, width=0.1, height=0.1))
 

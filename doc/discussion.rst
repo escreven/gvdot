@@ -576,7 +576,7 @@ Imposing Order
 
 The default Graphviz program :program:`dot` is designed to depict directed
 graphs.  While it also accepts undirected input, the result sometimes has an
-undesirable aspect ratio, long edges, and a disorganized appearance.  For
+undesirable aspect ratio, long edges, or a disorganized appearance.  For
 example, the code below
 
 .. code-block:: python
@@ -594,6 +594,7 @@ produces
 
 .. image:: _static/discussion/impose-order-default.*
     :align: center
+    :scale: 80%
     :alt: Default dot program output for graph
 
 |br| The Graphviz suite includes other programs such as :program:`neato`
@@ -608,6 +609,7 @@ we get a result that is good in many ways:
 
 .. image:: _static/discussion/impose-order-neato.*
     :align: center
+    :scale: 80%
     :alt: Program neato output for graph
 
 |br| But the depiction is sparse, edges pass very near nodes :math:`n`,
@@ -622,6 +624,7 @@ by program :program:`dot`.
 
 .. image:: _static/discussion/impose-order-improved.*
     :align: center
+    :scale: 80%
     :alt: Program dot output for graph after impose_order
 
 |br| The graph above was rendered by

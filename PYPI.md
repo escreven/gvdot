@@ -35,7 +35,7 @@ where `delta["q"][0]` is the list of states reached from state *q* by epsilon
 transitions, and `delta["q"][i]` is the list of states reached from *q* by
 symbol `alphabet[i-1]`.
 
-We start by defining a theme, a normal `Dot` object from which other dot
+We start by defining a theme, a normal `Dot` object from which other Dot
 objects can inherit graph attributes, default attributes, and roles.
 
 ```python
