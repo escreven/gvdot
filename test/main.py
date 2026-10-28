@@ -5,6 +5,8 @@ from __future__ import annotations
 # ipython-missing paths whether or not it's installed in the environment.
 #
 
+import subprocess
+from subprocess import CalledProcessError, TimeoutExpired
 import sys
 import importlib.abc
 
@@ -166,6 +168,54 @@ def _run(cases:list[_Case], failstop:bool):
         sys.exit(1)
 
 
+def _run_program(command:list[str], input:str) -> bool:
+
+    timeout = 5
+    program = command[0]
+
+    try:
+        subprocess.run(
+            command, input=input.encode(), capture_output=True,
+            text=False, timeout=timeout, check=True)
+    except CalledProcessError as ex:
+        print(f"Program {program} exited with status {ex.returncode}")
+        print()
+        for line in ex.stderr.decode(errors='replace').splitlines():
+            print(f"    {line}")
+        print()
+        return False
+    except TimeoutExpired as ex:
+        print(f"Program {program} timed out after {timeout} seconds.")
+        print()
+        return False
+    except Exception as ex:
+        print(f"Could not invoke {program} due to {ex}")
+        print()
+        return False
+
+    return True
+
+
+def _probe_graphviz_install() -> None:
+
+    graph = "graph { a -- b }"
+
+    if not _run_program(["dot", "-V"], input=""):
+        print("Check the Graphviz install.")
+        sys.exit(1)
+
+    for program in ("dot", "neato"):
+        for format in ("svg", "png"):
+            if not _run_program([program, f"-T{format}"], input=graph):
+                print(f"Graphviz appears to be installed, but {program} "
+                      f"could not render to {format}.")
+                if program == "neato":
+                    print("You may need to install the neato "
+                          "layout engine separately.")
+                print()
+                sys.exit(1)
+
+
 def _main():
 
     parser = ArgumentParser(
@@ -173,6 +223,9 @@ def _main():
 
     parser.add_argument("pattern", nargs='?', default=None,
         help="Only run tests with names containing this regex")
+
+    parser.add_argument("-noprobe", action="store_true",
+        help="Skip Graphviz install probe")
 
     parser.add_argument("-reverse", action="store_true",
         help="Run tests in reverse order")
@@ -204,6 +257,9 @@ def _main():
 
     if args.reverse:
         cases = list(reversed(cases))
+
+    if not args.noprobe:
+        _probe_graphviz_install()
 
     with fakedots():
         _run(cases,args.failstop)

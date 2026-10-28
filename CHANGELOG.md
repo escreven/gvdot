@@ -1,7 +1,22 @@
 ## Unreleased
 
+## [1.3.1] - 2026-10-27
+
+#### Changed
+- The test harness probes the Graphviz installation before running tests.
+- The first cells of the example notebooks probe the Graphviz installation.
+- The Installation section of the doc plus `test/` and `examples/` READMEs have
+  been updated to note the requirement to install `libgvplugin-neato-layout8`
+  on Ubuntu 26.04 and later.
+
 #### Fixed
-- Inclusion of `ID` and `CompassPoint` reference documentation.
+- Included `ID` and `CompassPoint` descriptions in the Reference section of the
+  doc.  This was broken by the move to a multi-module package.
+- The Graphviz [install
+  action](https://github.com/escreven/gvdot/blob/main/.github/actions/install-graphviz/action.yml)
+  now installs `libgvplugin-neato-layout8` on Ubuntu. `apt-get install
+  graphviz` on the most recent Ubuntu runner no longer installs the neato
+  layout engine on its own.
 
 ## [1.3.0] - 2026-10-27
 
@@ -97,9 +112,8 @@
 
 #### Changed
 - `save()` no longer infers the TIFF format from the filename.  Older versions
-  of Graphviz (including the one currently installed by apt-get on Ubuntu) do
-  not support TIFF.  Applications can still specify 'tiff' and any other format
-  explicitly.
+  of Graphviz do not support TIFF.  Applications can still specify 'tiff' and
+  any other format explicitly.
 
 ## [0.9.2] - 2026-02-09
 

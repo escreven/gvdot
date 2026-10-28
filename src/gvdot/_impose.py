@@ -4,6 +4,8 @@ from collections.abc import Iterator
 from typing import Counter, Literal
 from ._core import Block, Dot, _Edge, _NormID, _Mien, _integrate_role, _Attrs
 
+__all__ = ()
+
 #
 # Make available algorithm versions visible to tests.  (impose_order() does not
 # use _AVAILABLE_VERSIONS; its check is baked into the code.)

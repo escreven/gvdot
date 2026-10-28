@@ -36,3 +36,12 @@ with
 
 To install Graphviz, see `<https://graphviz.org/download>`_.
 
+.. note::
+
+    Installing Graphviz on Linux does not always install all Graphviz layout
+    engines.  For example, to use :program:`neato` on Ubuntu 26.04 or later,
+    install Graphviz with
+
+    .. code:: bash
+
+        $ sudo apt-get install --yes graphviz libgvplugin-neato-layout8
