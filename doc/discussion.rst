@@ -575,13 +575,16 @@ Imposing Order
 --------------
 
 The default Graphviz program :program:`dot` is designed to depict directed
-graphs.  While it also accepts undirected input, the result sometimes has an
+graphs.  When given undirected input, :program:`dot` operates with assumed edge
+directions based on the order in which edge endpoints are written in the DOT
+language text.  If those directions match the logical structure of the input,
+the result can be very good.  If they do not, the result can have an
 undesirable aspect ratio, long edges, or a disorganized appearance.  For
 example, the code below
 
 .. code-block:: python
 
-    # A biconnected graph
+    # A random biconnected graph
     edges = [ (('a', 'q'), ('a', 'o'), ('a', 'h'), ..., ('t', 'h')) ]
 
     dot = Dot().use_theme(graph_theme)
