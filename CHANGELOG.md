@@ -1,5 +1,7 @@
 ## Unreleased
 
+## [1.3.0] - 2026-10-27
+
 #### Added
 - Function `impose_order()` which can improve the layout of undirected graphs
   rendered by program `dot`.
