@@ -38,6 +38,7 @@ import impose_order
 import render
 import show
 import styling
+import subclass
 
 _Case = tuple[str,FunctionType]
 
@@ -191,6 +192,7 @@ def _main():
     cases.extend(_get_cases(render))
     cases.extend(_get_cases(show))
     cases.extend(_get_cases(styling))
+    cases.extend(_get_cases(subclass))
 
     if (pattern := args.pattern) is not None:
         cases = [ case for case in cases

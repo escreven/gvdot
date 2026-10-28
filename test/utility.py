@@ -232,6 +232,93 @@ def parse(text:str) -> list[DotLine]:
     return dotlines
 
 #
+# Extract the node portion of an endpoint string.  Empty, quoted, and HTML node
+# names are not supported.
+#
+
+def endpoint_nodeid(endpoint:str):
+    assert endpoint and endpoint[0] not in ('"','<')
+    return endpoint.split(':',maxsplit=1)[0]
+
+#
+# Find the GraphLine.  (It might not be first -- it can follow comments).
+#
+
+def graph_line(lines:list[DotLine]) -> GraphLine:
+    for line in lines:
+        if type(line) is GraphLine:
+            return line
+    raise AssertionError("No GraphLine found")
+
+#
+# Raise AssertionError unless there is exactly one NodeLine with the specified
+# nodeid and that NodeLine has the given attributes (if given).
+#
+
+def expect_node(lines:list[DotLine], nodeid:str,
+                attrs:dict[str,str]|None=None) -> None:
+
+    found_nodeid = False
+
+    for line in lines:
+        if type(line) is NodeLine and line.nodeid == nodeid:
+            assert not found_nodeid, (
+                f"Duplicate node {nodeid}")
+            found_nodeid = True
+            if attrs is not None:
+                assert line.attrs == attrs, (
+                    f"For node {nodeid} found {line.attrs} "
+                    f"expected {attrs}")
+
+    assert found_nodeid, (
+        f"Found no node {nodeid}")
+
+#
+# When multigraph is False, raise AssertionError unless there is exactly one
+# EdgeLine with the specified endpoints and that EdgeLine has the given
+# attributes.  (Parameter unique is unused.)
+#
+# When multigraph is True, raise AssertionError unless there is at least one
+# (unique is False) or exactly one (unique is True) EdgeLine with the specified
+# endpoints and given attributes.
+#
+
+def expect_edge(lines:list[DotLine], endpoint1:str, endpoint2:str,
+                attrs:dict[str,str]|None=None, multigraph=False,
+                unique=True) -> None:
+
+    dash = "--"
+    found_endpoints = False
+    found_attrs = False
+
+    for line in lines:
+        if (type(line) is GraphLine):
+            if line.directed:
+                dash = "->"
+        elif (type(line) is EdgeLine
+                and line.endpoint1 == endpoint1
+                and line.endpoint2 == endpoint2):
+            if not multigraph:
+                assert not found_endpoints, (
+                    f"Duplicate {endpoint1}{dash}{endpoint2}")
+            found_endpoints = True
+            if line.attrs == attrs:
+                if multigraph and unique:
+                    assert not found_attrs, (
+                        f"Duplicate {endpoint1}{dash}{endpoint2} {attrs}")
+                found_attrs = True
+            elif not multigraph:
+                raise AssertionError(
+                    f"For {endpoint1}{dash}{endpoint2} found {line.attrs} "
+                    f"expected {attrs}")
+
+    assert found_endpoints, (
+        f"Found no edge for {endpoint1}{dash}{endpoint2}")
+
+    assert found_attrs, (
+        f"Found no {endpoint1}{dash}{endpoint2} with {attrs} ")
+
+#
 # Raised by expect_str() when actual DOT text doesn't match expected text.
 # Properties expected and actual are the unnormalized text, and the
 # corresponding line numbers are zero based.  If expected or actual is a prefix

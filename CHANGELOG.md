@@ -109,7 +109,7 @@
 #### Changed
 - Themes are now dynamic.  Instead of merging attribute assignments when
   `use_theme()` is called, themes are resolved at render time without affecting
-  the dot object.
+  the Dot object.
 - Moved narrative docstring text from class Dot to Overview section of doc.
 - Significantly revised docstrings throughout.
 - Switched to using term "establish" instead of "specify" for first assignment
