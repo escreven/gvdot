@@ -344,7 +344,7 @@ def test_nonce_names():
 
 def test_nonce_properties():
     """
-    Nonces are equal iff identical.  Nonces are hashable.
+    Nonces are equal if and only if identical.  Nonces are hashable.
     """
     nonce1 = Nonce()
     nonce2 = Nonce()

@@ -16,7 +16,7 @@ Quick Tour
 
 Class :class:`Dot` is a DOT language builder.  Method :meth:`~Block.graph()`
 establishes or amends graph attributes.  :meth:`~Dot.node()` and
-:meth:`~Block.edge()` define and amend nodes and edges.  Method
+:meth:`~Block.edge()` define or amend nodes and edges.  Method
 :meth:`~Block.subgraph()` defines or amends subgraphs, returning an instance
 of :class:`Block`, the base class of :class:`Dot`.  Most builder methods are
 actually :class:`Block` methods.

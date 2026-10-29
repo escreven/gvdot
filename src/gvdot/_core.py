@@ -725,7 +725,7 @@ class Block:
 
     def node_is_defined(self, id:ID) -> bool:
         """
-        Return True iff the identified node is defined.
+        Return True if and only if the identified node is defined.
 
         :param id: The node to test.
         """
@@ -931,7 +931,7 @@ class Block:
     def edge_is_defined(self, point1:ID|Port, point2:ID|Port,
                         discriminant:ID|None=None) -> bool:
         """
-        Return True iff the identified edge is defined.
+        Return True if and only if the identified edge is defined.
 
         :param point1: See :meth:`edge`.
         :param point2: See :meth:`edge`.
@@ -1016,7 +1016,7 @@ class Block:
 
     def subgraph_is_defined(self, id:ID) -> bool:
         """
-        Return True iff the identified subgraph is defined.
+        Return True if and only if the identified subgraph is defined.
 
         :param id: The subgraph to test.
         """
@@ -1242,7 +1242,7 @@ class Dot(Block):
 
     def is_multigraph(self) -> bool:
         """
-        Return True iff this is a multigraph Dot object.
+        Return True if and only if this is a multigraph Dot object.
         """
         return self.multigraph
 

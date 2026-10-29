@@ -5,8 +5,6 @@ from __future__ import annotations
 # ipython-missing paths whether or not it's installed in the environment.
 #
 
-import subprocess
-from subprocess import CalledProcessError, TimeoutExpired
 import sys
 import importlib.abc
 
@@ -20,12 +18,14 @@ class NoIPython(importlib.abc.MetaPathFinder):
 sys.meta_path.insert(0, NoIPython())
 
 
-from argparse import ArgumentParser
 import io
 import re
 import inspect
 import textwrap
 import traceback
+import subprocess
+from subprocess import CalledProcessError, TimeoutExpired
+from argparse import ArgumentParser
 from types import FunctionType, ModuleType
 from gvdot import ProcessException
 from utility import DotMismatch, fakedots

@@ -25,8 +25,8 @@ When run, the example notebooks save generated images to directory
 
 Notebooks [nfa.ipynb](nfa.ipynb), [quicktour.ipynb](quicktour.ipynb),
 and [red-black-tree.ipynb](red-black-tree.ipynb) require Graphviz program
-`dot` to be on the path, while [er-diagram.ipynb](er-diagram.ipynb)
-requires `neato` to be on the path.  Both Graphviz programs must be configured
+`dot` to be on `PATH`, while [er-diagram.ipynb](er-diagram.ipynb)
+requires `neato` to be on `PATH`.  Both Graphviz programs must be configured
 to produce SVG output.
 
 The `neato` layout engine is not always installed with Graphviz on Linux,

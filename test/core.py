@@ -80,7 +80,8 @@ def test_comment():
 
 def test_is_multigraph():
     """
-    is_multigraph() must be true iff multigraph is specified to constructor.
+    is_multigraph() must be true if and only if multigraph is specified to
+    constructor.
     """
     dot = Dot()
     expect_str(dot,"""
