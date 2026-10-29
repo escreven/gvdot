@@ -1,5 +1,9 @@
 ## Unreleased
 
+#### Changed
+- The test harness Graphviz install probe timeout is now 60 seconds, hopefully
+  avoiding Windows runner timeouts.
+
 ## [1.3.1] - 2026-10-27
 
 #### Changed

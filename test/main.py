@@ -170,27 +170,30 @@ def _run(cases:list[_Case], failstop:bool):
 
 def _run_program(command:list[str], input:str) -> bool:
 
-    timeout = 5
-    program = command[0]
+    timeout    = 60   # GitHub Windows runners are very slow
+    commandstr = f'"{" ".join(command)}"'
 
     try:
         subprocess.run(
             command, input=input.encode(), capture_output=True,
             text=False, timeout=timeout, check=True)
     except CalledProcessError as ex:
-        print(f"Program {program} exited with status {ex.returncode}")
         print()
-        for line in ex.stderr.decode(errors='replace').splitlines():
-            print(f"    {line}")
-        print()
+        print(f"Command {commandstr} exited with status {ex.returncode}")
+        lines = ex.stderr.decode(errors='replace').splitlines()
+        if lines:
+            print()
+            for line in ex.stderr.decode(errors='replace').splitlines():
+                print(f"    {line}")
+            print()
         return False
     except TimeoutExpired as ex:
-        print(f"Program {program} timed out after {timeout} seconds.")
         print()
+        print(f"Command {commandstr} timed out after {timeout} seconds.")
         return False
     except Exception as ex:
-        print(f"Could not invoke {program} due to {ex}")
         print()
+        print(f"Could not run {commandstr} due to {ex}")
         return False
 
     return True
@@ -202,6 +205,7 @@ def _probe_graphviz_install() -> None:
 
     if not _run_program(["dot", "-V"], input=""):
         print("Check the Graphviz install.")
+        print()
         sys.exit(1)
 
     for program in ("dot", "neato"):
