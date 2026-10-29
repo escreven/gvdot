@@ -1,5 +1,10 @@
 ## Unreleased
 
+#### Added
+- `op.sh` actions `check-pypi` and `check-testpypi` install and test a
+  specified gvdot version from PyPI or TestPyPI in virtual environments they
+  create. Action `clean-venv` removes those environments.
+
 #### Changed
 - The test harness Graphviz install probe timeout is now 60 seconds, hopefully
   avoiding Windows runner timeouts.
