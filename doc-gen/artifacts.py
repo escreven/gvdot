@@ -54,7 +54,7 @@ def _code_block(language:str, text:str):
 
 
 #
-# Examples can have images, python source code, and dot source code, all of
+# Examples can have images, Python source code, and DOT source code, all of
 # which is optional.  save_artifacts() generates these artifacts and stores
 # them in doc/_static or doc/_code.
 #

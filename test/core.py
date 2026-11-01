@@ -209,6 +209,24 @@ def test_attr_basics():
     """)
 
 
+def test_attr_errors():
+    """
+    Assigning bad attribute values raises descriptive ValueError exceptions.
+    """
+    bad = object()
+    dot = Dot()
+    def check(fn): assert "'xyz'" in str(expect_ex(ValueError,fn))
+    check(lambda: dot.graph_role("test",xyz=bad)) #type:ignore
+    check(lambda: dot.node_role("test",xyz=bad)) #type:ignore
+    check(lambda: dot.edge_role("test",xyz=bad)) #type:ignore
+    check(lambda: dot.graph_default(xyz=bad)) #type:ignore
+    check(lambda: dot.node_default(xyz=bad)) #type:ignore
+    check(lambda: dot.edge_default(xyz=bad)) #type:ignore
+    check(lambda: dot.graph(xyz=bad)) #type:ignore
+    check(lambda: dot.node("a",xyz=bad)) #type:ignore
+    check(lambda: dot.edge("a","b",xyz=bad)) #type:ignore
+
+
 def test_attr_quoted_names():
     """
     Attribute names must be quoted when they are not identifier-like or are a
@@ -391,8 +409,8 @@ def test_edge_identity():
     """
     Only the node id part of port specifications matters for edge identity.
     With respect to identity, non-directed graph endpoints are unordered,
-    however order is preserved and can be amended because it can matter to
-    graphviz.  For multigraphs, discriminants are required for complete edge
+    however, order is preserved and can be amended because it can matter to
+    Graphviz.  For multigraphs, discriminants are required for complete edge
     identity.  Multigraph edges without discriminants are always distinct.
     """
     dot = Dot()

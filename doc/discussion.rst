@@ -68,7 +68,7 @@ methods are called.
 - The graph closing bracket
 
 :class:`Dot` takes steps to produce readable DOT language representations:
-it indents reasonably, avoids unnecessary :type:`ID` quoting (see below), and
+it indents reasonably, avoids unnecessary :type:`~gvdot._core.ID` quoting (see below), and
 separates sections with blank lines unless there are few statements.
 
 .. _discussion_ids:
@@ -79,7 +79,7 @@ IDs
 The DOT language grammar uses non-terminal `ID` for both entity identifiers and
 attribute values.  Lexically, an `ID` can be an unquoted character sequence
 that looks like a number or programming language identifier, a quoted string,
-or a Graphviz HTML string.  Package gvdot defines type :type:`ID` to represent
+or a Graphviz HTML string.  Package gvdot defines type :type:`~gvdot._core.ID` to represent
 `ID` values:
 
 .. code-block:: python
@@ -92,7 +92,7 @@ where :class:`Markup` is a gvdot class delineating HTML strings and
 Graphviz does not differentiate between the quoted and unquoted forms of
 non-HTML IDs; in DOT language, ``1.23`` and ``"1.23"`` are two ways to write
 the same thing.  Accordingly, :class:`Dot` methods normalize non-Markup
-:type:`ID` values, making these two calls equivalent:
+:type:`~gvdot._core.ID` values, making these two calls equivalent:
 
 .. code-block:: python
 
@@ -103,7 +103,7 @@ the same thing.  Accordingly, :class:`Dot` methods normalize non-Markup
     dot.node(100, fontsize=12, margin=0.25, color="green")
     dot.node("100", fontsize="12", margin="0.25", color="green")
 
-No matter how you specify :type:`ID` values, string or otherwise, :type:`Dot`
+No matter how you specify :type:`~gvdot._core.ID` values, string or otherwise, :type:`Dot`
 avoids unnecessary quoting.  The DOT language representation of a node defined
 by either call above is
 
@@ -124,14 +124,14 @@ has the representation
 
     a -- b [penwidth=0.25 color=red label="fine"]
 
-HTML IDs `are` distinct from non-HTML IDs in DOT language.  Python :type:`ID`
+HTML IDs `are` distinct from non-HTML IDs in DOT language.  Python :type:`~gvdot._core.ID`
 values ``"the<br/>end"`` and ``Markup("the<br/>end")`` have the DOT language
 representations ``"the<br/>end"`` and ``<the<br/>end>`` respectively.  When
 used as a label, Graphviz renders the first as text containing angle brackets
 and a slash, and the second as "the" and "end" on two lines.
 
 For convenience, because some Graphviz attributes have boolean values specified
-as ``true`` or ``false``, :class:`Dot` normalizes Python bool :type:`ID` values
+as ``true`` or ``false``, :class:`Dot` normalizes Python bool :type:`~gvdot._core.ID` values
 to those lowercase forms.
 
 .. _discussion_attributes:
@@ -158,10 +158,11 @@ object as
 .. include:: _code/discussion/attrs.dot.rst
 
 Each keyword argument name except for ``role`` should be a Graphviz attribute
-name and each value should be an :type:`ID` or ``None``.  Value ``None``
-deletes the attribute from the target entity, role, or entity type default if
-it was previously specified.  If the attribute was not previously specified,
-the assignment to ``None`` has no effect.
+name and each value should be an :type:`~gvdot._core.AttrSpec`, usually an
+:type:`~gvdot._core.ID` or ``None``.  Value ``None`` deletes the attribute from
+the target entity, role, or entity type default if it was previously specified.
+If the attribute was not previously specified, the assignment to ``None`` has
+no effect.
 
 Running the following as a cell in a notebook
 
@@ -241,6 +242,55 @@ can have attribute ``role``.
 A role need not be defined before it is assigned.  However, :class:`Dot` raises
 an exception if an assigned role is not defined when the application creates a
 DOT language representation or rendering of a Dot object.
+
+.. _multiple_roles:
+
+Assigning Multiple Roles
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Applications can use tuples to assign more than one role to nodes, edges, and
+graphs.  Below we diagram subtype relationships between a few types used in the
+`gvdot implementation
+<https://github.com/escreven/gvdot/tree/main/src/gvdot>`_.  Three are private
+and two are public.  Most are classes and one is a protocol.  We capture
+distinctive presentations of those possibilities through four roles "public",
+"private", "class", and "protocol".
+
+.. include:: _code/discussion/multirole-code.py.rst
+
+Node ``_Edge``, for example, has roles "private" and "class".  The attributes
+of "private" and "class" are inherited by ``_Edge`` causing it to be depicted
+with dark text on a light green background in a box with a solid border.
+
+.. image:: _static/discussion/multirole-image.*
+    :align: center
+    :alt: Type diagram
+
+|br|
+
+The order of the roles assigned to an entity matters.  If multiply assigned
+roles have different values for the same attribute, the value of the role
+appearing later in the role tuple takes precedence.  If the same role is
+assigned multiple times, its last appearance determines the role's precedence.
+
+When amending the attributes of a node, edge, or graph, applications can use
+the Ellipsis object, normally written as ``...``, to assign additional
+roles instead of replacing existing assignments.  For example, to highlight
+tight edges that may already be assigned roles, we might write
+
+.. code-block:: python
+
+    for u, v in tight_edges:
+        dot.edge(u,v,role=(...,"tight"))
+
+which adds the role "tight" to the end of each tight edge's assigned roles.
+
+Attribute ``role`` is the only attribute to which multiple values may be
+assigned.  Tuples and even Ellipsis may be used with any attribute, but if
+that results in more than one value for an attribute other than ``role``, gvdot
+raises :class:`ValueError`.  For further details, see the
+:type:`~gvdot._core.AttrSpec` reference.
+
 
 .. _discussion_themes:
 
@@ -420,7 +470,7 @@ But what if we want to amend a multigraph edge?  For that we use
 .. code-block:: python
 
     def edge(self, point1:ID|Port, point2:ID|Port,
-             discriminant:ID|None=None, /, **attrs:ID|None) -> Self:
+             discriminant:ID|None=None, /, **attrs:AttrSpec) -> Self:
 
 The ``discriminant`` parameter is a value allowing an application to refer to
 multigraph edges.  Discriminants are not required in multigraphs, and if
@@ -441,7 +491,7 @@ provided need only be unique among the edges of their associated node pair.
 
 Discriminants are a gvdot feature.  As you can see, they don't appear in the
 DOT language representation.  We used integer discriminants in this example
-because it was convenient, but discriminants can be any :type:`ID`.
+because it was convenient, but discriminants can be any :type:`~gvdot._core.ID`.
 
 .. _discussion_nonces:
 
@@ -479,7 +529,7 @@ initial node and edge at the bottom of the fragment below.
         dot.edge(init_id, nfa.start)
         ...
 
-But what :type:`ID` should we assign to ``init_id``?  The remainder of the
+But what :type:`~gvdot._core.ID` should we assign to ``init_id``?  The remainder of the
 generation code creates state nodes with identifiers that are the state name.
 If we pick something like ``"_init_"``, we either must enforce a state name
 restriction, complicate our generation code with some kind of indirection, or
@@ -520,8 +570,8 @@ Suppose the NFA definition is modified so that one of the states is named
 :class:`Dot` chooses a different ID for the Nonce to avoid a conflict with
 ``_nonce_1``.
 
-:class:`Nonce` is a member of the :type:`ID` type union, so instances can be
-used everywhere in the gvdot API where :type:`ID` is accepted.
+:class:`Nonce` is a member of the :type:`~gvdot._core.ID` type union, so instances can be
+used everywhere in the gvdot API where :type:`~gvdot._core.ID` is accepted.
 
 Both the :doc:`er-diagram` and :doc:`rb-trees` examples in this document use
 Nonces.  The ER Diagram generator uses :class:`Nonce` to synthesize identifiers
@@ -584,7 +634,7 @@ example, the code below
 .. code-block:: python
 
     # A random biconnected graph
-    edges = [ (('a', 'q'), ('a', 'o'), ('a', 'h'), ..., ('t', 'h')) ]
+    edges = [ ('a', 'q'), ('a', 'o'), ('a', 'h'), ..., ('t', 'h') ]
 
     dot = Dot().use_theme(graph_theme)
     for u, v in edges:

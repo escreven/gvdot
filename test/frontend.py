@@ -164,7 +164,7 @@ class _Kernel:
 
     def close(self):
         """
-        Shutdown the kernel.
+        Shut down the kernel.
         """
         #
         # We ignore failures here for two reasons.

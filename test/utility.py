@@ -23,7 +23,6 @@ from gvdot import Dot
 # significant restrictions include
 #
 #    - Only // comments supported, and only on their own line
-#    - Only ASCII characters
 #    - No markup contains any right angle bracket (!)
 #    - Square bracketed attribute lists can only appear at the end of a line
 #    - No more than one attribute list per line
@@ -252,11 +251,10 @@ def graph_line(lines:list[DotLine]) -> GraphLine:
 
 #
 # Raise AssertionError unless there is exactly one NodeLine with the specified
-# nodeid and that NodeLine has the given attributes (if given).
+# nodeid and that NodeLine has the given attributes.
 #
 
-def expect_node(lines:list[DotLine], nodeid:str,
-                attrs:dict[str,str]|None=None) -> None:
+def expect_node(lines:list[DotLine], nodeid:str, attrs:dict[str,str]) -> None:
 
     found_nodeid = False
 
@@ -265,10 +263,9 @@ def expect_node(lines:list[DotLine], nodeid:str,
             assert not found_nodeid, (
                 f"Duplicate node {nodeid}")
             found_nodeid = True
-            if attrs is not None:
-                assert line.attrs == attrs, (
-                    f"For node {nodeid} found {line.attrs} "
-                    f"expected {attrs}")
+            assert line.attrs == attrs, (
+                f"For node {nodeid} found {line.attrs} "
+                f"expected {attrs}")
 
     assert found_nodeid, (
         f"Found no node {nodeid}")
@@ -284,7 +281,7 @@ def expect_node(lines:list[DotLine], nodeid:str,
 #
 
 def expect_edge(lines:list[DotLine], endpoint1:str, endpoint2:str,
-                attrs:dict[str,str]|None=None, multigraph=False,
+                attrs:dict[str,str], multigraph=False,
                 unique=True) -> None:
 
     dash = "--"
@@ -317,6 +314,93 @@ def expect_edge(lines:list[DotLine], endpoint1:str, endpoint2:str,
 
     assert found_attrs, (
         f"Found no {endpoint1}{dash}{endpoint2} with {attrs} ")
+
+#
+# Raise AssertionError unless the graph has the given attributes and the given
+# id (if given).
+#
+
+def expect_graph(lines:list[DotLine], attrs:dict[str,str],
+                 graphid:str|None=None) -> None:
+
+    found_graph = False
+    found_attrs = dict[str,str]()
+    level       = -1
+
+    for line in lines:
+        match line:
+            case GraphLine(graphid=actual_graphid):
+                assert level == -1
+                assert not found_graph
+                found_graph = True
+                if graphid is not None:
+                    assert actual_graphid == graphid
+                level += 1
+
+            case SubgraphLine():
+                assert level >= 0
+                level += 1
+
+            case EndLine():
+                assert level >= 0
+                level -= 1
+
+            case GraphAttrLine(name,value):
+                assert level >= 0
+                if level == 0:
+                    found_attrs[name] = value
+
+    assert found_graph, "Found no graph"
+
+    assert level == -1, "Graph not properly closed"
+
+    assert found_attrs == attrs, (
+        f"For graph found {found_attrs} expected {attrs}")
+
+#
+# Raise AssertionError unless there is exactly one SubgraphLine with the
+# specified subgraphid and that SubgraphLine has the given attributes (if
+# given).
+#
+
+def expect_subgraph(lines:list[DotLine], subgraphid:str,
+                    attrs:dict[str,str]) -> None:
+
+    found_graph = False
+    found_subg  = False
+    found_attrs = dict[str,str]()
+    id_stack    = []
+
+    for line in lines:
+        match line:
+            case GraphLine():
+                assert not id_stack
+                assert not found_graph
+                found_graph = True
+                id_stack.append(None)
+
+            case SubgraphLine(actual_subgraphid):
+                assert id_stack
+                if actual_subgraphid == subgraphid:
+                    assert not found_subg
+                    found_subg = True
+                id_stack.append(actual_subgraphid)
+
+            case EndLine():
+                assert id_stack
+                id_stack.pop()
+
+            case GraphAttrLine(name,value):
+                assert id_stack
+                if len(id_stack) > 1 and id_stack[-1] == subgraphid:
+                    found_attrs[name] = value
+
+    assert found_subg, f"Found no subgraph {subgraphid}"
+
+    assert not id_stack, "Graph not properly closed"
+
+    assert found_attrs == attrs, (
+        f"For subgraph {subgraphid} found {found_attrs} expected {attrs}")
 
 #
 # Raised by expect_str() when actual DOT text doesn't match expected text.

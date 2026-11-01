@@ -37,6 +37,7 @@ import frontend
 import identifiers
 import internals
 import impose_order
+import multivalue
 import render
 import show
 import styling
@@ -246,6 +247,7 @@ def _main():
     cases.extend(_get_cases(identifiers))
     cases.extend(_get_cases(internals))
     cases.extend(_get_cases(impose_order))
+    cases.extend(_get_cases(multivalue))
     cases.extend(_get_cases(render))
     cases.extend(_get_cases(show))
     cases.extend(_get_cases(styling))

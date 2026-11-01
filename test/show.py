@@ -92,8 +92,8 @@ def test_show():
     """
     When IPython is installed, method show() should display Markdown, SVG, and
     Image objects.  It should pass through program names and timeouts to the
-    underlying to_svg() and to_rendered() methods.  It should set the size
-    graph attribute through the command line if requested.
+    underlying to_rendered() methods.  It should set the size graph attribute
+    through the command line if requested.
 
     When IPython is not installed, method show() should raise an explanatory
     exception.

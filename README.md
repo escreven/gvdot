@@ -112,7 +112,7 @@ directory.
 ## Documentation
 
 See [gvdot.readthedocs.io](https://gvdot.readthedocs.io) which includes a
-[Quick Tour](https://gvdot.readthedocs.io/en/latest/quicktour.html)
+[Quick Tour](https://gvdot.readthedocs.io/en/latest/quicktour.html).
 
 ## Installation
 
