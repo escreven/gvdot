@@ -469,7 +469,7 @@ def test_random_graphs():
     """
     Imposing order on random graphs (generated with a fixed seed) must succeed
     without failing internal invariant checks.  On average, the ordered
-    renderings of these graph should be more square than unordered.
+    renderings of these graphs should be more square than unordered.
     """
     iterations = 10
     node_count = 100
@@ -651,6 +651,27 @@ def test_roles_and_themes():
     (withsub2 := odot.copy()).subgraph().graph(role="theme_graph_role")
     expect_missing_role(withsub1)
     expect_missing_role(withsub2)
+
+
+def test_inherited_graph_roles():
+    """
+    Graph role assignments inherited through themes retain their attributes
+    and precedence when themes and roles are integrated.
+    """
+    theme = Dot().graph_role("a",color="red",bgcolor="white")
+    theme.graph_role("b",color="blue",fontcolor="green")
+    theme.graph(role=("a","b"))
+    dot = Dot().use_theme(Dot().use_theme(theme))
+    dot.graph(fontcolor="black")
+    dot.edge("x","y")
+    original = str(dot)
+
+    odot = impose_order(dot)
+    _require_da(dot,odot)
+    assert str(dot) == original
+    assert odot.theme is None
+    assert not odot.roles
+    assert not odot.graphrolemap
 
 
 _OSA_VALUES = {

@@ -107,6 +107,10 @@ Supporting Types
 
     See also the :ref:`discussion_nonces` discussion.
 
+.. autotype:: gvdot._core.AttrSpec
+
+    See also the :ref:`multiple_roles` discussion.
+
 .. autotype:: gvdot._core.CompassPoint
 .. autoclass:: Port
 

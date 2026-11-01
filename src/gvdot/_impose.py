@@ -556,26 +556,29 @@ def _transform(dot:Dot) -> Dot:
     dot  = dot.copy()
     mien = _Mien(dot)
 
-    dot.graphroles = defaultdict(dict)
-    dot.noderoles  = defaultdict(dict)
-    dot.edgeroles  = defaultdict(dict)
-    dot.theme      = None
-    dot.d_grapha   = mien.d_grapha
-    dot.d_nodea    = mien.d_nodea
-    dot.d_edgea    = mien.d_edgea
-    dot.grapha     = mien.grapha
+    dot.graphrolemap = defaultdict(dict)
+    dot.noderolemap  = defaultdict(dict)
+    dot.edgerolemap  = defaultdict(dict)
+    dot.theme        = None
+    dot.d_grapha     = mien.d_grapha
+    dot.d_nodea      = mien.d_nodea
+    dot.d_edgea      = mien.d_edgea
+    dot.attrs        = mien.attrs
+    dot.roles        = mien.roles
 
-    graphroles = mien.graphroles
-    noderoles  = mien.noderoles
-    edgeroles  = mien.edgeroles
+    graphrolemap = mien.graphrolemap
+    noderolemap  = mien.noderolemap
+    edgerolemap  = mien.edgerolemap
 
     nodemap = dot.nodemap
-    for nodekey, attrs in list(nodemap.items()):
-        nodemap[nodekey] = _integrate_role(attrs,noderoles,"node",nodekey)
+    for node in nodemap.values():
+        node.attrs = _integrate_role(node, noderolemap, "node", node.nodeid)
+        node.roles = []
 
     edgemap = dot.edgemap
     for edge in edgemap.values():
-        edge.attrs = _integrate_role(edge.attrs,edgeroles,"edge",edge)
+        edge.attrs = _integrate_role(edge, edgerolemap, "edge", edge)
+        edge.roles = []
 
     #
     # Walk the Block tree, including the Dot object, integrating graph
@@ -584,8 +587,9 @@ def _transform(dot:Dot) -> Dot:
 
     def transform_block(block:Block, parent_osa:_Attrs) -> None:
 
-        block.grapha = _integrate_role(block.grapha, graphroles,
-                                       "graph", block.graphid)
+        block.attrs = _integrate_role(block, graphrolemap,
+                                      "graph", block.graphid)
+        block.roles = []
 
         osa = _extract_order_sensitive(block.d_edgea)
         _update_if_missing(osa,parent_osa)
@@ -789,7 +793,7 @@ def impose_order(dot:Dot, *, hide_arrow:bool=True, version:int=1) -> Dot:
 
     def order_block(block:Block):
         block.nodes.sort(
-            key=lambda node: composite_rank_map[node])
+            key=lambda node: composite_rank_map[node.nodeid])
         block.edges.sort(
             key=lambda edge: composite_rank_map[edge.normport1.node])
         for subgraph in block.subgraphs:

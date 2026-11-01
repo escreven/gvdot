@@ -1,6 +1,12 @@
 ## Unreleased
 
+## [1.4.0] - 2026-10-31
+
 #### Added
+- Multiple roles can now be assigned to nodes, edges, and graphs.
+- Type `AttrSpec` which describes attribute values.  `AttrSpec` includes both
+  the previously allowed `ID` and `None` types plus tuples of `ID` and
+  `Ellipsis` values; the tuple forms support assigning multiple roles.
 - `op.sh` actions `check-pypi` and `check-testpypi` install and test a
   specified gvdot version from PyPI or TestPyPI in virtual environments they
   create. Action `clean-venv` removes those environments.
@@ -42,7 +48,7 @@
 
 #### Fixed
 - Catch `Exception` instead of `BaseException` in the test harness.
-- Theme graph and and default attributes now inherited correctly if an
+- Theme graph and default attributes now inherited correctly if an
   application subclasses `Dot`.
 - Description of default attribute inheritance for node `b` in the Discussion
   &Gt; Subgraphs section of the doc.

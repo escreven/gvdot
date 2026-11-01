@@ -1,5 +1,6 @@
 from __future__ import annotations
 from collections import defaultdict
+from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
 from html import escape as html_escape
@@ -7,10 +8,9 @@ from os import PathLike
 from pathlib import Path, PurePath
 import subprocess
 from subprocess import CalledProcessError, TimeoutExpired
-from typing import Any, Hashable, Literal, Self
+from types import EllipsisType
+from typing import Any, Hashable, Literal, Protocol, Self
 import re
-
-__version__ = "1.3.2dev1"
 
 __all__ = ()
 
@@ -61,9 +61,9 @@ class Nonce(Hashable):
 
     When generating the DOT language representation of a Dot object,
     :class:`Dot` resolves every Nonce that is part of the object or its theme
-    chain to a DOT language ID, choosing IDs not used
-    anywhere else in the object or theme chain.  :class:`Dot` resolves two
-    Nonce objects ``u`` and ``v`` to the same ID if and only if ``u is v``.
+    chain to a DOT language ID, choosing IDs not used anywhere else in the
+    object or theme chain.  :class:`Dot` resolves two Nonce objects ``u`` and
+    ``v`` to the same ID if and only if ``u is v``.
 
     :param prefix: :class:`Dot` will resolve the Nonce to an ID of the form
         *prefix_n* where *prefix* is the given value and *n* is a small
@@ -175,7 +175,8 @@ def _quote_if_needed(s:str) -> str:
             s = s.replace('\n','\\n')
         return '"' + s + '"'
 
-def _normalize(id:Any, what:str) -> _NormID:
+def _normalize(id:Any, what:Any,
+               formatter:Callable[[Any],str]|None=None) -> _NormID:
     match id:
         case Nonce():
             return id
@@ -186,7 +187,33 @@ def _normalize(id:Any, what:str) -> _NormID:
         case str() | int() | float():
             return _quote_if_needed(str(id))
         case _:
+            if formatter is not None: what = formatter(what)
             raise ValueError(f"{what} {repr(id)} is not an ID")
+
+#
+# Normalize a sequence of given IDs, which may contain Ellipsis references to
+# existing IDs.
+#
+# IMPORTANT: The returned order is the reverse of the input order.  Input is
+# lowest precedence to highest precedence.  Output is highest precedence to
+# lowest precedence.  This is not happenstance: _integrate_role() requires it.
+#
+
+def _normalize_sequence(
+        ids:tuple[ID|EllipsisType,...],
+        existing:list[_NormID], what:Any,
+        formatter:Callable[[Any],str]|None=None) -> list[_NormID]:
+    result:list[_NormID] = []
+    for value in reversed(ids):
+        if value is Ellipsis:
+            for existingvalue in existing:
+                if existingvalue not in result:
+                    result.append(existingvalue)
+        else:
+            value = _normalize(value,what,formatter)
+            if value not in result:
+                result.append(value)  #type:ignore
+    return result
 
 #
 # Return the quoted form of a normalized identifier, unless it is markup.
@@ -199,6 +226,48 @@ def _prefer_quoted(id:str):
         return '"' + id + '"'
     else:
         return id
+
+
+type AttrSpec = ID|None|tuple[ID|EllipsisType,...]
+"""
+    Attribute values can be given as an :type:`ID`, None, or a tuple.  If given
+    as an :type:`ID`, the named attribute is assigned that value.  If given as
+    None, the attribute is deleted.  If given as a tuple, an empty tuple is
+    equivalent to specifying None, and a non-Ellipsis singleton is equivalent
+    to specifying the single element.
+
+    .. code-block:: python
+
+        dot.node_update("a",shape=None)  # Deletes the shape attribute
+        dot.node_update("b",color=())    # Deletes the color attribute
+
+        dot.edge("a","b",role="loose")    # The edge's role becomes "loose"
+        dot.edge("c","d",role=("tight",)) # The edge's role becomes "tight"
+
+    Tuples can provide multiple values for attributes.  The only attribute
+    which allows multiple values is the reserved attribute ``role``.
+
+    .. code-block:: python
+
+        dot.edge("a","b",role=("transition","critical"))
+        dot.edge("b","c",color=("red","green"))  # Raises ValueError
+
+    The first line above is fine; the second raises :class:`ValueError`.
+
+    Within a tuple, the Ellipsis object, usually written ``...``, denotes the
+    values already assigned, if any.  That allows code to extend an entity's
+    roles.
+
+    .. code-block:: python
+
+        dot.graph(role=(...,"focused"))        # Append role "focused"
+        for state in terminal_states:
+            dot.node(state,role=("sink",...))  # Prepend role "sink"
+
+    The code above illustrates an important point: the roles assigned to
+    entities are ordered, and the placement of ``...`` determines the resulting
+    order.
+"""
 
 
 type CompassPoint = Literal[
@@ -281,77 +350,103 @@ class _NormPort:
         return self
 
 #
-# _ROLE_REF is the key for role assignments among entity attributes.  "role"
-# cannot be used directly because of underscore escapes.  We depend on default
-# identity semantics use using _ROLE_REF as a dict key.
-#
-
-class _RoleRef:
-    __slots__ = ()
-
-    def __repr__(self):
-        return "%%role%%"
-
-    def __deepcopy__(self, memo):
-        return self
-
-_ROLE_REF:_RoleRef = globals().get('_ROLE_REF',_RoleRef())
-
-#
 # Graphs, nodes, and edges all have attributes.  While from the grammar an
 # attribute can be any ID, all attributes supported by Graphviz have names that
 # are lexically identifiers in Python, and through this API are specified via
 # keyword parameter names.
 #
 
-type _Attrs = dict[str|_RoleRef,_NormID]
+type _Attrs = dict[str,_NormID]
 
-type _Roles = dict[_NormID,_Attrs]
+type _RoleKey = _NormID
 
 #
-# Update target entity attributes based on a "**attrs" parameter in the public
+# Block, _Node, _Edge, and _Mien all satisfy the _Entity protocol.  We would
+# make _Entity be a base class instead of a protocol except that we don't want
+# that exposed in the public class Block.
+#
+# IMPORTANT: The roles attribute is in highest to lowest precedence order --
+# the opposite of the order in which they would appear in a multivalue
+# assignment tuple.  The function _normalize_sequence() is responsible for this
+# (intentional) reversal.
+#
+
+class _Entity(Protocol):
+    attrs:_Attrs
+    roles:list[_RoleKey]
+
+#
+# Update target attributes based on a "**attrs" parameter in the public
 # API.  Observe that "foo=None" deletes attribute foo if it exists.
 #
 
-def _set_attrs(target:_Attrs, attrargs:dict[str,Any], permit_role=False):
+def _set_attrs(entity:_Entity|None, target:_Attrs,
+               attrargs:dict[str,AttrSpec]):
     for name, value in attrargs.items():
         if name == 'role':
-            if not permit_role:
+            if entity is None:
                 raise ValueError("Attribute 'role' not permitted here")
-            name = _ROLE_REF
+            if value is None:
+                value = []
+            elif not isinstance(value,tuple):
+                value = [ _normalize(value, "Attribute 'role' value") ]
+            else:
+                value = _normalize_sequence(value, entity.roles,
+                                            "Attribute 'role' value")
+            entity.roles = value
         else:
             if name and name[-1] == '_':
                 name = name[:-1]
             name = _quote_if_needed(name)
-        if value is None:
-            target.pop(name,None)
-        else:
-            target[name] = _normalize(value,f"Attribute {name} value")
+            if value is None:
+                target.pop(name,None)
+            elif not isinstance(value,tuple):
+                target[name] = _normalize(value,name,_f_attr_name_value)
+            else:
+                existing = ([] if (existingv := target.get(name)) is None
+                            else [ existingv ])
+                value = _normalize_sequence(value, existing, name,
+                                            _f_attr_name_value)
+                if len(value) == 0:
+                    target.pop(name,None)
+                elif len(value) == 1:
+                    target[name] = value[0]
+                else:
+                    raise ValueError("Attribute '{name}' is not multivalued")
+
+def _f_attr_name_value(name:str):
+    return f"Attribute '{name}' value"
 
 #
-# Return the flattened attributes of a possibly role-bearing entity.
+# Return the flattened attributes of the possibly role-bearing entity.
 #
 
-def _integrate_role(attrs:_Attrs, roles:_Roles, what:str, identity:Any):
-    if (role_name := attrs.get(_ROLE_REF)) is not None:
-        if (role_attrs := roles.get(role_name)) is not None:
-            attrs = attrs.copy()
+def _integrate_role(entity:_Entity, rolemap:dict[_RoleKey,_Attrs],
+                    what:str, identity:Any) -> _Attrs:
+    if not (roles := entity.roles):
+        return entity.attrs
+
+    attrs = entity.attrs.copy()
+
+    for role_key in roles:
+        if (role_attrs := rolemap.get(role_key)) is not None:
             for name, value in role_attrs.items():
                 if name not in attrs:
                     attrs[name] = value
-            del attrs[_ROLE_REF]
         else:
             if identity is not None:
                 what += " " + str(identity)
             raise RuntimeError(
-                f"Role {role_name} assigned to {what} not defined")
+                f"Role {role_key} assigned to {what} not defined")
+
     return attrs
 
 #
 # Merge target and source role dictionaries with source having precedence.
 #
 
-def _update_roles(target:_Roles, source:_Roles) -> None:
+def _update_rolemap(target:dict[_RoleKey,_Attrs],
+                    source:dict[_RoleKey,_Attrs]) -> None:
     for role, source_attrs in source.items():
         if (target_attrs := target.get(role)) is not None:
             target_attrs.update(source_attrs)
@@ -366,7 +461,7 @@ _TEXT_ATTRS = { "label", "headlabel", "taillabel", "xlabel", "comment" }
 
 #
 # We normalize discriminants to _NormIDs if they are given, otherwise (when
-# given as None) they are normalized to _Nonce for multigraphs and None for
+# given as None) they are normalized to Nonce for multigraphs and None for
 # non-multigraphs.
 #
 
@@ -385,11 +480,24 @@ type _EdgeKey = tuple[_NodeKey,_NodeKey,_NormDisc]
 type _SubgraphKey = _NormID
 
 #
+# Nodes have an id and attributes.
+#
+
+class _Node:
+    __slots__ = "nodeid", "attrs", "roles"
+
+    def __init__(self, nodeid:_NormID):
+        self.nodeid = nodeid
+        self.attrs:_Attrs = dict()
+        self.roles:list[_RoleKey] = []
+
+#
 # Edges have port specifications and attributes, and can be directed.
 #
 
 class _Edge:
-    __slots__ = "normport1", "normport2", "normdisc", "directed", "attrs"
+    __slots__ = ("normport1", "normport2", "normdisc",
+                 "directed", "attrs", "roles")
 
     def __init__(self, directed:bool, normport1:_NormPort,
                  normport2:_NormPort, normdisc:_NormDisc):
@@ -398,6 +506,7 @@ class _Edge:
         self.normdisc = normdisc
         self.directed = directed
         self.attrs:_Attrs = dict()
+        self.roles:list[_RoleKey] = []
 
     def update_ports(self, otherport1:_NormPort, otherport2:_NormPort):
 
@@ -447,27 +556,29 @@ class _Edge:
 #
 
 class _Mien:
-    __slots__ = ("d_grapha", "d_nodea", "d_edgea", "grapha",
-                 "noderoles", "edgeroles", "graphroles")
+    __slots__ = ("d_grapha", "d_nodea", "d_edgea", "attrs", "roles",
+                 "noderolemap", "edgerolemap", "graphrolemap")
 
-    d_grapha   : _Attrs
-    d_nodea    : _Attrs
-    d_edgea    : _Attrs
-    grapha     : _Attrs
-    graphroles : _Roles
-    noderoles  : _Roles
-    edgeroles  : _Roles
+    d_grapha     : _Attrs
+    d_nodea      : _Attrs
+    d_edgea      : _Attrs
+    attrs        : _Attrs
+    roles        : list[_RoleKey]
+    graphrolemap : dict[_RoleKey,_Attrs]
+    noderolemap  : dict[_RoleKey,_Attrs]
+    edgerolemap  : dict[_RoleKey,_Attrs]
 
     def __init__(self, dot:Dot):
 
         if (theme := dot.theme) is None:
-            self.d_grapha = dot.d_grapha
-            self.d_nodea = dot.d_nodea
-            self.d_edgea = dot.d_edgea
-            self.grapha = dot.grapha
-            self.graphroles = dot.graphroles
-            self.noderoles = dot.noderoles
-            self.edgeroles = dot.edgeroles
+            self.d_grapha     = dot.d_grapha
+            self.d_nodea      = dot.d_nodea
+            self.d_edgea      = dot.d_edgea
+            self.attrs        = dot.attrs
+            self.roles        = dot.roles
+            self.graphrolemap = dot.graphrolemap
+            self.noderolemap  = dot.noderolemap
+            self.edgerolemap  = dot.edgerolemap
             return
 
         stack = [ dot ]
@@ -475,31 +586,33 @@ class _Mien:
             stack.append(theme)
             theme = theme.theme
 
-        d_grapha   = dict()
-        d_nodea    = dict()
-        d_edgea    = dict()
-        grapha     = dict()
-        graphroles = defaultdict(dict)
-        noderoles  = defaultdict(dict)
-        edgeroles  = defaultdict(dict)
+        d_grapha     = dict()
+        d_nodea      = dict()
+        d_edgea      = dict()
+        attrs        = dict()
+        roles        = []
+        graphrolemap = defaultdict(dict)
+        noderolemap  = defaultdict(dict)
+        edgerolemap  = defaultdict(dict)
 
         for theme in reversed(stack):
             d_grapha.update(theme.d_grapha)
             d_nodea.update(theme.d_nodea)
             d_edgea.update(theme.d_edgea)
-            grapha.update(theme.grapha)
-            _update_roles(graphroles,theme.graphroles)
-            _update_roles(noderoles,theme.noderoles)
-            _update_roles(edgeroles,theme.edgeroles)
+            attrs.update(theme.attrs)
+            if theme.roles: roles = theme.roles
+            _update_rolemap(graphrolemap,theme.graphrolemap)
+            _update_rolemap(noderolemap,theme.noderolemap)
+            _update_rolemap(edgerolemap,theme.edgerolemap)
 
-        self.d_grapha   = d_grapha
-        self.d_nodea    = d_nodea
-        self.d_edgea    = d_edgea
-        self.grapha     = grapha
-        self.graphroles = graphroles
-        self.noderoles  = noderoles
-        self.edgeroles  = edgeroles
-
+        self.d_grapha     = d_grapha
+        self.d_nodea      = d_nodea
+        self.d_edgea      = d_edgea
+        self.attrs        = attrs
+        self.roles        = roles.copy()
+        self.graphrolemap = graphrolemap
+        self.noderolemap  = noderolemap
+        self.edgerolemap  = edgerolemap
 
 #
 # Return a list of all _NormID values in a Dot object and its _Mien, including
@@ -514,14 +627,14 @@ def _collect_ids(dot:Dot, mien:_Mien) -> list[_NormID|None]:
     result.extend(mien.d_grapha.values())
     result.extend(mien.d_nodea.values())
     result.extend(mien.d_edgea.values())
-    result.extend(mien.grapha.values())
-    for attrs in mien.graphroles.values(): result.extend(attrs.values())
-    for attrs in mien.noderoles.values(): result.extend(attrs.values())
-    for attrs in mien.edgeroles.values(): result.extend(attrs.values())
+    result.extend(mien.attrs.values())
+    for attrs in mien.graphrolemap.values(): result.extend(attrs.values())
+    for attrs in mien.noderolemap.values(): result.extend(attrs.values())
+    for attrs in mien.edgerolemap.values(): result.extend(attrs.values())
 
-    for node, attrs in dot.nodemap.items():
-        result.append(node)
-        result.extend(attrs.values())
+    for node in dot.nodemap.values():
+        result.append(node.nodeid)
+        result.extend(node.attrs.values())
 
     for edge in dot.edgemap.values():
         result.append(edge.normport1.node)
@@ -535,7 +648,7 @@ def _collect_ids(dot:Dot, mien:_Mien) -> list[_NormID|None]:
         result.extend(block.d_grapha.values())
         result.extend(block.d_nodea.values())
         result.extend(block.d_edgea.values())
-        result.extend(block.grapha.values())
+        result.extend(block.attrs.values())
         for subgraph in block.subgraphs:
             add_block(subgraph)
 
@@ -597,8 +710,8 @@ class Block:
     :func:`Block` directly raises a :class:`RuntimeError`.
     """
     __slots__ = (
-        "graphid", "d_grapha", "d_nodea", "d_edgea", "grapha",
-        "subgraphmap", "nodes", "edges", "subgraphs",
+        "graphid", "d_grapha", "d_nodea", "d_edgea", "attrs",
+        "subgraphmap", "nodes", "edges", "subgraphs", "roles",
         "_dot", "_parent"
     )
     def __init__(self):
@@ -611,51 +724,74 @@ class Block:
         self.d_grapha:_Attrs = dict()
         self.d_nodea:_Attrs = dict()
         self.d_edgea:_Attrs = dict()
-        self.grapha:_Attrs = dict()
+        self.attrs:_Attrs = dict()
+        self.roles:list[_RoleKey] = []
         self.subgraphmap:dict[_SubgraphKey,Block] = dict()
-        self.nodes:list[_NodeKey] = []
+        self.nodes:list[_Node] = []
         self.edges:list[_Edge] = []
         self.subgraphs:list[Block] = []
         self._dot = dot
         self._parent = parent
 
-    def graph_default(self, **attrs:ID|None) -> Self:
+    def graph_default(self, **attrs:AttrSpec) -> Self:
         """
         Establish or amend default graph attributes.
 
         :param attrs: New or amending attribute value assignments.
 
-        :raises ValueError: Role assignment specified as a default attribute.
+        :raises ValueError: Role assignment specified as a default attribute,
+            or an attribute value is not allowed.
         """
-        _set_attrs(self.d_grapha,attrs)
+        _set_attrs(None,self.d_grapha,attrs)
         return self
 
-    def graph(self, **attrs:ID|None) -> Self:
+    def graph(self, **attrs:AttrSpec) -> Self:
         """
         Establish or amend graph attributes.
 
-        :param attrs: New or amending attribute value assignments.
+        :param attrs: New or amending attribute value assignments
+        :raises ValueError: An attribute value is not allowed.
         """
-        _set_attrs(self.grapha,attrs,True)
+        _set_attrs(self,self.attrs,attrs)
         return self
 
-    def node_default(self, **attrs:ID|None) -> Self:
+    def node_default(self, **attrs:AttrSpec) -> Self:
         """
         Establish or amend default node attributes.
 
         :param attrs: New or amending attribute value assignments.
 
-        :raises ValueError: Role assignment specified as a default attribute.
+        :raises ValueError: Role assignment specified as a default attribute,
+            or an attribute value is not allowed.
         """
-        _set_attrs(self.d_nodea,attrs)
+        _set_attrs(None,self.d_nodea,attrs)
         return self
 
-    def node(self, id:ID, /, **attrs:ID|None) -> Self:
+    def _node(self, id:ID, attrargs:dict[str,Any],
+              must_exist=False, must_not_exist=False) -> Self:
+        """
+        Define or amend a node, enforcing defined/not-defined constraints.
+        """
+        nodemap = self._dot.nodemap
+        nodeid = _normalize(id, "Node identifier")
+        if (node := nodemap.get(nodeid)) is None:
+            if must_exist:
+                raise RuntimeError(f"Node {nodeid} not defined")
+            nodemap[nodeid] = node = _Node(nodeid)
+            self.nodes.append(node)
+        else:
+            if must_not_exist:
+                raise RuntimeError(f"Node {nodeid} already defined")
+        _set_attrs(node,nodemap[nodeid].attrs,attrargs)
+        return self
+
+    def node(self, id:ID, /, **attrs:AttrSpec) -> Self:
         """
         Define a node or amend its attributes.
 
         :param id: The node to define or amend.
         :param attrs: New or amending attribute value assignments.
+        :raises ValueError: An attribute value is not allowed.
 
         The Block object through which a node is defined determines where in
         the DOT language representation the corresponding node statement will
@@ -685,43 +821,29 @@ class Block:
                 }
             }
         """
-        nodemap = self._dot.nodemap
-        key = _normalize(id, "Node identifier")
-        if key not in nodemap:
-            self.nodes.append(key)
-        _set_attrs(nodemap[key],attrs,True)
-        return self
+        return self._node(id,attrs)
 
-    def node_define(self, id:ID, /, **attrs:ID|None) -> Self:
+    def node_define(self, id:ID, /, **attrs:AttrSpec) -> Self:
         """
         Same as method :meth:`node`, except require the node to be undefined.
 
         :param id: The node to define.
         :param attrs: New attribute value assignments.
         :raises RuntimeError: The node is already defined.
+        :raises ValueError: An attribute value is not allowed.
         """
-        nodemap = self._dot.nodemap
-        key = _normalize(id, "Node identifier")
-        if key in nodemap:
-            raise RuntimeError(f"Node {key} already defined")
-        self.nodes.append(key)
-        _set_attrs(nodemap[key],attrs,True)
-        return self
+        return self._node(id,attrs,must_not_exist=True)
 
-    def node_update(self, id:ID, /, **attrs:ID|None) -> Self:
+    def node_update(self, id:ID, /, **attrs:AttrSpec) -> Self:
         """
         Same as method :meth:`node`, except require the node to be defined.
 
         :param id: The node to amend.
         :param attrs: Amending attribute value assignments.
         :raises RuntimeError: The node is not defined.
+        :raises ValueError: An attribute value is not allowed.
         """
-        nodemap = self._dot.nodemap
-        key = _normalize(id, "Node identifier")
-        if key not in nodemap:
-            raise RuntimeError(f"Node {key} not defined")
-        _set_attrs(nodemap[key],attrs,True)
-        return self
+        return self._node(id,attrs,must_exist=True)
 
     def node_is_defined(self, id:ID) -> bool:
         """
@@ -731,15 +853,16 @@ class Block:
         """
         return _normalize(id, "Node identifier") in self._dot.nodemap
 
-    def edge_default(self, **attrs:ID|None) -> Self:
+    def edge_default(self, **attrs:AttrSpec) -> Self:
         """
         Establish or amend default edge attributes.
 
         :param attrs: New or amending attribute value assignments.
 
-        :raises ValueError: Role assignment specified as a default attribute.
+        :raises ValueError: Role assignment specified as a default attribute,
+            or an attribute value is not allowed.
         """
-        _set_attrs(self.d_edgea,attrs)
+        _set_attrs(None,self.d_edgea,attrs)
         return self
 
     def _edge_preamble(self, point1:ID|Port, point2:ID|Port,
@@ -797,11 +920,12 @@ class Block:
                 raise RuntimeError(f"Edge {edge.name()} already defined")
             edge.update_ports(normport1,normport2)
 
-        _set_attrs(edge.attrs,attrargs,True)
+        _set_attrs(edge,edge.attrs,attrargs)
         return self
 
     def edge(self, point1:ID|Port, point2:ID|Port,
-             discriminant:ID|None=None, /, **attrs:ID|None) -> Self:
+             discriminant:ID|None=None, /,
+             **attrs:AttrSpec) -> Self:
         """
         Define an edge or amend its attributes and endpoints.
 
@@ -819,7 +943,8 @@ class Block:
 
         :param attrs: New or amending attribute value assignments.
 
-        :raises ValueError: Discriminant specified for a non-multigraph.
+        :raises ValueError: Discriminant specified for a non-multigraph, or an
+            attribute value is not allowed.
 
         The Block object through which an edge is defined determines where in
         the DOT language representation the corresponding edge statement will
@@ -903,7 +1028,8 @@ class Block:
         return self._edge(point1,point2,discriminant,attrs)
 
     def edge_define(self, point1:ID|Port, point2:ID|Port,
-                    discriminant:ID|None=None, /, **attrs:ID|None) -> Self:
+                    discriminant:ID|None=None, /,
+                    **attrs:AttrSpec) -> Self:
         """
         Same as method :meth:`edge`, except require the edge to be undefined.
 
@@ -911,12 +1037,14 @@ class Block:
         :param point2: See :meth:`edge`.
         :param discriminant: See :meth:`edge`.
         :raises RuntimeError: The edge is already defined.
-        :raises ValueError: Discriminant specified for a non-multigraph.
+        :raises ValueError: Discriminant specified for a non-multigraph, or an
+            attribute value is not allowed.
         """
         return self._edge(point1,point2,discriminant,attrs,must_not_exist=True)
 
     def edge_update(self, point1:ID|Port, point2:ID|Port,
-                    discriminant:ID|None=None, /, **attrs:ID|None) -> Self:
+                    discriminant:ID|None=None, /,
+                    **attrs:AttrSpec) -> Self:
         """
         Same as method :meth:`edge`, except require the edge to be defined.
 
@@ -924,7 +1052,8 @@ class Block:
         :param point2: See :meth:`edge`.
         :param discriminant: See :meth:`edge`.
         :raises RuntimeError: The edge is not defined.
-        :raises ValueError: Discriminant specified for a non-multigraph.
+        :raises ValueError: Discriminant specified for a non-multigraph, or an
+            attribute value is not allowed.
         """
         return self._edge(point1,point2,discriminant,attrs,must_exist=True)
 
@@ -1022,7 +1151,7 @@ class Block:
         """
         return _normalize(id,"Subgraph identifier") in self.subgraphmap
 
-    def all_default(self, **attrs:ID|None) -> Self:
+    def all_default(self, **attrs:AttrSpec) -> Self:
         """
         Establish or amend default graph, node, and edge attributes all at once.
 
@@ -1035,11 +1164,12 @@ class Block:
             block.node_default(**attrs)
             block.edge_default(**attrs)
 
-        :raises ValueError: Role assignment specified as a default attribute.
+        :raises ValueError: Role assignment specified as a default attribute,
+            or an attribute value is not allowed.
         """
-        _set_attrs(self.d_grapha,attrs)
-        _set_attrs(self.d_nodea,attrs)
-        _set_attrs(self.d_edgea,attrs)
+        _set_attrs(None,self.d_grapha,attrs)
+        _set_attrs(None,self.d_nodea,attrs)
+        _set_attrs(None,self.d_edgea,attrs)
         return self
 
     def parent(self) -> Block|None:
@@ -1097,14 +1227,15 @@ class Block:
         if d_nodea:  statement("node",d_nodea)
         if d_edgea:  statement("edge",d_edgea)
 
-        graphroles = mien.graphroles
-        noderoles  = mien.noderoles
-        edgeroles  = mien.edgeroles
-        nodemap    = self._dot.nodemap
-        graphid    = self.graphid
-        grapha     = _integrate_role(mien.grapha if isinstance(self,Dot)
-                                     else self.grapha, graphroles,
-                                     "graph",graphid)
+        graphrolemap = mien.graphrolemap
+        noderolemap  = mien.noderolemap
+        edgerolemap  = mien.edgerolemap
+        graphid      = self.graphid
+
+        if isinstance(self,Dot):
+            grapha = _integrate_role(mien, graphrolemap, "graph", graphid)
+        else:
+            grapha = _integrate_role(self, graphrolemap, "graph", graphid)
 
         blankline()
         for key, value in grapha.items():
@@ -1115,14 +1246,14 @@ class Block:
                 statement(f"{key}={value}",None)
 
         blankline()
-        for nodekey in self.nodes:
-            attrs = _integrate_role(nodemap[nodekey],noderoles,"node",nodekey)
-            statement(resolve(nodekey),attrs)
+        for node in self.nodes:
+            nodea = _integrate_role(node, noderolemap, "node", node.nodeid)
+            statement(resolve(node.nodeid),nodea)
 
         blankline()
         for edge in self.edges:
-            attrs = _integrate_role(edge.attrs,edgeroles,"edge", edge)
-            statement(edge.dot(resolver),attrs)
+            edga = _integrate_role(edge, edgerolemap, "edge", edge)
+            statement(edge.dot(resolver),edga)
 
         for subgraph in self.subgraphs:
             blankline()
@@ -1169,7 +1300,7 @@ class Dot(Block):
     """
     __slots__ = (
         "directed", "strict", "multigraph", "comment",
-        "graphroles", "noderoles", "edgeroles",
+        "graphrolemap", "noderolemap", "edgerolemap",
         "nodemap", "edgemap", "theme"
     )
     def __init__(self, *, directed:bool=False, strict:bool=False,
@@ -1184,12 +1315,12 @@ class Dot(Block):
         self.multigraph = multigraph
         self.comment    = comment
 
-        self.graphroles:_Roles = defaultdict(dict)
-        self.noderoles:_Roles  = defaultdict(dict)
-        self.edgeroles:_Roles  = defaultdict(dict)
+        self.graphrolemap:dict[_RoleKey,_Attrs] = defaultdict(dict)
+        self.noderolemap:dict[_RoleKey,_Attrs]  = defaultdict(dict)
+        self.edgerolemap:dict[_RoleKey,_Attrs]  = defaultdict(dict)
 
-        self.nodemap:dict[_NodeKey,_Attrs] = defaultdict(dict)
-        self.edgemap:dict[_EdgeKey,_Edge]  = dict()
+        self.nodemap:dict[_NodeKey,_Node] = dict()
+        self.edgemap:dict[_EdgeKey,_Edge] = dict()
         self.theme:Dot|None = None
 
         graphid = None if id is None else _normalize(id, "Graph identifier")
@@ -1217,26 +1348,27 @@ class Dot(Block):
         # The rest is standard.
         #
 
-        other.directed    = deepcopy(self.directed,memo)
-        other.strict      = deepcopy(self.strict,memo)
-        other.multigraph  = deepcopy(self.multigraph,memo)
-        other.graphid     = deepcopy(self.graphid,memo)
-        other.comment     = deepcopy(self.comment,memo)
-        other.d_grapha    = deepcopy(self.d_grapha,memo)
-        other.d_nodea     = deepcopy(self.d_nodea,memo)
-        other.d_edgea     = deepcopy(self.d_edgea,memo)
-        other.grapha      = deepcopy(self.grapha,memo)
-        other.graphroles  = deepcopy(self.graphroles,memo)
-        other.noderoles   = deepcopy(self.noderoles,memo)
-        other.edgeroles   = deepcopy(self.edgeroles,memo)
-        other.nodemap     = deepcopy(self.nodemap,memo)
-        other.edgemap     = deepcopy(self.edgemap,memo)
-        other.subgraphmap = deepcopy(self.subgraphmap,memo)
-        other.nodes       = deepcopy(self.nodes,memo)
-        other.edges       = deepcopy(self.edges,memo)
-        other.subgraphs   = deepcopy(self.subgraphs,memo)
-        other._dot        = other
-        other._parent     = None
+        other.directed     = deepcopy(self.directed,memo)
+        other.strict       = deepcopy(self.strict,memo)
+        other.multigraph   = deepcopy(self.multigraph,memo)
+        other.graphid      = deepcopy(self.graphid,memo)
+        other.comment      = deepcopy(self.comment,memo)
+        other.d_grapha     = deepcopy(self.d_grapha,memo)
+        other.d_nodea      = deepcopy(self.d_nodea,memo)
+        other.d_edgea      = deepcopy(self.d_edgea,memo)
+        other.attrs       = deepcopy(self.attrs,memo)
+        other.roles        = deepcopy(self.roles,memo)
+        other.graphrolemap = deepcopy(self.graphrolemap,memo)
+        other.noderolemap  = deepcopy(self.noderolemap,memo)
+        other.edgerolemap  = deepcopy(self.edgerolemap,memo)
+        other.nodemap      = deepcopy(self.nodemap,memo)
+        other.edgemap      = deepcopy(self.edgemap,memo)
+        other.subgraphmap  = deepcopy(self.subgraphmap,memo)
+        other.nodes        = deepcopy(self.nodes,memo)
+        other.edges        = deepcopy(self.edges,memo)
+        other.subgraphs    = deepcopy(self.subgraphs,memo)
+        other._dot         = other
+        other._parent      = None
 
         return other
 
@@ -1246,47 +1378,50 @@ class Dot(Block):
         """
         return self.multigraph
 
-    def graph_role(self, role:str, /, **attrs:ID|None) -> Self:
+    def graph_role(self, role:str, /, **attrs:AttrSpec) -> Self:
         """
         Define a graph role or amend its attributes.
 
         :param role: The graph role to define or amend.
         :param attrs: New or amending attribute value assignments.
 
-        :raises ValueError: Role assignment specified for a role.
+        :raises ValueError: Role assignment specified for a role, or an
+            attribute value is not allowed.
         """
         #
         # NOTE: Even though role names are limited to str, we normalize them
         # because they are normalized when assigned as attribute values.
         #
-        _set_attrs(self.graphroles[_normalize(role,"Role name")],attrs)
+        _set_attrs(None,self.graphrolemap[_normalize(role,"Role name")],attrs)
         return self
 
-    def node_role(self, role:str, /, **attrs:ID|None) -> Self:
+    def node_role(self, role:str, /, **attrs:AttrSpec) -> Self:
         """
         Define a node role or amend its attributes.
 
         :param role: The node role to define or amend.
         :param attrs: New or amending attribute value assignments.
 
-        :raises ValueError: Role assignment specified for a role.
+        :raises ValueError: Role assignment specified for a role, or an
+            attribute value is not allowed.
         """
-        _set_attrs(self.noderoles[_normalize(role,"Role name")],attrs)
+        _set_attrs(None,self.noderolemap[_normalize(role,"Role name")],attrs)
         return self
 
-    def edge_role(self, role:str, /, **attrs:ID|None) -> Self:
+    def edge_role(self, role:str, /, **attrs:AttrSpec) -> Self:
         """
         Define an edge role or amend its attributes.
 
         :param role: The edge role to define or amend.
         :param attrs: New or amending attribute value assignments.
 
-        :raises ValueError: Role assignment specified for a role.
+        :raises ValueError: Role assignment specified for a role, or an
+            attribute value is not allowed.
         """
-        _set_attrs(self.edgeroles[_normalize(role,"Role name")],attrs)
+        _set_attrs(None,self.edgerolemap[_normalize(role,"Role name")],attrs)
         return self
 
-    def all_role(self, role:str, /, **attrs:ID|None) -> Self:
+    def all_role(self, role:str, /, **attrs:AttrSpec) -> Self:
         """
         Define or amend the attributes of same-named graph, node, and edge
         roles all at once.
@@ -1300,12 +1435,13 @@ class Dot(Block):
             dot.node_role(role, **attrs)
             dot.edge_role(role, **attrs)
 
-        :raises ValueError: Role assignment specified for roles.
+        :raises ValueError: Role assignment specified for roles, or an
+            attribute value is not allowed.
         """
         normrole = _normalize(role,"Role name")
-        _set_attrs(self.graphroles[normrole],attrs)
-        _set_attrs(self.noderoles[normrole],attrs)
-        _set_attrs(self.edgeroles[normrole],attrs)
+        _set_attrs(None,self.graphrolemap[normrole],attrs)
+        _set_attrs(None,self.noderolemap[normrole],attrs)
+        _set_attrs(None,self.edgerolemap[normrole],attrs)
         return self
 
     def copy(self, *, id:ID|None=None, comment:str|None=None) -> Dot:

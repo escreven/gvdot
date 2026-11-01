@@ -26,9 +26,11 @@ Use option `-h` to see usage.
 | [identifiers.py](identifiers.py) | IDs and their forms, including Nonces
 | [impose_order.py](impose_order.py) | The impose_order() function
 | [internals.py](internals.py) | Aspects that are hard to test through the public API
+| [multivalue.py](multivalue.py) | Using attribute value tuples for roles and otherwise
 | [render.py](render.py) | Rendering to files, image bytes, and SVG
 | [show.py](show.py) | Showing Dot object images and source in notebooks
 | [styling.py](styling.py) | Roles and themes
+| [subclass.py](styling.py) | Subclassing `Dot`
 
 
 Test definition modules include one or more functions

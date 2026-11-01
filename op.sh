@@ -71,14 +71,14 @@ function require_consistent_version {
     local python_version
     python_version=$(\
         sed -n 's/^__version__ = "\([^"][^"]*\)"/\1/p' \
-            src/gvdot/_core.py)
+            src/gvdot/__init__.py)
 
     [[ -z $python_version ]] \
-        && fail "Could not find version in src/gvdot/_core.py"
+        && fail "Could not find version in src/gvdot/__init__.py"
 
     [[ $pyproject_version == "$python_version" ]] \
         || fail "Version mismatch: pyproject.toml ($pyproject_version)" \
-                "!= src/gvdot/_core.py ($python_version)"
+                "!= src/gvdot/__init__.py ($python_version)"
 
     echo "$python_version"
 }

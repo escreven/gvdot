@@ -6,7 +6,7 @@ from utility import expect_str, expect_ex
 def test_copy():
     """
     Copies should be faithful, and should allow the graph and comment to be
-    changed.  A copy should have the identical theme as the original.
+    changed.  A copy's theme should be identical to the original's theme.
     """
     dot = Dot(id="Original", comment="V1")
     dot.graph_default(dpi=72)

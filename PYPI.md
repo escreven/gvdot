@@ -107,7 +107,7 @@ You can find this [NFA
 example](https://github.com/escreven/gvdot/blob/main/examples/nfa.ipynb) and
 others in the [examples](https://github.com/escreven/gvdot/tree/main/examples)
 directory.  The documentation includes a [Quick
-Tour](https://gvdot.readthedocs.io/en/latest/quicktour.html)
+Tour](https://gvdot.readthedocs.io/en/latest/quicktour.html).
 
 ## Installation
 

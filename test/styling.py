@@ -67,6 +67,34 @@ def test_roles():
     """)
 
 
+def test_delete_role():
+    """
+    Role assignments can be deleted by assigning None.
+    """
+    dot = Dot()
+    dot.all_role("test",x=1)
+    dot.graph(role="test")
+    dot.node("a",role="test")
+    dot.edge("a","b",role="test")
+    expect_str(dot,"""
+    graph {
+        x=1
+        a [ x=1 ]
+        a -- b [ x=1 ]
+    }
+    """)
+
+    dot.graph(role=None)
+    dot.node("a",role=None)
+    dot.edge("a","b",role=None)
+    expect_str(dot,"""
+    graph {
+        a
+        a -- b
+    }
+    """)
+
+
 def test_all_role():
     """
     Graph, node, and edge roles can be defined and amended all at once.
@@ -340,7 +368,7 @@ def test_theme_errors():
 def test_subgraphs_see_theme_roles():
     """
     Inherited roles should be assignable to entities defined through subgraph
-    Dot objects.
+    Block objects.
     """
     theme = Dot().all_role("test",x=1)
     dot = Dot().use_theme(theme)
@@ -355,5 +383,51 @@ def test_subgraphs_see_theme_roles():
             a [x=1]
             a -- b [x=1]
         }
+    }
+    """)
+
+
+def test_theme_graph_role():
+    """
+    A theme graph role assignment is inherited by Dot objects.
+    """
+    theme1 = Dot().graph_role("test",x=1)
+    theme2 = Dot().use_theme(theme1)
+    dot = Dot().use_theme(theme2)
+    theme1.graph(role="test")
+    expect_str(dot,"""
+    graph {
+        x=1
+    }
+    """)
+
+    theme1 = Dot().graph_role("test",x=1)
+    theme2 = Dot().use_theme(theme1)
+    dot = Dot().use_theme(theme2)
+    theme2.graph(role="test")
+    expect_str(dot,"""
+    graph {
+        x=1
+    }
+    """)
+
+    theme1 = Dot().graph_role("test",x=1)
+    theme2 = Dot().use_theme(theme1)
+    dot = Dot().use_theme(theme2)
+    dot.graph(role="test")
+    expect_str(dot,"""
+    graph {
+        x=1
+    }
+    """)
+
+    theme1 = Dot().graph_role("test",x=1)
+    theme2 = Dot().use_theme(theme1)
+    dot = Dot().use_theme(theme2)
+    theme1.graph(role="test")
+    dot.graph(x=2)
+    expect_str(dot,"""
+    graph {
+        x=2
     }
     """)
