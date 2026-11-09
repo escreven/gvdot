@@ -40,3 +40,15 @@ css
     font-weight: bold;
     padding: 2px 2px;
 }
+
+/* Pull designated ordered lists in tighter with preceding paragraph and
+   add vertical space between items */
+
+ol.nice-list {
+    margin-left: 24px;
+    margin-top: -12px;
+}
+
+ol.nice-list li {
+    margin-bottom: 12px;
+}

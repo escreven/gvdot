@@ -64,6 +64,7 @@ In a notebook, we can directly display the diagram from a cell containing
     quicktour
     discussion
     reference
+    markup
     examples
     installation
     resources

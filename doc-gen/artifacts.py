@@ -41,6 +41,7 @@ def _code_block(language:str, text:str):
             del lines[-1]
         transformed = []
         for line in lines:
+            line = line.rstrip()
             if match := re.fullmatch(r"(\s*)#\+\s*(.*)", line):
                 transformed.append(match[1] + match[2])
             elif not re.fullmatch(r".*#-\s*", line):
@@ -50,17 +51,18 @@ def _code_block(language:str, text:str):
     assert lines
 
     return f".. code-block:: {language}\n\n" + "".join(
-        "    " + line + "\n" for line in lines)
+        "    " + line + "\n" if line else "\n"
+        for line in lines)
 
 
 #
 # Examples can have images, Python source code, and DOT source code, all of
-# which is optional.  save_artifacts() generates these artifacts and stores
+# which are optional.  save_artifacts() generates these artifacts and stores
 # them in doc/_static or doc/_code.
 #
 # NOTE: This module must be in a directory at the repo root, so that
-# {__file__}/../doc/_static and {__file__}/../doc/_code are the target image
-# and code snippet directories.
+# {dir(__file__)}/../doc/_static and {dir(__file__)}/../doc/_code are the
+# target image and code snippet directories.
 #
 
 @dataclass

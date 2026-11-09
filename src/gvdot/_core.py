@@ -6,10 +6,11 @@ from dataclasses import dataclass
 from html import escape as html_escape
 from os import PathLike
 from pathlib import Path, PurePath
+from reprlib import recursive_repr
 import subprocess
 from subprocess import CalledProcessError, TimeoutExpired
 from types import EllipsisType
-from typing import Any, Hashable, Literal, Protocol, Self
+from typing import Any, Hashable, Literal, NoReturn, Protocol, Self
 import re
 
 __all__ = ()
@@ -33,7 +34,6 @@ def _missing_ipython():
         "Install with: pip install gvdot[ipython]")
 
 
-@dataclass(slots=True)
 class Markup:
     """
     A Graphviz DOT language markup string.
@@ -44,9 +44,70 @@ class Markup:
 
     :param markup: The DOT language markup text excluding the opening and
         closing angle brackets.
-    """
-    markup : str
 
+    :raises ValueError: The given markup text is not a ``str``.
+
+    Package gvdot uses a :class:`Markup` object's string representation when
+    building DOT language.  For :class:`Markup` proper, this is the value of
+    ``markup``.  Applications can subclass :class:`Markup` and override
+    ``__str__()`` to create specialized markup generators:
+
+    .. code-block:: python
+
+        class X(Markup):
+            def __init__(self, i:int):
+                self.i = i
+            def __str__(self) -> str:
+                return f'x<sub><font point-size="10">{self.i}</font></sub>'
+
+        dot = Dot()
+        dot.node(1,label=X(1))
+        dot.node(2,label=X(2))
+        dot.edge(1,2)
+
+    Package gvdot includes a module ``gvdot.markup`` with :class:`Markup`
+    subclasses that build Graphviz HTML strings.  Using that module, the code
+    above could be written as
+
+    .. code-block:: python
+
+        from gvdot.markup import Span, Sub, Font
+
+        def X(i:int) -> Markup:
+            return Span("x",Sub(Font(str(i),point_size=10)))
+
+        # ... the rest the same ...
+    """
+    _base_markup : str
+
+    def __init__(self, markup:str):
+        if not isinstance(markup,str):
+            raise ValueError(f"Not a string: {markup}")
+        self._base_markup = markup
+
+    def __eq__(self, other):
+        if self.__class__ is Markup and other.__class__ is Markup:
+            return self._base_markup == other._base_markup
+        else:
+            return NotImplemented
+
+    def __repr__(self):
+        if self.__class__ is Markup:
+            return f"Markup(markup={self._base_markup!r})"
+        else:
+            return super().__repr__()
+
+    def __str__(self) -> str:
+        return self._base_markup
+
+    @property
+    def markup(self) -> str:
+        if hasattr(self,'_base_markup'):
+            return self._base_markup
+        else:
+            raise AttributeError(
+                f"Markup subclass {self.__class__.__name__}"
+                " does not support property 'markup'")
 
 #
 # In addition to being publicly available for creating unique IDs, nonces are
@@ -183,7 +244,7 @@ def _normalize(id:Any, what:Any,
         case bool():
             return "true" if id else "false"
         case Markup():
-            return '<' + id.markup + '>'
+            return '<' + str(id) + '>'
         case str() | int() | float():
             return _quote_if_needed(str(id))
         case _:

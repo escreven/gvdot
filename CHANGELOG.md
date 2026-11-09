@@ -1,5 +1,24 @@
 ## Unreleased
 
+#### Added
+- Module `gvdot.markup` defining several `Markup` subclasses making it easy to
+  build Graphviz HTML strings.
+- Option `-exclude` to `test/main.py` to avoid running tests with names
+  matching the given pattern.
+- Option `-showoutput` to `test/main.py` displays test output even when tests
+  succeed.
+
+#### Changed
+- Class `Markup` is no longer implemented as a dataclass and can now be
+  subclassed to provide specialized markup generators.  As part of this change,
+  property `Markup.markup` is now read-only and the string representation of a
+  `Markup` instance is its HTML text.
+- The base `Markup` class initializer raises a `ValueError` if its argument is
+  not a `str`.
+- The document example generator no longer includes whitespace on otherwise
+  empty code lines.
+
+
 ## [1.4.0] - 2026-10-31
 
 #### Added
