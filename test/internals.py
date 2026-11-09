@@ -1,5 +1,6 @@
 from typing import Any
 from gvdot import Dot, _NormPort, _Edge, _Digraph
+from gvdot.markup import _ALLOWED_ROOTS, TR, TD, VR
 from utility import expect_ex
 
 
@@ -61,3 +62,20 @@ def test_role_compaction():
     for _ in range(10):
         dot.node("x",role=(...,...,"c","b","a",...,...))
     assert x.roles == [ "c", "b", "a"]
+
+
+def test_bad_vr_at_root():
+    """
+    The Graphviz HTML grammar requires VR elements to be between table cells.
+    There is a supporting validation in Managed.__str__().  However it's not
+    possible to reach that code because TR is the only allowed parent of VR,
+    and TR is not an allowed root.  We prefer to keep the VR check in __str__()
+    in case __str__() is ever rearranged -- so we temporarily allow TR roots to
+    test that validation code.
+    """
+    try:
+        assert TR not in _ALLOWED_ROOTS
+        _ALLOWED_ROOTS.add(TR)
+        expect_ex(RuntimeError, lambda: str(TR(TD("x"),VR())))
+    finally:
+        _ALLOWED_ROOTS.remove(TR)

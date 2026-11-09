@@ -10,6 +10,9 @@ the :ref:`discussion_ids`, :ref:`discussion_attributes`, and
 :ref:`discussion_roles` discussions.  The terms *define*, *establish*, and
 *amend* are :ref:`defined here<discussion_terms>`.
 
+Support for building :ref:`Graphviz HTML<markup_module>` is documented in a
+separate section.
+
 
 Dot and Block
 -------------
@@ -103,6 +106,9 @@ Supporting Types
 
 .. autotype:: gvdot._core.ID
 .. autoclass:: Markup
+
+    For more, see the :ref:`markup_module` section.
+
 .. autoclass:: Nonce
 
     See also the :ref:`discussion_nonces` discussion.

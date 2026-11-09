@@ -37,6 +37,8 @@ import frontend
 import identifiers
 import internals
 import impose_order
+import markup_base
+import markup_subc
 import multivalue
 import render
 import show
@@ -96,7 +98,7 @@ def _print_mismatch_text(text:str, mismatch_lineno:int):
         print("--> [end]")
 
 
-def _run(cases:list[_Case], failstop:bool):
+def _run(cases:list[_Case], failstop:bool, showoutput:bool):
 
     print()
     print(f"Running {len(cases)} tests")
@@ -113,6 +115,12 @@ def _run(cases:list[_Case], failstop:bool):
                 fn()
             print("OK")
             correct += 1
+            if showoutput and (output := captured_output.value()):
+                print()
+                print("Test Output:")
+                print()
+                print(textwrap.indent(output.rstrip(),"    "))
+                print()
         except Exception as failure:
             print("FAILED")
             print()
@@ -229,6 +237,9 @@ def _main():
     parser.add_argument("pattern", nargs='?', default=None,
         help="Only run tests with names containing this regex")
 
+    parser.add_argument("-exclude", metavar="PATTERN",
+        help="Exclude tests with names containing this regex")
+
     parser.add_argument("-noprobe", action="store_true",
         help="Skip Graphviz install probe")
 
@@ -237,6 +248,9 @@ def _main():
 
     parser.add_argument("-failstop", action="store_true",
         help="Stop immediately on failure")
+
+    parser.add_argument("-showoutput", action="store_true",
+        help="Show output even in case of success")
 
     args = parser.parse_args()
 
@@ -247,6 +261,8 @@ def _main():
     cases.extend(_get_cases(identifiers))
     cases.extend(_get_cases(internals))
     cases.extend(_get_cases(impose_order))
+    cases.extend(_get_cases(markup_base))
+    cases.extend(_get_cases(markup_subc))
     cases.extend(_get_cases(multivalue))
     cases.extend(_get_cases(render))
     cases.extend(_get_cases(show))
@@ -256,6 +272,10 @@ def _main():
     if (pattern := args.pattern) is not None:
         cases = [ case for case in cases
                   if re.search(pattern,case[0]) ]
+
+    if (exclude := args.exclude) is not None:
+        cases = [ case for case in cases
+                  if not re.search(exclude,case[0]) ]
 
     if not cases:
         print("No tests match the pattern.")
@@ -268,7 +288,7 @@ def _main():
         _probe_graphviz_install()
 
     with fakedots():
-        _run(cases,args.failstop)
+        _run(cases,args.failstop,args.showoutput)
 
 
 if __name__ == '__main__':

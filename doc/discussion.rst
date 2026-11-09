@@ -68,8 +68,9 @@ methods are called.
 - The graph closing bracket
 
 :class:`Dot` takes steps to produce readable DOT language representations:
-it indents reasonably, avoids unnecessary :type:`~gvdot._core.ID` quoting (see below), and
-separates sections with blank lines unless there are few statements.
+it indents reasonably, avoids unnecessary :type:`~gvdot._core.ID` quoting (see
+below), and separates sections with blank lines unless there are few
+statements.
 
 .. _discussion_ids:
 
@@ -79,8 +80,8 @@ IDs
 The DOT language grammar uses non-terminal `ID` for both entity identifiers and
 attribute values.  Lexically, an `ID` can be an unquoted character sequence
 that looks like a number or programming language identifier, a quoted string,
-or a Graphviz HTML string.  Package gvdot defines type :type:`~gvdot._core.ID` to represent
-`ID` values:
+or a Graphviz HTML string.  Package gvdot defines type :type:`~gvdot._core.ID`
+to represent `ID` values:
 
 .. code-block:: python
 
@@ -103,9 +104,13 @@ the same thing.  Accordingly, :class:`Dot` methods normalize non-Markup
     dot.node(100, fontsize=12, margin=0.25, color="green")
     dot.node("100", fontsize="12", margin="0.25", color="green")
 
-No matter how you specify :type:`~gvdot._core.ID` values, string or otherwise, :type:`Dot`
-avoids unnecessary quoting.  The DOT language representation of a node defined
-by either call above is
+For convenience, because some Graphviz attributes have boolean values specified
+as ``true`` or ``false``, :class:`Dot` normalizes Python bool
+:type:`~gvdot._core.ID` values to those lowercase forms.
+
+No matter how you specify :type:`~gvdot._core.ID` values, string or otherwise,
+:type:`Dot` avoids unnecessary quoting.  The DOT language representation of a
+node defined by either call above is
 
 .. code-block:: graphviz
 
@@ -124,15 +129,26 @@ has the representation
 
     a -- b [penwidth=0.25 color=red label="fine"]
 
-HTML IDs `are` distinct from non-HTML IDs in DOT language.  Python :type:`~gvdot._core.ID`
-values ``"the<br/>end"`` and ``Markup("the<br/>end")`` have the DOT language
-representations ``"the<br/>end"`` and ``<the<br/>end>`` respectively.  When
-used as a label, Graphviz renders the first as text containing angle brackets
-and a slash, and the second as "the" and "end" on two lines.
+HTML IDs `are` distinct from non-HTML IDs in DOT language.  Python
+:type:`~gvdot._core.ID` values ``"the<br/>end"`` and ``Markup("the<br/>end")``
+have the DOT language representations ``"the<br/>end"`` and ``<the<br/>end>``
+respectively.  When used as a label, Graphviz renders the first as text
+containing angle brackets and a slash, and the second as "the" and "end" on two
+lines.
 
-For convenience, because some Graphviz attributes have boolean values specified
-as ``true`` or ``false``, :class:`Dot` normalizes Python bool :type:`~gvdot._core.ID` values
-to those lowercase forms.
+To help assemble more complicated Graphviz HTML, gvdot includes module
+``gvdot.markup``, described in the :ref:`markup_module` section.  Using that
+module, we can write
+
+.. include:: _code/discussion/good-morning.py.rst
+
+which displays
+
+.. image:: _static/discussion/good-morning.*
+    :align: center
+    :alt: Good morning table
+
+|br|
 
 .. _discussion_attributes:
 
@@ -529,11 +545,11 @@ initial node and edge at the bottom of the fragment below.
         dot.edge(init_id, nfa.start)
         ...
 
-But what :type:`~gvdot._core.ID` should we assign to ``init_id``?  The remainder of the
-generation code creates state nodes with identifiers that are the state name.
-If we pick something like ``"_init_"``, we either must enforce a state name
-restriction, complicate our generation code with some kind of indirection, or
-hope the input source isn't malicious.
+But what :type:`~gvdot._core.ID` should we assign to ``init_id``?  The
+remainder of the generation code creates state nodes with identifiers that are
+the state name.  If we pick something like ``"_init_"``, we either must enforce
+a state name restriction, complicate our generation code with some kind of
+indirection, or hope the input source isn't malicious.
 
 The gvdot solution is class :class:`Nonce`. A Nonce is a placeholder that
 :class:`Dot` resolves to a unique DOT language ID when generating DOT language
@@ -570,8 +586,9 @@ Suppose the NFA definition is modified so that one of the states is named
 :class:`Dot` chooses a different ID for the Nonce to avoid a conflict with
 ``_nonce_1``.
 
-:class:`Nonce` is a member of the :type:`~gvdot._core.ID` type union, so instances can be
-used everywhere in the gvdot API where :type:`~gvdot._core.ID` is accepted.
+:class:`Nonce` is a member of the :type:`~gvdot._core.ID` type union, so
+instances can be used everywhere in the gvdot API where :type:`~gvdot._core.ID`
+is accepted.
 
 Both the :doc:`er-diagram` and :doc:`rb-trees` examples in this document use
 Nonces.  The ER Diagram generator uses :class:`Nonce` to synthesize identifiers
@@ -612,7 +629,8 @@ Here we ran the default program :program:`dot` to render the task diagram into
 the default format ``png``.   We specified the image should be generated with a
 resolution of 300 dots per inch.
 
-:class:`Dot` includes three other rendering methods which all call :meth:`~Dot.to_rendered`:
+:class:`Dot` includes three other rendering methods which all call
+:meth:`~Dot.to_rendered`:
 
 - :meth:`Dot.to_svg` renders to SVG and returns the result as a string.
 - :meth:`Dot.save` renders and saves to a file.
@@ -651,7 +669,7 @@ produces
 
 |br| The Graphviz suite includes other programs such as :program:`neato`
 specifically designed to depict undirected graphs.  If we use :program:`neato`
-with splines enabled to avoid overlapping nodes and edges,
+with splines enabled to avoid edges overlapping nodes,
 
 .. code-block:: python
 

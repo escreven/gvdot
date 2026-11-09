@@ -450,16 +450,20 @@ def expect_str(dot:Dot, text:str):
 # expect_ex() returns the exception raised.
 #
 
-def expect_ex[T:Exception](extype:type[T], fn:Callable) -> T:
+def expect_ex[T:Exception](extype:type[T], fn:Callable,
+                           moreinfo:Callable|None=None) -> T:
     try:
         fn()
     except Exception as ex:
         if not isinstance(ex,extype):
-            raise AssertionError(f"Caught {ex.__class__.__name__}; "
-                                 f"expected {extype.__name__}") from ex
+            raise AssertionError(
+                f"Caught {ex.__class__.__name__}; "
+                f"expected {extype.__name__}" +
+                ("" if moreinfo is None else f"; {moreinfo()}")) from ex
         return ex
 
-    raise AssertionError(f"No exception; expected {extype.__name__}")
+    raise AssertionError(f"No exception; expected {extype.__name__}" +
+                         ("" if moreinfo is None else f"; {moreinfo()}"))
 
 #
 # Data validation for to_svg, to_rendered, and impose_order tests.

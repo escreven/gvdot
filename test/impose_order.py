@@ -26,7 +26,7 @@ class _EdgeBag(list[EdgeLine]):
 
     def __eq__(self, other) -> bool:
         if not isinstance(other,_EdgeBag):
-            return False
+            return NotImplemented
         if len(self) != len(other):
             return False
         other = other.copy()

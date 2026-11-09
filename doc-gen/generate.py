@@ -150,6 +150,37 @@ def rollback_example() -> list[Artifact]:
     ]
 
 
+def good_morning_example() -> list[Artifact]:
+
+    from gvdot import Dot
+    from gvdot.markup import Font, Table, TR, TD
+
+    def code():
+        from gvdot.markup import Font, Table, TR, TD
+        dot = Dot(directed=True).graph(rankdir="LR")
+
+        dot.node(1,shape="plain",label=Font(
+            color="blue",face="Courier New").add(
+            Table(cellspacing=0, cellborder=1, border=0).add(
+                TR(TD("Good"),TD("morning")),
+                TR(TD("to you.", colspan=2, port="outro")))))
+
+        dot.node(2,shape="plain",label=Font(
+            color="green",face="Courier New").add(
+            Table(cellspacing=0, cellborder=1, border=0).add(
+                TR(TD("Why", rowspan=2, port="intro"),TD("thank")),
+                TR(TD("you.")))))
+
+        dot.edge(Port(1,"outro","s"),Port(2,"intro","w"))
+        #+ dot.show()
+        return dot
+
+    return [
+        PythonCode("discussion/good-morning", code),
+        Image("discussion/good-morning", code()),
+    ]
+
+
 def attrs_example() -> list[Artifact]:
 
     def code():
@@ -423,6 +454,110 @@ def impose_order_example() -> list[Artifact]:
         Image("discussion/impose-order-neato",    ndot, program="neato"),
         Image("discussion/impose-order-improved", impose_order(dot))
     ]
+
+
+# ============================================================================
+#                                  MARKUP
+# ============================================================================
+
+def markup_records_example() -> list[Artifact]:
+
+    def code():
+        from gvdot import Dot, Port
+        from gvdot.markup import Table, TR, TD, BR
+
+        dot = Dot(directed=True, id="structs")
+        dot.node_default(shape="plaintext")
+
+        dot.node("struct1", label=Table(
+            border=0, cellborder=1, cellspacing=0).add(
+            TR(TD("left"), TD("mid dle", port="f1"), TD("right", port="f2")),
+        ))
+
+        dot.node("struct2", label=Table(
+            border=0, cellborder=1, cellspacing=0).add(
+            TR(TD("one", port="f0"), TD("two")),
+        ))
+
+        dot.node("struct3", label=Table(
+            border=0, cellborder=1, cellspacing=0, cellpadding=4).add(
+            TR(TD("hello", BR(), "world", rowspan=3),
+            TD("b", colspan=3),
+            TD("g", rowspan=3),
+            TD("h", rowspan=3)),
+            TR(TD("c"), TD("d", port="here"), TD("e")),
+            TR(TD("f", colspan=3)),
+        ))
+
+        dot.edge(Port("struct1", "f1"), Port("struct2", "f0"))
+        dot.edge(Port("struct1", "f2"), Port("struct3", "here"))
+        return dot
+
+    return [
+        PythonCode("markup/records", code),
+        Image     ("markup/records", code())
+    ]
+
+
+def markup_escape_example() -> list[Artifact]:
+
+    from gvdot import Dot
+    from gvdot.markup import Font, BR
+
+    def code():
+        dot = Dot(directed=True).graph(rankdir="LR")
+        dot.node_default(shape="circle",style="filled",color="sienna3")
+        dot.edge("A","B",label=Font(point_size=10).add(
+            "Not <b>bold</b>",BR(),
+            "Not <i>italic</i>",BR(),
+            'But "quoted"'
+        ))
+        return dot
+
+    return [
+        PythonCode("markup/escape", code),
+        Image     ("markup/escape", code())
+    ]
+
+
+def markup_entity_example() -> list[Artifact]:
+
+    from gvdot import Dot
+    from gvdot.markup import Entity, Span, Text
+
+    def code():
+        dot = Dot(directed=True).graph(rankdir="LR")
+        dot.node(1,label=Span("Some ",Entity("Phi")))
+        dot.node(2,label=Span("then an ",Entity("Omega")))
+        dot.node(3,label=Text("but no &Sigma;"))
+        dot.edge(1,2).edge(2,3)
+        dot.graph(label=Entity(0x1F600))
+        return dot
+
+    return [
+        Image("markup/entity", code())
+    ]
+
+
+def markup_with_entities_example() -> list[Artifact]:
+
+    from gvdot import Dot
+    from gvdot.markup import Text, with_entities
+
+    def code():
+        dot = Dot(directed=True).graph(rankdir="LR")
+        dot.node_default(shape="box")
+        dot.node(1,label=Text("&alpha; < &beta;"))
+        dot.node(2,label=with_entities("&alpha; < &beta;"))
+        dot.edge(1,2)
+        return dot
+
+    return [
+        PythonCode("markup/with-entities", code),
+        DotCode   ("markup/with-entities", code()),
+        Image     ("markup/with-entities", code())
+    ]
+
 
 # ============================================================================
 #                                QUICK TOUR
