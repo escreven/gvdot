@@ -576,8 +576,8 @@ def test_empty():
     except for TD are elided if their content is empty.
     """
     #
-    # There is no way to directly test that HR and VR are non-empty since they
-    # are not allowed unless preceded by non-empty content.  They show up
+    # There is no way to directly test that HR and VR are truly non-empty since
+    # they are not allowed unless preceded by non-empty content.  They show up
     # correctly when used or not -- test_to_html() takes care of that.
     #
 
@@ -588,17 +588,22 @@ def test_empty():
         return match[1]
 
     def require_empty(tree:Managed):
+        assert tree.vacuous()
         assert not td_str(tree), repr(tree)
         if tree.__class__ in _root_classes:
             assert not str(tree)
 
     def require_nonempty(tree:Managed):
+        assert not tree.vacuous()
         assert td_str(tree), repr(tree)
         if tree.__class__ in _root_classes:
             assert str(tree)
 
     require_nonempty(BR())
     require_nonempty(Img())
+
+    assert not HR().vacuous()
+    assert not VR().vacuous()
 
     require_empty(Text(""))
     require_empty(Text("\t\r\n"))
@@ -628,6 +633,7 @@ def test_empty():
     # Raw requires a different approach.
     #
 
+    assert not Raw("").vacuous()
     assert str(Bold(Raw("")))   == "<b></b>"
     assert str(Bold(Raw("\t"))) == "<b>\t</b>"
     assert str(Bold(Raw("\r"))) == "<b>\r</b>"
@@ -639,6 +645,7 @@ def test_empty_td():
     TD, alone among containers, is allowed to be empty and not elided.
     """
     assert str(Table(TR(TD()))) == '<table><tr><td></td></tr></table>'
+    assert not TD().vacuous()
 
     def table():
         return Table(
@@ -1083,18 +1090,18 @@ def test_repr():
     assert repr(Text("<&>")) == "Text<&lt;&amp;&gt;>"
     assert repr(Entity("epsilon")) == "Entity<&epsilon;>"
     assert repr(Entity(64)) == "Entity<&#64;>"
-    assert repr(BR()) == "BR<br;;>"
-    assert repr(HR()) == "HR<hr;;>"
-    assert repr(BR(align="left")) == "BR<br;align='left';>"
+    assert repr(BR()) == "BR<>"
+    assert repr(HR()) == "HR<>"
+    assert repr(BR(align="left")) == "BR<align='left'>"
     assert repr(Span()) == "Span<>"
     assert repr(Span("a", "b")) == "Span<Text<a>,Text<b>>"
-    assert repr(Bold("hello")) == "Bold<b;;Text<hello>>"
-    assert repr(Bold(Text("hello"))) == "Bold<b;;Text<hello>>"
-    assert repr(Bold("a", "b")) == "Bold<b;;Text<a>Text<b>>"
+    assert repr(Bold("hello")) == "Bold<Text<hello>>"
+    assert repr(Bold(Text("hello"))) == "Bold<Text<hello>>"
+    assert repr(Bold("a", "b")) == "Bold<Text<a>Text<b>>"
     assert repr(Font("hello", color="red")) == (
-        "Font<font;color='red';Text<hello>>")
+        "Font<color='red';Text<hello>>")
     assert repr(Table(TR(TD("hello")))) == (
-        "Table<table;;TR<tr;;TD<td;;Text<hello>>>>")
+        "Table<TR<TD<Text<hello>>>>")
     assert repr(Raw("<&>")) == "Raw<<&>>"
 
 
