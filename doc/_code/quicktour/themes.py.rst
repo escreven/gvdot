@@ -10,7 +10,7 @@
     list_theme.edge_role("link", color="#333")
     list_theme.edge_role("nil", style="dashed")
     list_theme.graph(rankdir="LR")
-    
+
     dot = Dot(directed=True)
     dot.use_theme(list_theme)
     dot.node("Fred", role="element")

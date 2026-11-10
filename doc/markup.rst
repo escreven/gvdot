@@ -80,6 +80,8 @@ Base Classes
     :show-inheritance:
 
 
+.. _markup_subclasses:
+
 Markup Subclasses
 -----------------
 

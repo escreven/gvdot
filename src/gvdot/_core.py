@@ -65,16 +65,16 @@ class Markup:
         dot.node(2,label=X(2))
         dot.edge(1,2)
 
-    Package gvdot includes a module ``gvdot.markup`` with :class:`Markup`
-    subclasses that build Graphviz HTML strings.  Using that module, the code
-    above could be written as
+    Package gvdot includes a module ``gvdot.markup`` with Markup subclasses
+    that build Graphviz HTML strings.  Using that module, the code above could
+    be written as
 
     .. code-block:: python
 
         from gvdot.markup import Span, Sub, Font
 
         def X(i:int) -> Markup:
-            return Span("x",Sub(Font(str(i),point_size=10)))
+            return Span("x",Sub(Font(point_size=10).add(str(i))))
 
         # ... the rest the same ...
     """

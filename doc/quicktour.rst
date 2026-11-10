@@ -178,6 +178,24 @@ Applications use :class:`Markup` to delineate Graphviz HTML strings.
         :align: center
 
 
+The ``gvdot.markup`` module defines :ref:`markup_subclasses` for building
+complex HTML.
+
+.. list-table::
+   :align: left
+   :class: .gvdot-example-table .my-col-1-header
+
+   * - Code
+     - .. include:: _code/quicktour/markup-module.py.rst
+
+   * - DOT language |br| representation
+     - .. include:: _code/quicktour/markup-module.dot.rst
+
+   * - Rendered
+     - .. image:: _static/quicktour/markup-module.*
+        :align: center
+
+
 An edge endpoint can be a :class:`Port`.
 
 .. list-table::

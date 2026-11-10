@@ -17,6 +17,11 @@ css
     padding-right: 8px !important;
 }
 
+.gvdot-example-table div.highlight {
+    max-width: 600px;
+    width: 100%;
+}
+
 .my-col-1-header th:first-child,
 .my-col-1-header td:first-child {
     font-weight: bold;

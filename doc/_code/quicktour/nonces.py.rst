@@ -5,7 +5,7 @@
     theme.edge_default(arrowhead="none")
     theme.node_role("anchor", label="", width=.10, height=.10,
                     style="filled", shape="square")
-    
+
     dot = Dot(directed=True).use_theme(theme)
     source = Nonce()
     sink = Nonce()
