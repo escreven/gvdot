@@ -38,20 +38,20 @@ That dot object renders as
 While the Graphviz HTML grammar requires container elements such as ``FONT``
 and ``TABLE`` to have content, ``gvdot.markup`` is more relaxed.  A
 :class:`Container` is empty if it has no non-empty children.  Empty containers
-are allowed, and are elided from any Graphviz HTML string produced.  Void
-elements such as ``BR`` are never empty.  :class:`Text` elements are empty if
-and only if they contain no printable characters.  :class:`TD` is a special
-case: empty :class:`TD` instances are allowed but not elided.  Despite the
-documented grammar, Graphviz programs accept ``<TD></TD>`` cells and give them
-a different appearance than non-empty cells.
+are allowed, and are elided from any Graphviz HTML string produced.
+Non-container elements are never empty, except :class:`Text` elements are empty
+if they contain no printable characters.  :class:`TD` is a special case: empty
+:class:`TD` instances are allowed but not elided.  Despite the documented
+grammar, Graphviz programs accept ``<TD></TD>`` cells and give them a different
+appearance than non-empty cells.
 
 Applications can avoid ``gvdot.markup`` validation and escaping by using class
 :class:`Raw`.  Raw HTML text is incorporated as-is into strings produced from
 Markup object trees, with no checks or transformations.
 
-While Graphviz HTML strings constructed through ``gvdot.markup`` are lexically
-and syntactically correct (assuming correct use of :class:`Raw`), it's still
-possible to create strings that Graphviz programs do not accept.
+Even though Graphviz HTML strings constructed through ``gvdot.markup`` are
+lexically and syntactically valid (assuming correct use of :class:`Raw`),
+applications can still create strings that Graphviz programs do not accept.
 ``gvdot.markup`` lexically validates entities, but does not determine if a
 specific entity value is supported by Graphviz.  ``gvdot.markup`` does not
 validate attribute values.

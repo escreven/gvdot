@@ -10,6 +10,7 @@ __all__ = (
     'CellContent', 'Align', 'TDAlign', 'VAlign', 'ImageScale', 'Text',
     'Entity', 'Span', 'Raw', 'Font', 'Bold', 'Italic', 'Underline', 'Overline',
     'Strike', 'Sub', 'Sup', 'BR', 'Table', 'TR', 'TD', 'HR', 'VR', 'Img',
+    'B', 'I', 'U', 'O', 'S',
     'with_entities',
 )
 
@@ -124,12 +125,9 @@ class Managed(ABC):
                 _bad("{self} element does not permit child {child}",
                      self=self, child=child)
             #
-            # If a non-TD child is empty, it is ignored.
+            # If a child is empty, it is ignored.
             #
-            if (child_class is Text and not child._text or #type:ignore
-                child._is_container and not child._children and
-                child_class is not TD
-            ):
+            if child.vacuous():
                 ignored.append(child)
                 child._parent = self
                 continue
@@ -226,11 +224,12 @@ class Managed(ABC):
             raise
 
     def __repr__(self) -> str:
-        result = f"{self.__class__.__name__}<{self._tag};"
-        result += ",".join(f"{name}={value!r}" for name, value
-                           in self._attributes.items())
-        result += ";" + "".join(map(repr,self._children)) + ">"
-        return result
+        attrtext = ",".join(f"{name}={value!r}" for name, value
+                            in self._attributes.items())
+        bodytext = "".join(map(repr,self._children))
+        return (f"{self.__class__.__name__}<" + attrtext +
+                (';' if attrtext and bodytext else '') +
+                bodytext + '>')
 
     def _inner_str(self) -> str:
         result = f"<{self._tag}"
@@ -259,7 +258,7 @@ class Managed(ABC):
         if self_class not in _ALLOWED_ROOTS:
             _bad("{self} element cannot be a root",self=self)
 
-        if self._is_container and not self._children:
+        if self.vacuous():
             return ""
 
         if self_class is Table and self._children[-1]._tag_class is HR:
@@ -276,12 +275,13 @@ class Managed(ABC):
 
         return self._inner_str()
 
-    # NORELEASE
-    #@abstractmethod
-    #def empty(self) -> bool:
-    #    """
-    #    Return true if and only if the managed object is empty.
-    #    """
+    @abstractmethod
+    def vacuous(self) -> bool:
+        """
+        Return True if and only if the managed object is empty and will be
+        elided from Graphviz HTML strings.  If non-empty content is added to a
+        vacuous :class:`Container`, it ceases being vacuous.
+        """
 
 
 class Container[T:GeneralContent](ABC):
@@ -341,6 +341,9 @@ class ContainerElement[T:GeneralContent](Managed,Container[T],ABC):
         self._add_content(content)
         return self
 
+    def vacuous(self) -> bool:
+        return len(self._children) == 0
+
 
 class VoidElement(Managed,ABC):
     """
@@ -354,6 +357,9 @@ class VoidElement(Managed,ABC):
 
     def _ve_init(self, tag_class:type, /, **attributes):
         self._managed_init(tag_class,attributes,False)
+
+    def vacuous(self) -> bool:
+        return False
 
 
 type GeneralContent = Managed | str
@@ -452,6 +458,9 @@ class Text(Managed, Markup):
     def __str__(self) -> str:
         return self._text
 
+    def vacuous(self) -> bool:
+        return len(self._text) == 0
+
 
 _ENTITY_NAME_RE = re.compile(
     r"(?:[A-Za-z][A-Za-z0-9]*|#[0-9]+|#(?:x|X)[0-9A-Fa-f]+)")
@@ -544,6 +553,9 @@ class Entity(Managed, Markup):
     def __str__(self) -> str:
         return self._text
 
+    def vacuous(self) -> bool:
+        return False
+
 
 class Span(Managed,Container[TextContent],Markup):
     """
@@ -563,7 +575,7 @@ class Span(Managed,Container[TextContent],Markup):
             dot.graph(label=Span("Hello",BR(),"World!"))
             dot.show_source()
 
-    Displays the following in a notebook:
+    which displays the following in a notebook:
 
         .. code-block:: graphviz
 
@@ -592,6 +604,9 @@ class Span(Managed,Container[TextContent],Markup):
 
     def __str__(self) -> str:
         return self._inner_str()
+
+    def vacuous(self) -> bool:
+        return len(self._children) == 0
 
 
 class Raw(Managed, Markup):
@@ -629,8 +644,8 @@ class Raw(Managed, Markup):
         }
 
     Applications using :class:`Raw` are responsible for escaping and conforming
-    to the Graphviz HTML grammar.  The :class:`Raw` use below has several
-    mistakes.
+    to the Graphviz HTML grammar.  The following has several :class:`Raw` use
+    mistakes:
 
     .. code-block:: python
 
@@ -683,6 +698,9 @@ class Raw(Managed, Markup):
 
     def __str__(self) -> str:
         return self._text
+
+    def vacuous(self) -> bool:
+        return False
 
 
 class Font(ContainerElement[TextOrTableContent],Markup):
@@ -832,6 +850,9 @@ class TD(ContainerElement[GeneralContent],Markup):
             "rowspan": rowspan, "sides": sides, "style": style,
             "target": target, "title": title, "tooltip": tooltip,
             "valign": valign, "width": width})
+
+    def vacuous(self) -> bool:
+        return False
 
 
 class HR(VoidElement,Markup):
