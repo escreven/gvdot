@@ -84,9 +84,8 @@ workflow is run manually with two parameters: a repository (PyPI or TestPyPI)
 and an expected release number.  It requires the corresponding release tag to
 exist, installs `gvdot` from the specified repository, verifies the installed
 package has the expected version, then runs the test suite.  Installation is
-unpinned.  When the expected version is a release candidate (for example,
-`1.5.0rc1`), pip receives `--all-releases=gvdot` to include prereleases in
-version selection.
+unpinned, with option `--all-releases=gvdot` specified if the expected version
+is a release candidate.
 
 ### Dependency Watch
 

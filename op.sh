@@ -360,7 +360,7 @@ upload_dist() {
 }
 
 #
-# Download and test a deployed distribution in a virtual environment.
+# Download and test the latest deployed distribution in a virtual environment.
 #
 
 check_deployment() {
@@ -404,7 +404,7 @@ check_deployment() {
 
     echo "Installing dependencies."
 
-    $withenv && python -m pip install --upgrade pip \
+    $withenv && python -m pip install --upgrade pip setuptools wheel \
              && python -m pip install ipython notebook pillow coverage ||
         fail "Could not install dependencies."
 
