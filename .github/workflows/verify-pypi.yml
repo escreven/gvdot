@@ -84,17 +84,23 @@ jobs:
         python -m pip install --upgrade pip wheel setuptools
 
     - name: Install gvdot and Check Version
+      env:
+        EXPECTED_VERSION: ${{ inputs.version }}
       run: |
+        requirement=gvdot
+        if [[ $EXPECTED_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+rc[0-9]+$ ]]; then
+          requirement="gvdot==$EXPECTED_VERSION"
+        fi
         if [[ "${{ inputs.repository }}" == "PyPI" ]]; then
-          python -m pip install --no-deps gvdot
+          python -m pip install --no-deps "$requirement"
         else
-          python -m pip install --no-deps -i https://test.pypi.org/simple/ gvdot
+          python -m pip install --no-deps -i https://test.pypi.org/simple/ "$requirement"
         fi
         installed_version="$(python -c "import importlib.metadata; print(importlib.metadata.version('gvdot'))")"
         echo "gvdot installed from ${{ inputs.repository }}" \
               "is version $installed_version"
-        if [[ ! $installed_version == "${{ inputs.version }}" ]]; then
-          echo "Expected ${{ inputs.version }}"
+        if [[ ! $installed_version == "$EXPECTED_VERSION" ]]; then
+          echo "Expected $EXPECTED_VERSION"
           exit 1
         fi
 

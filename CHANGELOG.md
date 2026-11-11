@@ -7,6 +7,7 @@
   matching the given pattern.
 - Option `-showoutput` to `test/main.py` displays test output even when tests
   succeed.
+- Release candidate support in `op.sh` and `verify-pypi.yml`.
 
 #### Changed
 - Class `Markup` is no longer implemented as a dataclass and can now be
