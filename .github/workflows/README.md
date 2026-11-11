@@ -83,10 +83,10 @@ Verify PyPI confirms that a gvdot release is successfully deployed.  The
 workflow is run manually with two parameters: a repository (PyPI or TestPyPI)
 and an expected release number.  It requires the corresponding release tag to
 exist, installs `gvdot` from the specified repository, verifies the installed
-package has the expected version, then runs the test suite.  For release
-candidates, installation is pinned to the expected version (for example,
-`1.5.0rc1`).  For final releases, installation is unpinned to verify the
-default version selected by pip.
+package has the expected version, then runs the test suite.  Installation is
+unpinned.  When the expected version is a release candidate (for example,
+`1.5.0rc1`), pip receives `--all-releases=gvdot` to include prereleases in
+version selection.
 
 ### Dependency Watch
 
