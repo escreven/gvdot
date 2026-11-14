@@ -24,8 +24,8 @@ represent a schema as a dictionary of ``Table`` objects.  Tables have
     * A list of ``ForeignKey`` objects which are references from the tables.
       Foreign keys include the from (referencing) and to (referenced) tables
       along with the participating columns of each.  A SQLite foreign key may
-      be specified with implicit referenced columns, in which case the
-      ``to_cols`` attribute will be None.
+      have implicit referenced columns, in which case the ``to_cols`` attribute
+      will be None.
 
 ``ForeignKey`` has two methods:
 
@@ -89,7 +89,8 @@ Schema Loading
 --------------
 
 Function ``load_schema(connection)`` returns a schema given a SQLite database
-connection.
+connection by querying the built-in table ``sqlite_schema`` and various virtual
+table functions such ``pragram_table_xinfo()``.
 
 .. code:: python
 
@@ -119,27 +120,25 @@ connection.
 
         for table in schema.values():
 
-            unique_cols = set((
+            unique_cols = {
                 object_name(name)
                 for (name,) in query("""
                     select index_info.name
                     from pragma_index_list(:table_name) index_list,
                          pragma_index_info(index_list.name) index_info
                     where index_list."unique" = 1 and index_info.name is not null;
-                """, table_name=table.name)
-            ))
+                    """, table_name=table.name)
+            }
 
             rowid_pk = not query("""
                 select 1
                 from pragma_index_list(:table_name)
-                where origin = 'pk'
-            """, table_name=table.name)
+                where origin = 'pk'""", table_name=table.name)
 
-            for name, type, notnull, pk in query(
-                    """select name, type, "notnull", pk
-                       from pragma_table_xinfo(:table_name)
-                       where hidden <> 1""",
-                    table_name=table.name):
+            for name, type, notnull, pk in query("""
+                    select name, type, "notnull", pk
+                    from pragma_table_xinfo(:table_name)
+                    where hidden <> 1""", table_name=table.name):
                 objname = object_name(name)
                 table.columns[objname] = Column(
                     name=name, type=type,
@@ -148,8 +147,7 @@ connection.
 
         #
         # Load foreign keys.  Because pragma_foreign_key_list yields one row for
-        # every column of a foreign key reference, we must sort and use break
-        # processing.
+        # every foreign key reference column, we sort and use break processing.
         #
 
         def columns_for(table:Table, names:list[str]) -> tuple[Column,...]:
@@ -157,12 +155,12 @@ connection.
 
         for table in schema.values():
 
-            fk_id        = None
-            fk_to_table  = ""
-            fk_from_cols = []
-            fk_to_cols   = []
+            fk_id        = None  # Group break column
+            fk_to_table  = ""    # Per-group
+            fk_from_cols = []    # Accumulated per row
+            fk_to_cols   = []    # Accumulated per row
 
-            def complete_fk():
+            def on_break():
                 nonlocal fk_from_cols, fk_to_cols
                 to_table  = schema[object_name(fk_to_table)]
                 from_cols = columns_for(table, fk_from_cols)
@@ -180,14 +178,14 @@ connection.
                     order by id, seq""", table_name=table.name):
                 if fk_id != id:
                     if fk_id is not None:
-                        complete_fk()
+                        on_break()
                     fk_to_table = to_table
                     fk_id = id
                 fk_from_cols.append(from_col)
                 fk_to_cols.append(to_col)
 
             if fk_id is not None:
-                complete_fk()
+                on_break()
 
         return schema
 
@@ -213,7 +211,7 @@ from that database.
     from pprint import pprint
     pprint(registration_schema[object_name('section')],depth=3)
 
-which displays
+which prints
 
 .. code:: text
 
@@ -269,16 +267,16 @@ Graphviz HTML.
 
     def table_markup(table:Table) -> Markup:
         return Font(face="sans-serif").add(
-            MarkupTable(cellspacing=0, cellborder=0, border=1,
-                        bgcolor="#eaeaef").add(
+            MarkupTable(
                 _title_row(table.name), HR(),
-                *(_dbcol_row(table,col) for col in table.columns.values())))
+                *(_dbcol_row(table,col) for col in table.columns.values()),
+                cellspacing=0, cellborder=0, border=1, bgcolor="#eaeaef"))
 
-    def _title_row(name:str):
+    def _title_row(name:str) -> TR:
         return TR(TD(Font(Bold(name), point_size=13, color="#ec8"),
                      colspan=4, bgcolor="#544"))
 
-    def _dbcol_row(table:Table, col:Column):
+    def _dbcol_row(table:Table, col:Column) -> TR:
 
         col_fk = any(col in fk.from_cols for fk in table.references)
         tag, tag_color = (("PK", "darkgreen") if col.pk else
@@ -287,8 +285,8 @@ Graphviz HTML.
 
         indicator = Bold("?") if col.nullable else ""
 
-        return TR(TD(Bold(Font(tag, color=tag_color, point_size=8)), align="left"),
-                  TD(Font(col.name+" ", point_size=10), align="left"),
+        return TR(TD(Font(Bold(tag), color=tag_color, point_size=8), align="left"),
+                  TD(Font(col.name + " ", point_size=10), align="left"),
                   TD(Font(col.type, point_size=8, color="#338"), align="left"),
                   TD(Font(indicator, point_size=8, color="#338")))
 
@@ -296,12 +294,12 @@ The type and parameter hints of ``gvdot.markup`` made creating the above easy
 and almost entirely error free — a very different experience than trying
 to generate that HTML directly.
 
-A more subtle point is that we didn't need to worry about escaping.  Table
-names, column names, and types are injected into the HTML as part of the
-generation, and ``gvdot.markup`` escapes them for us.
+We also didn't need to worry about escaping.  The code above incorporates table
+names, column names, and types into the markup directly, relying on
+``gvdot.markup`` to escape as needed.  While in this case there were no
+data-driven attribute values, ``gvdot.markup`` escapes those as well.
 
-Let's see how a label for table ``section`` looks:
-
+Here is the label for table ``section``:
 
 .. code:: python
 
@@ -324,7 +322,7 @@ communicate four things about a foreign key:
     1. The referencing table,
     2. The referenced table,
     3. Whether or not the foreign key is identifying, and
-    4. Whether or not the foreign key is optional with respect to the child
+    4. Whether or not the foreign key is optional with respect to the child.
 
 We define a theme for our schema diagram to address all four with edge roles:
 
@@ -394,8 +392,7 @@ All that's left is the easiest part: writing the Dot object generator.
 
         for table in schema.values():
             for fk in table.references:
-                to_table = fk.to_table
-                dot.edge(table.name, to_table.name, role=(
+                dot.edge(table.name, fk.to_table.name, role=(
                     ("mandatory" if fk.mandatory() else "optional"),
                     ("identifying" if fk.identifying() else "nonidentifying")))
 

@@ -3,6 +3,9 @@
 #### Added
 - Module `gvdot.markup` defining several `Markup` subclasses making it easy to
   build Graphviz HTML strings.
+- A [SQLite Schema
+  Diagrammer](https://github.com/escreven/gvdot/blob/main/examples/sqlite-schema.ipynb)
+  example using `gvdot.markup`.
 - Option `-exclude` to `test/main.py` to avoid running tests with names
   matching the given pattern.
 - Option `-showoutput` to `test/main.py` displays test output even when tests

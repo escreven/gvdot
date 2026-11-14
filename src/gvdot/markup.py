@@ -660,7 +660,7 @@ class Raw(Managed, Markup):
 
     The less-than sign in the graph label must be escaped.  Element ``TD`` is
     not an allowed child of ``TABLE``.  ``HR`` is not allowed content of a
-    cell.  Because ``HR`` is a void element, it should be written as ``<hr/>``.
+    cell.  Because ``HR`` is a void element, it must be written as ``<hr/>``.
     When the code above is run in a notebook, the result is
 
     .. code-block:: console
