@@ -8,4 +8,5 @@ Examples
 
    er-diagram
    rb-trees
+   sqlite-schema
 
