@@ -195,8 +195,9 @@ connection.
 Sample Database
 ---------------
 
-The gvdot ``examples/`` directory includes a simplified university course
-registration database named ``registration.sqlite``.
+The gvdot `examples <https://github.com/escreven/gvdot/tree/main/examples>`_
+directory on GitHub includes a simplified university course registration
+database named ``registration.sqlite``.
 
 .. code:: python
 
