@@ -148,7 +148,8 @@ which displays
     :align: center
     :alt: Good morning table
 
-|br|
+|br| The :doc:`sqlite-schema` example in this document uses ``gvdot.markup`` to
+create SQLite schema diagrams depicting tables and their columns as nodes.
 
 .. _discussion_attributes:
 

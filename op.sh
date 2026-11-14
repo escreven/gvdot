@@ -411,11 +411,11 @@ check_deployment() {
     echo "Installing gvdot ${repo_version} from ${name}."
 
     if [[ $repo == pypi ]]; then
-        $withenv && python -m pip install --no-deps \
+        $withenv && python -m pip install --no-deps --no-cache-dir \
             "gvdot==${repo_version}" || \
                 fail "Could not install gvdot ${repo_version} from PyPI"
     else
-        $withenv && python -m pip install --no-deps \
+        $withenv && python -m pip install --no-deps --no-cache-dir \
             -i https://test.pypi.org/simple/ "gvdot==${repo_version}" || \
                 fail "Could not install gvdot ${repo_version} from TestPyPI"
     fi

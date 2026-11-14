@@ -15,6 +15,16 @@
   relies on nonces to create phantom nodes steering Graphviz toward better tree
   layouts.
 
+* **[registration.sql](registration.sql)** — Creates the
+  **registration.sqlite** sample database.
+
+* **registration.sqlite** - A sample SQLite database read by
+  **[sqlite-schema.ipynb](sqlite-schema.ipynb)**.
+
+* **[sqlite-schema.ipynb](sqlite-schema.ipynb)** — Generates schema diagrams
+  from SQLite databases.  It uses `gvdot.markup` to display database tables as
+  nodes and assigns multiple roles to edges to depict foreign keys.
+
 
 ### Directory `images/`
 
@@ -23,11 +33,11 @@ When run, the example notebooks save generated images to directory
 
 ### Requirements
 
-Notebooks [nfa.ipynb](nfa.ipynb), [quicktour.ipynb](quicktour.ipynb),
-and [red-black-tree.ipynb](red-black-tree.ipynb) require Graphviz program
-`dot` to be on `PATH`, while [er-diagram.ipynb](er-diagram.ipynb)
-requires `neato` to be on `PATH`.  Both Graphviz programs must be configured
-to produce SVG output.
+All notebooks require Graphviz program `dot` to be on `PATH` and configured to
+produce SVG output.  [er-diagram.ipynb](er-diagram.ipynb) and
+[sqlite-schema.ipynb](sqlite-schema.ipynb) use the `neato` layout engine.
+[sqlite-schema.ipynb](sqlite-schema.ipynb) uses the normally built-in `sqlite3`
+module.
 
 The `neato` layout engine is not always installed with Graphviz on Linux,
 including recent versions of Ubuntu.  To enable these notebooks on Ubuntu 26.04

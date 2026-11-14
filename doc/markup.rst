@@ -220,7 +220,7 @@ includes single capital letter aliases so that one can write
         dot = Dot().graph(label=I("Emphasized"))
 
 The element Markup subclasses are not documented individually.  Instead, see
-`HTML-like Labels <https://graphviz.org/doc/info/shapes.html#html>`_, in the
+`HTML-like Labels <https://graphviz.org/doc/info/shapes.html#html>`_ in the
 Graphviz documentation.  The keyword arguments of each class initializer
 correspond directly to the element attributes described there, except for
 element attribute ``POINT-SIZE`` which has keyword ``point_size``.

@@ -402,12 +402,12 @@ class Text(Managed, Markup):
 
     The Graphviz documentation states that `string` is a collection of
     printable characters including spaces, and non-printing characters such as
-    tabs or newlines are ignored.  What it actually considers to be
+    tabs or newlines are ignored.  What Graphviz actually considers to be
     non-printing are characters with ASCII values less than 32.
     Correspondingly, :class:`Text` strips those same characters from ``text``.
 
     A :class:`Text` object is empty if and only if ``text`` is empty after
-    non-printable characters are removed.
+    non-printing characters are removed.
 
     Applications do not commonly instantiate :class:`Text` because
     :class:`Container` classes create :class:`Text` objects for each content
@@ -567,7 +567,7 @@ class Span(Managed,Container[TextContent],Markup):
 
     :class:`Span` can be especially useful as a Markup object tree root.
 
-    Example use:
+    Example:
 
         .. code-block:: python
 
