@@ -14,7 +14,7 @@ interactively display Dot objects in notebooks.
 .. _landing-page-example:
 
 Example
-~~~~~~~
+-------
 
 Suppose we want to generate diagrams of nondeterministic finite automata
 like this:
@@ -54,6 +54,37 @@ In a notebook, we can directly display the diagram from a cell containing
 .. code:: python
 
     nfa_diagram(example,"Example NFA").show()
+
+
+**See also:**
+
+.. grid:: 3
+    :gutter: 3
+    :class-container: index-examples
+
+    .. grid-item-card:: Entity Relationship Diagram
+        :link: er-diagram
+        :link-type: doc
+        :class-title: sd-text-center sd-mb-3
+
+        .. image:: _static/examples/er-generated-color.svg
+            :align: center
+
+    .. grid-item-card:: Red-Black Trees
+        :link: rb-trees
+        :link-type: doc
+        :class-title: sd-text-center sd-mb-3
+
+        .. image:: _static/examples/rb-auto-18.svg
+            :align: center
+
+    .. grid-item-card:: SQLite Schema Diagrammer
+        :link: sqlite-schema
+        :link-type: doc
+        :class-title: sd-text-center sd-mb-3
+
+        .. image:: _static/examples/sqlite-schema.svg
+            :align: center
 
 
 .. toctree::

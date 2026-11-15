@@ -21,6 +21,9 @@
   not a `str`.
 - The document example generator no longer includes whitespace on otherwise
   empty code lines.
+- The backgrounds of images used in documentation are now transparent.
+- `sphinx-design` extension cards are used instead of a simple TOC on the
+  examples index page; similar cards are used on the overall index page.
 
 
 ## [1.4.0] - 2026-10-31

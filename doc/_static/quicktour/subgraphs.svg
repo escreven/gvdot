@@ -7,7 +7,7 @@
 <svg width="166pt" height="132pt"
  viewBox="0.00 0.00 166.00 132.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 128)">
-<polygon fill="white" stroke="none" points="-4,4 -4,-128 162,-128 162,4 -4,4"/>
+<!-- <polygon fill="white" stroke="none" points="-4,4 -4,-128 162,-128 162,4 -4,4"/> -->
 <g id="clust1" class="cluster">
 <title>cluster_1</title>
 <path fill="none" stroke="orange" d="M20,-8C20,-8 138,-8 138,-8 144,-8 150,-14 150,-20 150,-20 150,-48 150,-48 150,-54 144,-60 138,-60 138,-60 20,-60 20,-60 14,-60 8,-54 8,-48 8,-48 8,-20 8,-20 8,-14 14,-8 20,-8"/>
