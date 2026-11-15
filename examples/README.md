@@ -63,7 +63,7 @@
   identify phantom nodes steering Graphviz toward better tree layouts.
 
 * **[sqlite-schema.ipynb](sqlite-schema.ipynb)** — Generates schema diagrams
-  from SQLite databases.  It uses `gvdot.markup` to create Graphviz HTML node
+  from SQLite databases.  It uses `gvdot.markup` to build Graphviz HTML node
   labels depicting tables and their columns, and assigns multiple edge roles to
   portray the varying characteristics of foreign keys.
 

@@ -50,7 +50,7 @@ Examples
             :class: sd-mb-3
 
         Generates schema diagrams from SQLite databases. It uses
-        ``gvdot.markup`` to create Graphviz HTML node labels depicting tables
+        ``gvdot.markup`` to build Graphviz HTML node labels depicting tables
         and their columns, and assigns multiple edge roles to portray the
         varying characteristics of foreign keys.
 
