@@ -3,6 +3,9 @@
 Entity Relationship Diagram
 ===========================
 
+Gallery Transcription
+---------------------
+
 The Graphviz gallery includes `a Chen-style entity relationship diagram
 <https://graphviz.org/Gallery/neato/ER.html>`_.  We can reproduce that example
 by transcribing the gallery's `DOT language input file
@@ -69,6 +72,9 @@ group together nodes and edges in a way that may be inconsistent with the
 structure of the code's input. That's not a problem for gvdot applications
 because gvdot supports order independence and roles.
 
+ER Model
+--------
+
 Suppose we want to generate diagrams from ER models represented by the
 following classes.
 
@@ -118,6 +124,9 @@ Let's create a model based on the gallery example.
         ])
 
 
+Theme
+-----
+
 Chen ER-diagrams use rectangles for entities, ellipses for attributes, and
 diamonds for relationships.  We define an ER-diagram theme with those shapes.
 We also choose the same font and layout engine as the gallery, and define edge
@@ -141,6 +150,9 @@ the theme a bit.
 
     er_gallery_theme = (Dot().use_theme(er_base_theme)
         .node_role("relationship", style="filled", color="lightgrey"))
+
+Generator
+---------
 
 Now we write our code to generate diagrams from models.  Observe there are no
 presentation-related attribute assignments.  We could have them, of course, but
@@ -234,9 +246,13 @@ which displays
         label="\nGenerated Using gvdot"
     }
 
+
+Adding Color
+------------
+
 The gallery theme is quite plain looking.  Let's render something with color.
-All we need to do is change the theme – we don't even need to rebuild the
-diagram.
+All we need is a different specialization of the base theme – we don't even
+need to rebuild the diagram.
 
 .. code:: python
 

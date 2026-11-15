@@ -379,13 +379,13 @@ The rest of the theme is straightforward.
 Dot Object Generator
 --------------------
 
-All that's left is the easiest part: writing the Dot object generator.
+Now comes the easiest part: writing the Dot object generator.
 
 .. code:: python
 
     def schema_diagram(schema:Schema) -> Dot:
 
-        dot = Dot(directed=True).use_theme(schema_theme)
+        dot = Dot(directed=True, multigraph=True).use_theme(schema_theme)
 
         for table in schema.values():
             dot.node(table.name, label=table_markup(table))

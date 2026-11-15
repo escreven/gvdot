@@ -6,10 +6,10 @@
 - A [SQLite Schema
   Diagrammer](https://github.com/escreven/gvdot/blob/main/examples/sqlite-schema.ipynb)
   example using `gvdot.markup`.
-- Option `-exclude` to `test/main.py` to avoid running tests with names
+- Option `-exclude` to `test/main.py` which avoids running tests with names
   matching the given pattern.
-- Option `-showoutput` to `test/main.py` displays test output even when tests
-  succeed.
+- Option `-showoutput` to `test/main.py` which displays test output even when
+  tests succeed.
 - Release candidate support in `op.sh` and `verify-pypi.yml`.
 
 #### Changed
