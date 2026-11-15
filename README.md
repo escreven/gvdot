@@ -104,10 +104,42 @@ In a notebook, we can directly display the diagram from a cell containing
 nfa_diagram(example,"Example NFA").show()
 ```
 
-You can find this [NFA
-example](https://github.com/escreven/gvdot/blob/main/examples/nfa.ipynb) and
-others in the [examples](https://github.com/escreven/gvdot/tree/main/examples)
-directory.
+You can find this NFA example and others as notebooks in the
+[examples](https://github.com/escreven/gvdot/tree/main/examples) directory:
+
+<table align="center">
+  <tr valign="bottom">
+    <td align="center" width="25%">
+      <a href="https://github.com/escreven/gvdot/blob/main/examples/nfa.ipynb">
+        <img src="readme-example.svg"
+             height="100" alt="SQLite schema diagram">
+        <br><font size="-1">nfa.ipynb</font></b>
+      </a>
+    </td>
+    <td align="center" width="25%">
+      <a href="https://github.com/escreven/gvdot/blob/main/examples/er-diagram.ipynb">
+        <img src="doc/_static/examples/er-generated-color-bg.svg"
+             height="100" alt="SQLite schema diagram">
+        <br><font size="-1">er-diagram.ipynb</font></b>
+      </a>
+    </td>
+    <td align="center" width="25%">
+      <a href="https://github.com/escreven/gvdot/blob/main/examples/red-black-tree.ipynb">
+        <img src="doc/_static/examples/rb-auto-18-bg.svg"
+             height="100" alt="SQLite schema diagram">
+        <br><font size="-1">red-black-tree.ipynb</font>
+      </a>
+    </td>
+    <td align="center" width="25%">
+      <a href="https://github.com/escreven/gvdot/blob/main/examples/sqlite-schema.ipynb">
+        <img src="doc/_static/examples/sqlite-schema-bg.svg"
+             height="100" alt="SQLite schema diagram">
+        <br><font size="-1">sqlite-schema.ipynb</font>
+      </a>
+    </td>
+  </tr>
+</table>
+
 
 ## Documentation
 

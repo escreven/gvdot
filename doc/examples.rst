@@ -22,9 +22,9 @@ Examples
             :align: center
             :class: sd-mb-3
 
-        Reproduces the Chen-style entity relationship diagram from the Graphviz
-        documentation, showing how to use themes and roles to separate
-        presentation from structure.
+        Reproduces a Graphviz gallery entity relationship diagram, then shows
+        how to use themes and roles to separate presentation from structure
+        when generating diagrams from models.
 
     .. grid-item-card:: Red-Black Trees
         :link: rb-trees
@@ -35,8 +35,9 @@ Examples
             :align: center
             :class: sd-mb-3
 
-        Creates illustrations for students learning about red-black trees.  It
-        uses nonces to identify phantom nodes inserted to create good layouts.
+        Creates illustrations for students learning about red-black trees.  The
+        generator uses nonces to identify phantom nodes steering Graphviz
+        toward better tree layouts.
 
     .. grid-item-card:: SQLite Schema Diagrammer
         :link: sqlite-schema
@@ -48,10 +49,10 @@ Examples
             :align: center
             :class: sd-mb-3
 
-        Depicts tables, columns, and foreign keys loaded from a SQLite database
-        connection.  It uses ``gvdot.markup`` to create Graphviz HTML node
-        labels and uses multiple edge roles to portray the varying
-        characteristics of foreign keys.
+        Generates schema diagrams from SQLite databases. It uses
+        ``gvdot.markup`` to create Graphviz HTML node labels depicting tables
+        and their columns, and assigns multiple edge roles to portray the
+        varying characteristics of foreign keys.
 
 .. toctree::
     :hidden:
