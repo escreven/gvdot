@@ -1,5 +1,7 @@
 ## Unreleased
 
+## [1.5.0] - 2026-11-15
+
 #### Added
 - Module `gvdot.markup` defining several `Markup` subclasses making it easy to
   build Graphviz HTML strings.
@@ -24,7 +26,6 @@
 - The backgrounds of images used in documentation are now transparent.
 - `sphinx-design` extension cards are used instead of a simple TOC on the
   examples index page; similar cards are used on the overall index page.
-
 
 ## [1.4.0] - 2026-10-31
 
