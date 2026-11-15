@@ -11,6 +11,9 @@ Our goal is to produce illustrations for students learning about Robert
 Sedgewick's `Left-leaning Red-Black Trees
 <https://sedgewick.io/wp-content/themes/sedgewick/papers/2008LLRB.pdf>`_.
 
+Theme
+-----
+
 As usual, we begin by creating a theme.
 
 .. code-block:: python
@@ -93,6 +96,9 @@ and use it in our hand-crafted tree.
 
 |br| Much better, but tedious to construct by hand.  Time to automate.
 
+Generator
+---------
+
 We create a simple red-black tree implementation based on Sedgewick's paper.
 
 .. code-block:: python
@@ -160,6 +166,9 @@ Now we write the generation code.
                 block.edge(c1,c2,role="phantom").edge(c2,c3,role="phantom")
 
         return dot
+
+Result
+------
 
 All that's left is generating our illustrations.
 
@@ -270,6 +279,9 @@ The DOT language of our final tree diagram is
             phantom_3 -> 43 [style=invisible]
         }
     }
+
+Seeing Phantoms
+---------------
 
 To better understand what the phantoms contributed, we can make them visible.
 We don't need to modify the diagram; we just amend the phantom roles in the
