@@ -91,9 +91,12 @@ jobs:
           all_releases=""
         fi
         if [[ "${{ inputs.repository }}" == "PyPI" ]]; then
-          python -m pip install --no-deps $all_releases gvdot
+          python -m pip install --no-deps $all_releases \
+            --no-cache-dir --refresh-package gvdot \
+            gvdot
         else
           python -m pip install --no-deps $all_releases \
+            --no-cache-dir --refresh-package gvdot \
             -i https://test.pypi.org/simple/ gvdot
         fi
         installed_version="$(python -c "import importlib.metadata; print(importlib.metadata.version('gvdot'))")"
