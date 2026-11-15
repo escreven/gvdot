@@ -161,11 +161,3 @@ If you have the source, you can run the tests yourself with
 ```bash
 $ python test/main.py
 ```
-
-## Example notebooks
-
-Explore these notebooks for more ways to use gvdot:
-
-| [Entity Relationship Diagram](https://github.com/escreven/gvdot/blob/main/examples/er-diagram.ipynb) | [Red-Black Trees](https://github.com/escreven/gvdot/blob/main/examples/red-black-tree.ipynb) | [SQLite Schema Diagrammer](https://github.com/escreven/gvdot/blob/main/examples/sqlite-schema.ipynb) |
-| :---: | :---: | :---: |
-| [![Entity Relationship Diagram](https://raw.githubusercontent.com/escreven/gvdot/main/doc/_static/examples/er-generated-color.svg)](https://github.com/escreven/gvdot/blob/main/examples/er-diagram.ipynb) | [![Red-Black Trees](https://raw.githubusercontent.com/escreven/gvdot/main/doc/_static/examples/rb-auto-18.svg)](https://github.com/escreven/gvdot/blob/main/examples/red-black-tree.ipynb) | [![SQLite Schema Diagrammer](https://raw.githubusercontent.com/escreven/gvdot/main/doc/_static/examples/sqlite-schema.svg)](https://github.com/escreven/gvdot/blob/main/examples/sqlite-schema.ipynb) |

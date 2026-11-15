@@ -56,7 +56,7 @@ In a notebook, we can directly display the diagram from a cell containing
     nfa_diagram(example,"Example NFA").show()
 
 
-**See also:**
+**More examples:**
 
 .. grid:: 3
     :gutter: 3
