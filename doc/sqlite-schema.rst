@@ -263,32 +263,37 @@ Graphviz HTML.
 .. code:: python
 
     from gvdot.markup import TR, TD, Font, HR, Bold
-    from gvdot.markup import Table as MarkupTable  # Avoid name conflict
+    from gvdot.markup import Table as HtmlTable  # Avoid name conflict
 
     def table_markup(table:Table) -> Markup:
-        return Font(face="sans-serif").add(
-            MarkupTable(
-                _title_row(table.name), HR(),
-                *(_dbcol_row(table,col) for col in table.columns.values()),
-                cellspacing=0, cellborder=0, border=1, bgcolor="#eaeaef"))
 
-    def _title_row(name:str) -> TR:
-        return TR(TD(Font(Bold(name), point_size=13, color="#ec8"),
-                     colspan=4, bgcolor="#544"))
+        html_table = HtmlTable(
+            cellspacing=0, cellborder=0, border=1, bgcolor="#eaeaef")
 
-    def _dbcol_row(table:Table, col:Column) -> TR:
+        html_table.add(TR(
+            TD(Font(Bold(table.name), point_size=13, color="#ec8"),
+            colspan=4, bgcolor="#544")))
 
-        col_fk = any(col in fk.from_cols for fk in table.references)
-        tag, tag_color = (("PK", "darkgreen") if col.pk else
-                          ("FK", "webpurple") if col_fk else
-                          ("U", "goldenrod") if col.unique else ("","black"))
+        html_table.add(HR())  # A horizontal rule to sharpen the separation.
 
-        indicator = Bold("?") if col.nullable else ""
+        for col in table.columns.values():
 
-        return TR(TD(Font(Bold(tag), color=tag_color, point_size=8), align="left"),
-                  TD(Font(col.name + " ", point_size=10), align="left"),
-                  TD(Font(col.type, point_size=8, color="#338"), align="left"),
-                  TD(Font(indicator, point_size=8, color="#338")))
+            col_fk = any(col in fk.from_cols for fk in table.references)
+            tag, tag_color = (("PK", "darkgreen") if col.pk else
+                              ("FK", "webpurple") if col_fk else
+                              ("U", "goldenrod") if col.unique else
+                              ("", "black"))
+
+            indicator = Bold("?") if col.nullable else ""
+
+            html_table.add(TR(
+                TD(Font(Bold(tag), color=tag_color, point_size=8), align="left"),
+                TD(Font(col.name + " ", point_size=10), align="left"),
+                TD(Font(col.type, point_size=8, color="#338"), align="left"),
+                TD(Font(indicator, point_size=8, color="#338"))))
+
+        return Font(html_table, face="sans-serif")
+
 
 The type and parameter hints of ``gvdot.markup`` made creating the above easy
 and almost entirely error free — a very different experience than trying

@@ -54,11 +54,15 @@ def _code_block(language:str, text:str):
         "    " + line + "\n" if line else "\n"
         for line in lines)
 
-
 #
 # Examples can have images, Python source code, and DOT source code, all of
 # which are optional.  save_artifacts() generates these artifacts and stores
 # them in doc/_static or doc/_code.
+#
+# Unless a Dot object has a bgcolor default graph attribute, rendered Dot
+# objects are given transparent default background colors -- that the images
+# have transparent backgrounds unless explicitly assigned one in the example
+# code.
 #
 # NOTE: This module must be in a directory at the repo root, so that
 # {dir(__file__)}/../doc/_static and {dir(__file__)}/../doc/_code are the
@@ -80,7 +84,9 @@ class Image(Artifact):
 
     def save(self, dir:PurePath):
         name = self.name
-        dot = self.dot
+        dot = self.dot.copy()
+        if "bgcolor" not in dot.d_grapha:
+            dot.graph_default(bgcolor="transparent")
         program = self.program
         dot.save(dir / f"_static/{name}.svg", program=program)
 

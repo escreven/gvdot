@@ -1,5 +1,8 @@
 ## Unreleased
 
+#### Changed
+- The document example generator makes most image backgrounds transparent.
+
 ## [1.5.0] - 2026-11-15
 
 #### Added

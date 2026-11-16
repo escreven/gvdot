@@ -12,6 +12,6 @@
         "r2": [[], ["r3"], ["r1"]],
         "r3": [[], ["r3"], ["r3"]],
     }, ["q4","r0","r1","r2"], "s0")
-    
+
     nfa_diagram(example,"Example NFA").save("example.svg")
-    
+
