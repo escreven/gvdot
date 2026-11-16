@@ -7,7 +7,6 @@
 <svg width="703pt" height="485pt"
  viewBox="0.00 0.00 703.00 485.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 481.37)">
-<!-- <polygon fill="white" stroke="none" points="-4,4 -4,-481.37 698.57,-481.37 698.57,4 -4,4"/> -->
 <!-- instructor -->
 <g id="node1" class="node">
 <title>instructor</title>
@@ -191,10 +190,8 @@
 <text xml:space="preserve" text-anchor="start" x="273.64" y="-98.03" font-family="sans-serif" font-weight="bold" font-size="8.00" fill="darkgreen">PK</text>
 <text xml:space="preserve" text-anchor="start" x="288.89" y="-97.5" font-family="sans-serif" font-size="10.00">meeting_id </text>
 <text xml:space="preserve" text-anchor="start" x="353.64" y="-97.88" font-family="sans-serif" font-size="8.00" fill="#333388">INTEGER</text>
-<text xml:space="preserve" text-anchor="start" x="273.64" y="-82.78" font-family="sans-serif" font-weight="bold" font-size="8.00" fill="darkgreen">PK</text>
 <text xml:space="preserve" text-anchor="start" x="288.89" y="-82.25" font-family="sans-serif" font-size="10.00">day_of_week </text>
 <text xml:space="preserve" text-anchor="start" x="353.64" y="-82.62" font-family="sans-serif" font-size="8.00" fill="#333388">INTEGER</text>
-<text xml:space="preserve" text-anchor="start" x="273.64" y="-67.53" font-family="sans-serif" font-weight="bold" font-size="8.00" fill="darkgreen">PK</text>
 <text xml:space="preserve" text-anchor="start" x="288.89" y="-67" font-family="sans-serif" font-size="10.00">start_time </text>
 <text xml:space="preserve" text-anchor="start" x="353.64" y="-67.38" font-family="sans-serif" font-size="8.00" fill="#333388">TEXT</text>
 <text xml:space="preserve" text-anchor="start" x="288.89" y="-51.75" font-family="sans-serif" font-size="10.00">end_time </text>

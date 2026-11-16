@@ -75,7 +75,7 @@ create table meeting (
     section_id  integer,
     location    text not null,
     kind        text not null,
-    primary key (class_id, meeting_id, day_of_week, start_time),
+    primary key (class_id, meeting_id),
     foreign key (class_id) references class (id),
     foreign key (class_id, section_id)
         references section (class_id, section_id),
