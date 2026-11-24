@@ -1,12 +1,14 @@
 ## Unreleased
 
+## [1.6.0] - 2026-11-23
+
 #### Added
 - Function `probe()` allows applications to determine if a required Graphviz
   program is available and supports the layout engine and output format
   required.  If the answer is negative, `probe()` raises a new descriptive
   exception `ProbeException`.
-- Option `-showscripts` to `test/main.py` prints the mock Graphviz program
-  scripts used for testing.
+- Option `-showscripts` to `test/main.py` prints mock Graphviz program scripts
+  used for testing.
 
 #### Changed
 - The document example generator makes most image backgrounds transparent.
