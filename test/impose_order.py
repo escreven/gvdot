@@ -1,20 +1,20 @@
 from __future__ import annotations
-from datetime import datetime, timezone
 import os
 import re
-import lzma
 import json
-from random import Random
-from itertools import combinations
-from collections import defaultdict
-from dataclasses import replace
+import lzma
+from datetime import datetime, timezone
 from typing import Iterable, Iterator
+from collections import defaultdict
+from itertools import combinations
+from dataclasses import replace
+from random import Random
+from utility import expect_node, expect_edge, endpoint_nodeid, graph_line
+from utility import expect_ex, parse, svg_parse, svg_dimensions
+from utility import SubgraphLine, EndLine, EdgeDAttrLine
+from utility import DotLine, NodeLine, EdgeLine
 from gvdot import Dot, Port, Nonce, impose_order
 from gvdot import _impose, _AVAILABLE_VERSIONS
-from utility import expect_ex, parse, svg_parse, svg_dimensions
-from utility import GraphLine, DotLine, NodeLine, EdgeLine
-from utility import SubgraphLine, EndLine, EdgeDAttrLine
-from utility import expect_node, expect_edge, endpoint_nodeid, graph_line
 
 #
 # Multigraphs can have multiple identical edges, and for tests below, the

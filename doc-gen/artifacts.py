@@ -2,10 +2,10 @@ import re
 import sys
 import inspect
 import textwrap
-from abc import abstractmethod
 from dataclasses import dataclass
-from pathlib import PurePath
+from abc import abstractmethod
 from types import FunctionType
+from pathlib import Path
 from gvdot import Dot
 
 #
@@ -74,7 +74,7 @@ class Artifact:
     name : str
 
     @abstractmethod
-    def save(self, dir:PurePath):
+    def save(self, dir:Path):
         ...
 
 @dataclass
@@ -82,7 +82,7 @@ class Image(Artifact):
     dot     : Dot
     program : str = "dot"
 
-    def save(self, dir:PurePath):
+    def save(self, dir:Path):
         name = self.name
         dot = self.dot.copy()
         if "bgcolor" not in dot.d_grapha:
@@ -94,7 +94,7 @@ class Image(Artifact):
 class DotCode(Artifact):
     dot : Dot
 
-    def save(self, dir:PurePath):
+    def save(self, dir:Path):
         with open(dir / f"_code/{self.name}.dot.rst", "w") as f:
             print(_code_block("graphviz",str(self.dot)), file=f, end="")
 
@@ -102,7 +102,7 @@ class DotCode(Artifact):
 class PythonCode(Artifact):
     code : FunctionType | str
 
-    def save(self, dir:PurePath):
+    def save(self, dir:Path):
 
         if type(code := self.code) is str:
             source = code
@@ -121,7 +121,7 @@ class PythonCode(Artifact):
 
 def save_artifacts(artifacts:list[Artifact]):
 
-    dir = PurePath(__file__).parent.parent.joinpath("doc")
+    dir = Path(__file__).parent.parent.joinpath("doc")
 
     for artifact in artifacts:
         artifact.save(dir)

@@ -1,5 +1,5 @@
-from gvdot import Dot, Markup
 from utility import expect_str, expect_ex
+from gvdot import Dot, Markup
 
 
 #

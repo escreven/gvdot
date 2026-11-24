@@ -1,17 +1,19 @@
 from __future__ import annotations
-from collections import defaultdict
-from collections.abc import Callable
-from copy import deepcopy
-from dataclasses import dataclass
-from html import escape as html_escape
-from os import PathLike
-from pathlib import Path, PurePath
-from reprlib import recursive_repr
+import os
+import re
+import shutil
 import subprocess
 from subprocess import CalledProcessError, TimeoutExpired
+from typing import Any, Hashable, Literal, Protocol, Self
+from html import escape as html_escape
+from collections.abc import Callable
+from collections import defaultdict
+from dataclasses import dataclass
 from types import EllipsisType
-from typing import Any, Hashable, Literal, NoReturn, Protocol, Self
-import re
+from pathlib import Path
+from copy import deepcopy
+from os import PathLike, fsdecode
+from os.path import join
 
 __all__ = ()
 
@@ -32,6 +34,22 @@ def _missing_ipython():
     raise RuntimeError(
         "IPython is required to show Dot objects. "
         "Install with: pip install gvdot[ipython]")
+
+#
+# Return a string to pass to subprocess.run() as the command.
+#
+
+def _invocation_str(program:str|PathLike, directory:str|PathLike|None) -> str:
+    program = fsdecode(program)
+    if not program:
+        raise ValueError("program is empty")
+    if directory is None:
+        return program
+    else:
+        directory = fsdecode(directory)
+        if not directory:
+            raise ValueError("directory is empty")
+        return join(directory,program)
 
 
 class Markup:
@@ -1621,6 +1639,8 @@ class Dot(Block):
 
         :return: The output bytes of the specified program.
 
+        :raises ValueError: A specified program or directory value is empty.
+
         :raises RuntimeError: An assigned role is not defined.
 
         :raises InvocationException: Could not invoke the program, likely
@@ -1650,16 +1670,9 @@ class Dot(Block):
                                    directory="/opt")
 
         """
-        t_arg = f"-T{format.lower()}"
-
-        input = str(self).encode()
-
-        if directory is not None:
-            program = PurePath(directory,program)
-
-        program = str(program)
-
-        command = [ program, t_arg ]
+        input   = str(self).encode()
+        program = _invocation_str(program, directory)
+        command = [ program, f"-T{format.lower()}" ]
 
         if dpi is not None:
             command.append(f"-Gdpi={dpi}")
@@ -1769,14 +1782,16 @@ class Dot(Block):
         ``Image`` object.  :meth:`show` generates the data required by invoking
         a Graphviz program.
 
+        :raises ValueError: A specified program or directory value is empty.
+
+        :raises RuntimeError: IPython is not installed, or an assigned role is
+            not defined.
+
         :raises ShowException: :meth:`show()` could not complete because the
             program could not be invoked, it timed out, or it exited with a
             non-zero status code.  When :meth:`show()` raises
             :class:`ShowException`, it also displays a ``Markdown`` block
             explaining why it could not complete.
-
-        :raises RuntimeError: IPython is not installed, or an assigned role is
-            not defined.
 
         For the parameters, see :meth:`to_rendered`.  The ``size`` parameter
         can be especially useful: a value such as ``"5,5"`` can help ensure the
@@ -1838,12 +1853,29 @@ class InvocationException(Exception):
 
         The program that could not be run.
     """
+    program : str
 
     def __init__(self, program:str):
         self.program = program
+        self._diagnosis = 'unknown'
+        try:
+            if os.path.dirname(program):
+                if not (os.path.isfile(program) and
+                        os.access(program,os.X_OK)):
+                    self._diagnosis = 'executable'
+            elif shutil.which(program) is None:
+                self._diagnosis = 'path'
+        except Exception:
+            pass
 
     def __str__(self):
-        return "Could not run program " + self.program
+        match self._diagnosis:
+            case 'executable':
+                return f"No executable at '{self.program}'"
+            case 'path':
+                return f"Program '{self.program}' is not on PATH"
+            case _:
+                return f"Could not run program '{self.program}'"
 
 
 class ProcessException(Exception):
@@ -1875,7 +1907,7 @@ class ProcessException(Exception):
                         if type(stderr) is bytes else stderr) #type:ignore
 
     def __str__(self):
-        return f"Program {self.program} exited with status {self.status}"
+        return f"Program '{self.program}' exited with status {self.status}"
 
 
 class TimeoutException(Exception):
@@ -1907,7 +1939,8 @@ class TimeoutException(Exception):
                         if type(stderr) is bytes else stderr) #type:ignore
 
     def __str__(self):
-        return f"Program {self.program} timed out after {self.timeout} seconds"
+        return (f"Program '{self.program}' timed out "
+                f"after {self.timeout} seconds")
 
 
 class ShowException(Exception):

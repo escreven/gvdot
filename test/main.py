@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import sys
 import importlib.abc
+from pathlib import Path
 
 class NoIPython(importlib.abc.MetaPathFinder):
     def find_spec(self, fullname, path, target=None):
@@ -25,21 +26,22 @@ import textwrap
 import traceback
 import subprocess
 from subprocess import CalledProcessError, TimeoutExpired
-from argparse import ArgumentParser
 from types import FunctionType, ModuleType
+from argparse import ArgumentParser
+from utility import DotMismatch, program, tempfiles
 from gvdot import ProcessException
-from utility import DotMismatch, fakedots
 
 # Modules defining tests
 import core
 import dotcopy
 import frontend
 import identifiers
-import internals
 import impose_order
+import internals
 import markup_base
 import markup_subc
 import multivalue
+import probe
 import render
 import show
 import styling
@@ -229,6 +231,18 @@ def _probe_graphviz_install() -> None:
                 sys.exit(1)
 
 
+def _show_scripts():
+
+    from utility import _SCRIPTS
+    for name in _SCRIPTS.keys():
+        path = Path(program(name))
+        print(f"Script {path.name}:")
+        with open(path) as f:
+            for line in f.read().splitlines():
+                print(f"    {line}")
+            print()
+
+
 def _main():
 
     parser = ArgumentParser(
@@ -252,7 +266,15 @@ def _main():
     parser.add_argument("-showoutput", action="store_true",
         help="Show output even in case of success")
 
+    parser.add_argument("-showscripts", action="store_true",
+        help="Show the generated scripts instead of running tests")
+
     args = parser.parse_args()
+
+    if args.showscripts:
+        with tempfiles():
+            _show_scripts()
+            return
 
     cases = []
     cases.extend(_get_cases(core))
@@ -264,6 +286,7 @@ def _main():
     cases.extend(_get_cases(markup_base))
     cases.extend(_get_cases(markup_subc))
     cases.extend(_get_cases(multivalue))
+    cases.extend(_get_cases(probe))
     cases.extend(_get_cases(render))
     cases.extend(_get_cases(show))
     cases.extend(_get_cases(styling))
@@ -287,7 +310,7 @@ def _main():
     if not args.noprobe:
         _probe_graphviz_install()
 
-    with fakedots():
+    with tempfiles():
         _run(cases,args.failstop,args.showoutput)
 
 

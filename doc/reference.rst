@@ -128,6 +128,8 @@ Functions
 
     See also the :ref:`imposing_order` discussion.
 
+.. autofunction:: probe
+
 Exceptions
 ----------
 
@@ -143,3 +145,5 @@ Exceptions
 .. autoexception:: ShowException
     :members:
 
+.. autoexception:: ProbeException
+    :members:

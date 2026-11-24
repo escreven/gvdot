@@ -1,5 +1,5 @@
-from gvdot import Dot, impose_order
 from utility import expect_str, image_format, svg_parse
+from gvdot import Dot, impose_order
 
 
 def test_subclass():

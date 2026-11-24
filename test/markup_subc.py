@@ -2,14 +2,13 @@ import re
 import typing
 from collections.abc import Callable
 from dataclasses import dataclass
-from re import Pattern
 from typing import Any, cast
 from pathlib import Path
-
+from re import Pattern
 from gvdot import Dot, Markup, ProcessException
-from gvdot.markup import *
 from gvdot.markup import Managed
 from utility import expect_ex
+from gvdot.markup import *
 
 
 type ContainerMarkup = (
