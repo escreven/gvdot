@@ -1,5 +1,5 @@
-from gvdot import Dot
 from utility import expect_ex, expect_str
+from gvdot import Dot
 
 
 def test_roles():

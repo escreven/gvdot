@@ -1,7 +1,6 @@
 from __future__ import annotations
-from copy import deepcopy
-from gvdot import Block, Dot, Port
 from utility import expect_str, expect_ex
+from gvdot import Block, Dot, Port
 
 
 def test_graph_header():

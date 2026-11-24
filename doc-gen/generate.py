@@ -1,13 +1,13 @@
+import re
+import nbformat
 from argparse import ArgumentParser
 from collections import defaultdict
 from dataclasses import dataclass
-import nbformat
-from pathlib import Path
-import re
 from types import FunctionType
+from pathlib import Path
 from typing import Any
-from gvdot import Dot, Markup, Port, Nonce, impose_order
 from artifacts import Artifact, Image, PythonCode, DotCode, save_artifacts
+from gvdot import Dot, Markup, Port, Nonce, impose_order
 
 
 #
@@ -152,8 +152,8 @@ def rollback_example() -> list[Artifact]:
 
 def good_morning_example() -> list[Artifact]:
 
-    from gvdot import Dot
     from gvdot.markup import Font, Table, TR, TD
+    from gvdot import Dot
 
     def code():
         from gvdot.markup import Font, Table, TR, TD
@@ -463,8 +463,8 @@ def impose_order_example() -> list[Artifact]:
 def markup_records_example() -> list[Artifact]:
 
     def code():
-        from gvdot import Dot, Port
         from gvdot.markup import Table, TR, TD, BR
+        from gvdot import Dot, Port
 
         dot = Dot(directed=True, id="structs")
         dot.node_default(shape="plaintext")
@@ -501,8 +501,8 @@ def markup_records_example() -> list[Artifact]:
 
 def markup_escape_example() -> list[Artifact]:
 
-    from gvdot import Dot
     from gvdot.markup import Font, BR
+    from gvdot import Dot
 
     def code():
         dot = Dot(directed=True).graph(rankdir="LR")
@@ -522,8 +522,8 @@ def markup_escape_example() -> list[Artifact]:
 
 def markup_entity_example() -> list[Artifact]:
 
-    from gvdot import Dot
     from gvdot.markup import Entity, Span, Text
+    from gvdot import Dot
 
     def code():
         dot = Dot(directed=True).graph(rankdir="LR")
@@ -541,8 +541,8 @@ def markup_entity_example() -> list[Artifact]:
 
 def markup_with_entities_example() -> list[Artifact]:
 
-    from gvdot import Dot
     from gvdot.markup import Text, with_entities
+    from gvdot import Dot
 
     def code():
         dot = Dot(directed=True).graph(rankdir="LR")

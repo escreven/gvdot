@@ -1,9 +1,9 @@
 from __future__ import annotations
 import re
 import html
-from abc import ABC, abstractmethod
 from typing import Literal, NoReturn, Self, Any
-from ._core import Markup
+from abc import ABC, abstractmethod
+from gvdot import Markup
 
 __all__ = (
     'GeneralContent', 'TextContent', 'TextOrTableContent', 'RowContent',

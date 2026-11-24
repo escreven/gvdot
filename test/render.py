@@ -1,10 +1,20 @@
+from contextlib import chdir
 import os
 import shutil
 from pathlib import Path
 from gvdot import Dot, InvocationException, ProcessException, TimeoutException
-from utility import dotecho, doterror, dotsleep, tmpdir
-from utility import expect_ex, image_format, likely_full_svg, svg_parse
+from utility import EmptyPathLike, expect_ex, image_format, likely_full_svg, svg_parse
 from utility import image_file_format
+from utility import program, tempdir
+
+
+type GVDotException = InvocationException | ProcessException | TimeoutException
+
+def _require_program(ex:GVDotException, name:str):
+
+    assert ex.program == program(name), (
+        f"Expected program '{program(name)}', found '{ex.program}'"
+    )
 
 
 def test_to_rendered():
@@ -43,18 +53,18 @@ def test_to_rendered():
     assert image_format(data) == 'PNG'
 
     ex = expect_ex(TimeoutException,lambda: dot.to_rendered(
-        directory=tmpdir(), program=dotsleep(), timeout=0.01))
+                   program=program("dotsleep"), timeout=0.01))
 
     assert "timed out" in str(ex)
-    assert ex.program.endswith(dotsleep())
+    _require_program(ex,'dotsleep')
     assert ex.timeout == 0.01
     assert type(ex.stderr) is str
 
     ex = expect_ex(ProcessException,lambda: dot.to_rendered(
-        directory=tmpdir(), program=doterror()))
+                   program=program("doterror")))
 
     assert "exited with status" in str(ex)
-    assert ex.program.endswith(doterror())
+    _require_program(ex,'doterror')
     assert ex.status == 1 and "ErrorText" in ex.stderr
     assert type(ex.stderr) is str
 
@@ -90,9 +100,8 @@ def test_to_rendered():
     #
 
     # Returned data is the echoed command line
-    data = dot.to_rendered(
-        dpi=30, ratio=20, size="1,1",
-        directory=tmpdir(), program=dotecho()).decode()
+    data = dot.to_rendered(dpi=30, ratio=20, size="1,1",
+                           program=program("dotecho")).decode()
 
     assert "-Gdpi=30" in data
     assert "-Gratio=20" in data
@@ -104,8 +113,7 @@ def test_to_rendered_downcase():
     to_rendered() should downcase the format before forming the -T argument.
     """
     dot = Dot().edge("a", "b")
-    text = dot.to_rendered(
-        format="PnG", directory=tmpdir(), program=dotecho()).decode()
+    text = dot.to_rendered(format="PnG", program=program("dotecho")).decode()
     assert "-Tpng" in text
     assert "-TPnG" not in text
 
@@ -154,23 +162,22 @@ def test_to_svg():
     assert likely_full_svg(svg)
 
     ex = expect_ex(TimeoutException,lambda: dot.to_svg(
-        directory=tmpdir(), program=dotsleep(), timeout=0.01))
+                   program=program("dotsleep"), timeout=0.01))
 
-    assert ex.program.endswith(dotsleep())
+    _require_program(ex,'dotsleep')
     assert ex.timeout == 0.01
     assert type(ex.stderr) is str
 
     ex = expect_ex(ProcessException,lambda: dot.to_svg(
-        directory=tmpdir(), program=doterror()))
+                   program=program("doterror")))
 
-    assert ex.program.endswith(doterror())
+    _require_program(ex,'doterror')
     assert ex.status == 1 and "ErrorText" in ex.stderr
     assert type(ex.stderr) is str
 
     # Returned string is the echoed command line
-    svg = dot.to_svg(
-        dpi=30, ratio=20, size="1,1",
-        directory=tmpdir(), program=dotecho())
+    svg = dot.to_svg(dpi=30, ratio=20, size="1,1",
+                     program=program("dotecho"))
 
     assert "-Gdpi=30" in svg
     assert "-Gratio=20" in svg
@@ -187,7 +194,7 @@ def test_save():
     If a timeout is specified, and the program times out, it should raise a
     TimeoutException exception.
     """
-    dir = tmpdir()
+    dir = tempdir()
 
     test_png = f"{dir}/test.png"
     test_jpg = f"{dir}/test.jpg"
@@ -227,23 +234,22 @@ def test_save():
     assert image_file_format(test_png) == 'PNG'
 
     ex = expect_ex(TimeoutException,lambda: dot.save(test_png,
-        directory=tmpdir(), program=dotsleep(), timeout=0.01))
+                   program=program("dotsleep"), timeout=0.01))
 
-    assert ex.program.endswith(dotsleep())
+    _require_program(ex,'dotsleep')
     assert ex.timeout == 0.01
     assert type(ex.stderr) is str
 
     ex = expect_ex(ProcessException,lambda: dot.save(test_png,
-        directory=tmpdir(), program=doterror()))
+                   program=program("doterror")))
 
-    assert ex.program.endswith(doterror())
+    _require_program(ex,'doterror')
     assert ex.status == 1 and "ErrorText" in ex.stderr
     assert type(ex.stderr) is str
 
     # Written data is the echoed command line
-    dot.save(test_png,
-        dpi=30, ratio=20, size="1,1",
-        directory=tmpdir(), program=dotecho())
+    dot.save(test_png, dpi=30, ratio=20, size="1,1",
+             program=program("dotecho"))
 
     with open(test_png, "rb") as f:
         data = f.read().decode()
@@ -257,7 +263,7 @@ def test_inferred_formats():
     Make sure all inferred save formats are supported.
     """
     dot = Dot().node("Yes")
-    dir = tmpdir()
+    dir = tempdir()
     for extension in ('svg','png','jpg','jpeg','gif','pdf'):
         dot.save(f"{dir}/supported.{extension}")
 
@@ -268,11 +274,11 @@ def test_inferred_case_insensitive():
     comparison.
     """
     dot = Dot().edge("a", "b")
-    svg_file = f"{tmpdir()}/casecheck.SvG"
-    jpg_file = f"{tmpdir()}/casecheck.JPeG"
+    svg_file = f"{tempdir()}/casecheck.SvG"
+    jpg_file = f"{tempdir()}/casecheck.JPeG"
 
-    dot.save(svg_file, directory=tmpdir(), program=dotecho())
-    dot.save(jpg_file, directory=tmpdir(), program=dotecho())
+    dot.save(svg_file, program=program("dotecho"))
+    dot.save(jpg_file, program=program("dotecho"))
 
     with open(svg_file, "rb") as f:
         text = f.read().decode()
@@ -295,7 +301,7 @@ def test_pathlike():
     name = path.name
     parent = path.parent
 
-    test_png = Path(f"{tmpdir()}/test.png")
+    test_png = Path(f"{tempdir()}/test.png")
 
     dot = Dot().edge("a","b").graph(label="Title")
 
@@ -359,3 +365,61 @@ def test_pathlike():
 
     dot.save(test_png, program=name, directory=str(parent))
     assert image_file_format(str(test_png)) == 'PNG'
+
+
+def test_invocation_diagnosis():
+    """
+    InvocationException should have a descriptive string representation.
+    """
+    dot = Dot().node("x")
+
+    def message(program:str):
+        s = str(expect_ex(InvocationException, lambda: (
+            dot.to_rendered(program=program))))
+        assert program in s
+        return s
+
+    assert "PATH" in message("doesnotexist")
+    assert "PATH" in message(".")
+
+    assert "executable" in message("./doesnotexist")
+    assert "executable" in message(tempdir())
+
+    if os.name != 'nt':
+        assert "PATH" in message('dotnoexec')
+        assert "executable" in message(tempdir()+ "/" + 'dotnoexec')
+
+    assert message(tempdir() + "/invalid.exe")
+
+    assert str(InvocationException(None)) #type:ignore
+
+
+def test_dot_relative():
+    """
+    Directory "." should cause program to be interpreted relative to ".".
+    """
+    dotecho = Path(program("dotecho")).name
+    with chdir(tempdir()):
+        dot = Dot().node("x")
+        dot.to_rendered(dotecho,directory=".")
+        dot.to_rendered(Path(dotecho),directory=Path("."))
+        expect_ex(InvocationException, lambda: (
+            dot.to_rendered("neato",directory=".")))
+        expect_ex(InvocationException, lambda: (
+            dot.to_rendered(Path("neato"),directory=Path("."))))
+
+
+def test_empty_segments():
+    """
+    Program and directory must both be non-empty.
+    """
+    dot = Dot().node("x")
+    for program, directory in (
+        ("",tempdir()),
+        ("dot",""),
+        (EmptyPathLike(),tempdir()),
+        ("dot",EmptyPathLike()),
+    ):
+        expect_ex(ValueError, lambda: dot.to_rendered(
+            program=program, directory=directory),
+            moreinfo=lambda: repr((program,directory)))

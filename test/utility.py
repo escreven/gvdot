@@ -1,14 +1,13 @@
 from __future__ import annotations
-from contextlib import contextmanager
 import io
 import os
 import re
-import shutil
 import tempfile
 import xml.etree.ElementTree as ET  # How ugly
-from re import Pattern, Match
-from dataclasses import dataclass, field
 from typing import Callable, ClassVar, Protocol
+from dataclasses import dataclass, field
+from contextlib import contextmanager
+from re import Pattern, Match
 from PIL import Image
 from gvdot import Dot
 
@@ -504,58 +503,123 @@ def image_file_format(filename:str):
     return Image.open(filename).format
 
 #
-# Create fake Graphviz programs for testing timeouts and non-zero exit status.
+# Create fake Graphviz programs for testing timeouts, non-zero exit status, and
+# exec bit missing.
 #
 # On Windows, the fakes are implemented as .cmd batch files.  Unfortunately, on
 # Windows subprocess.run() of dotsleep.cmd with a timeout doesn't actually
 # return until after the powershell sleep completes.
 #
+# Exec bit testing is Posix only.
+#
 
-_tmpdir:str|None = None
+_tempdir:str|None = None
 
-def tmpdir() -> str:
-    if _tmpdir is None:
-        raise RuntimeError("tmpdir is None")
-    return _tmpdir
+def tempdir() -> str:
+    if _tempdir is None:
+        raise RuntimeError("_tmpdir is None")
+    return _tempdir
 
 if os.name == 'nt':
-    def dotsleep(): return "dotsleep.cmd"
-    def doterror(): return "doterror.cmd"
-    def dotecho(): return "dotecho.cmd"
+
+    def _script(vmagic:str = "graphviz version 1.2.3", vexit:int=0,
+                exit:int=0, posix:str="", nt:str="", vcode=False):
+        return """
+        @echo off
+        if not "%~1"=="-V" goto main
+        echo preamble {vmagic} (20260904.0139) 1>&2
+        {vcode}
+        exit /b {vexit}
+        :main
+        {code}
+        exit /b {exit}
+        """.format(vmagic=vmagic,vexit=vexit,exit=exit,
+                   code=nt if not vcode else "",
+                   vcode=nt if vcode else "")
+
 else:
-    def dotsleep(): return "dotsleep"
-    def doterror(): return "doterror"
-    def dotecho(): return "dotecho"
+
+    def _script(vmagic:str = "graphviz version 1.2.3", vexit:int=0,
+                exit:int=0, posix:str="", nt:str="", vcode=False):
+        return """
+        #!/bin/sh
+        if [ "$1" = "-V" ]; then
+            echo preamble "{vmagic} (20260904.0139)" >&2
+            {vcode}
+            exit {vexit}
+        fi
+        {code}
+        exit {exit}
+        """.format(vmagic=vmagic,vexit=vexit,exit=exit,
+                   code=posix if not vcode else "",
+                   vcode=posix if vcode else "")
+
+_SCRIPTS = {
+    'dotsleep' : _script(
+        posix='sleep 10',
+        nt   ='powershell -Command "Start-Sleep -s 10"'),
+    'doterror' : _script(
+        posix='echo ErrorText >&2',
+        nt   ='echo ErrorText 1>&2', exit=1),
+    'dotecho' : _script(
+        posix='echo "$@"',
+        nt   ='echo %*'),
+    'dotnoexec'   : _script(),
+    'invalid.exe' : 'Not an executable\n',
+    'dotdvg10'    : _script(vmagic="graphviz version 1",       vexit=0),
+    'dotdvg20'    : _script(vmagic="graphviz version 1.2",     vexit=0),
+    'dotdvg30'    : _script(vmagic="graphviz version 1.2.3",   vexit=0),
+    'dotdvg40'    : _script(vmagic="graphviz version 1.2.3.4", vexit=0),
+    'dotdvgd0'    : _script(vmagic="graphviz version 11.22",   vexit=0),
+    'dotdvgq0'    : _script(vmagic="graphviz version 11.22.33",vexit=0),
+    'dotdvgx0'    : _script(vmagic="graphviz",                 vexit=0),
+    'dotdvg31'    : _script(vmagic="graphviz version 1.2.3",   vexit=1),
+    'dotdvx30'    : _script(vmagic="version 1.2.3",            vexit=0),
+    'dotdvsleep'  : _script(vcode=True,
+                            posix='sleep 10',
+                            nt   ='powershell -Command "Start-Sleep -s 10"'),
+
+}
+
+if os.name == 'nt':
+    def program(name:str) -> str:
+        if not name.endswith('.exe'): name += '.cmd'
+        return os.path.join(tempdir(), name)
+else:
+    def program(name:str) -> str:
+        return tempdir() + '/' + name
 
 @contextmanager
-def fakedots():
-    global _tmpdir
-    _tmpdir = tempfile.mkdtemp()
-    try:
-        dotsleep = os.path.join(_tmpdir, "dotsleep")
-        doterror = os.path.join(_tmpdir, "doterror")
-        dotecho = os.path.join(_tmpdir, "dotecho")
+def tempfiles():
+    global _tempdir
+    with tempfile.TemporaryDirectory() as tmpdir:
+        _tempdir = tmpdir
 
-        def script(path, commands):
-            if os.name == 'nt':
-                path += '.cmd'
+        def writescript(name, commands):
+            source = "\n".join(stripped for line in commands.splitlines()
+                               if (stripped := line.strip()))
+            path = program(name)
             with open(path, "w") as f:
-                f.write(commands)
+                f.write(source)
+            return path
 
-        if os.name == 'nt':
-            script(dotsleep, 'powershell -Command "Start-Sleep -s 5"\n')
-            script(doterror, '@echo ErrorText 1>&2\nexit /b 1\n')
-            script(dotecho,  '@echo %*\n')
-        else:
-            script(dotsleep, '#!/bin/sh\nsleep 10\n')
-            script(doterror, '#!/bin/sh\necho ErrorText >&2\nexit 1\n')
-            script(dotecho,  '#!/bin/sh\necho "$@"\n')
-            os.chmod(dotsleep, 0o755)
-            os.chmod(doterror, 0o755)
-            os.chmod(dotecho, 0o755)
+        for name, commands in _SCRIPTS.items():
+            path = writescript(name, commands)
+            if os.name != 'nt':
+                if name == 'dotnoexec':
+                    os.chmod(path, 0o644)  # <-- No exec bit
+                else:
+                    os.chmod(path, 0o755)
 
-        yield
+        try:
+            yield
+        finally:
+            _tempdir = None
 
-    finally:
-        shutil.rmtree(_tmpdir)
-        _tmpdir = None
+#
+#  A bogus PathLike object that returns an empty string.
+#
+
+class EmptyPathLike(os.PathLike):
+    def __fspath__(self):
+        return ""

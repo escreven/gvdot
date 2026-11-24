@@ -1,6 +1,6 @@
-from collections import defaultdict
 import math
 from collections.abc import Iterator
+from collections import defaultdict
 from typing import Counter, Literal
 from ._core import Block, Dot, _Edge, _NormID, _Mien, _integrate_role, _Attrs
 

@@ -1,6 +1,8 @@
+import shutil
 from typing import Any
-from gvdot import Dot, _NormPort, _Edge, _Digraph
 from gvdot.markup import _ALLOWED_ROOTS, TR, TD, VR
+from gvdot import Dot, _NormPort, _Edge, _Digraph
+from gvdot import InvocationException
 from utility import expect_ex
 
 
@@ -79,3 +81,27 @@ def test_bad_vr_at_root():
         expect_ex(RuntimeError, lambda: str(TR(TD("x"),VR())))
     finally:
         _ALLOWED_ROOTS.remove(TR)
+
+
+def test_bad_program_on_path():
+    """
+    If we attempt to run a program on PATH which is marked executable, but
+    can't be run, perhaps because it is corrupted, there should be an
+    invocation exception that has a message different than the non-executable,
+    not on PATH cases.  We choose to test this case by monkey patching
+    shutil.which().
+    """
+    def blithe_which(cmd,*args,**kwargs):
+        return f"/not/really/there/{cmd}"
+
+    try:
+        old_which = shutil.which
+        shutil.which = blithe_which
+        ex = InvocationException("doesnotexist")
+    finally:
+        shutil.which = old_which
+
+    s = str(ex)
+    assert "PATH" not in s
+    assert "executable" not in s
+    assert "doesnotexist" in s

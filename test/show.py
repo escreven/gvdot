@@ -1,12 +1,12 @@
-from pathlib import Path
 import re
 import shutil
 from typing import Any
+from pathlib import Path
+from contextlib import chdir
+from utility import EmptyPathLike, svg_parse, svg_dimensions, likely_full_svg, tempdir
+from utility import expect_ex, image_format, program
 from gvdot import Dot, ShowException
 from gvdot import _core
-from utility import doterror, dotsleep, expect_ex, image_format
-from utility import svg_parse, svg_dimensions, likely_full_svg, tmpdir
-
 
 class _MockIPython:
 
@@ -140,32 +140,28 @@ def test_show():
         assert "could not be invoked" in displayed[0][1]
 
         expect_ex(ShowException,lambda: dot.show(
-            format="svg", directory=tmpdir(),
-            program=dotsleep(), timeout=0.01))
+            format="svg", program=program("dotsleep"), timeout=0.01))
         displayed = mock.take()
         assert len(displayed) == 1
         assert displayed[0][0] == "Markdown"
         assert "timed out" in displayed[0][1]
 
         expect_ex(ShowException,lambda: dot.show(
-            format="png", directory=tmpdir(),
-            program=dotsleep(), timeout=0.01))
+            format="png", program=program("dotsleep"), timeout=0.01))
         displayed = mock.take()
         assert len(displayed) == 1
         assert displayed[0][0] == "Markdown"
         assert "timed out" in displayed[0][1]
 
         expect_ex(ShowException,lambda: dot.show(
-            format="svg", directory=tmpdir(),
-            program=doterror()))
+            format="svg", program=program("doterror")))
         displayed = mock.take()
         assert len(displayed) == 1
         assert displayed[0][0] == "Markdown"
         assert "exited with status" in displayed[0][1]
 
         expect_ex(ShowException,lambda: dot.show(
-            format="png", directory=tmpdir(),
-            program=doterror()))
+            format="png", program=program("doterror")))
         displayed = mock.take()
         assert len(displayed) == 1
         assert displayed[0][0] == "Markdown"
@@ -199,9 +195,10 @@ def test_pathlike():
     pathstr = shutil.which('dot')
     assert pathstr
     pathdot = Path(pathstr)
-    pathdne = Path(tmpdir(),"doesnotexist")
-    pathsleep = Path(tmpdir(),dotsleep())
-    patherror = Path(tmpdir(),doterror())
+
+    pathdne   = program("doesnotexist")
+    pathsleep = program("dotsleep")
+    patherror = program("doterror")
 
     with _MockIPython() as mock:
         dot = Dot().graph(fontsize=32)
@@ -241,3 +238,36 @@ def test_pathlike():
             assert False
         except RuntimeError as ex:
             assert re.search("IPython.*install", str(ex))
+
+
+def test_dot_relative():
+    """
+    Directory "." should cause program to be interpreted relative to ".".
+    """
+    dotecho = Path(program("dotecho")).name
+    with _MockIPython() as mock, chdir(tempdir()):
+        dot = Dot().node("x")
+        dot.show(dotecho,directory=".")
+        dot.show(Path(dotecho),directory=Path("."))
+        expect_ex(ShowException, lambda: (
+            dot.show("neato",directory=".")))
+        expect_ex(ShowException, lambda: (
+            dot.show(Path("neato"),directory=Path("."))))
+
+
+
+def test_empty_segments():
+    """
+    Program and directory must both be non-empty.
+    """
+    with _MockIPython() as mock:
+        dot = Dot().node("x")
+        for program, directory in (
+            ("",tempdir()),
+            ("dot",""),
+            (EmptyPathLike(),tempdir()),
+            ("dot",EmptyPathLike()),
+        ):
+            expect_ex(ValueError, lambda: dot.show(
+                program=program, directory=directory),
+                moreinfo=lambda: repr((program,directory)))

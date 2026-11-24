@@ -1,6 +1,5 @@
-from copy import deepcopy
+from utility import expect_str
 from gvdot import Dot
-from utility import expect_str, expect_ex
 
 
 def test_copy():

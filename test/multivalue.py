@@ -1,7 +1,6 @@
 from typing import Any
-
-from gvdot import Dot, Block
 from utility import expect_edge, expect_ex, expect_graph, expect_node, expect_str, parse
+from gvdot import Dot
 
 
 #
