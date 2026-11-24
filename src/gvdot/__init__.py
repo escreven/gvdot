@@ -2,7 +2,7 @@
 Generate and render Graphviz diagrams with clear, maintainable code by separating presentation from structure.
 """
 
-__version__ = "1.6.0"
+__version__ = "1.6.1dev1"
 
 __all__ = (
     "Markup", "Nonce", "Port", "Dot", "InvocationException",

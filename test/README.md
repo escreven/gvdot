@@ -29,7 +29,7 @@ Use option `-h` to see usage.
 | [markup_base.py](html_labels.py) | Using the base Markup class in DOT labels
 | [markup_subc.py](html_labels.py) | Using the `gvdot.markup` Markup subclasses
 | [multivalue.py](multivalue.py) | Using attribute value tuples for roles and otherwise
-| [probe.py](probe.py) | Probing Graphviz installations and diagnosing failures
+| [probe.py](probe.py) | Probing Graphviz installations
 | [render.py](render.py) | Rendering to files, image bytes, and SVG
 | [show.py](show.py) | Showing Dot object images and source in notebooks
 | [styling.py](styling.py) | Roles and themes
