@@ -52,19 +52,19 @@ create table class (
 );
 
 create table assistant (
-    class_id integer not null references class (id),
-    student_id  integer not null references student (id),
+    class_id   integer not null references class (id),
+    student_id integer not null references student (id),
     primary key (class_id, student_id)
 );
 
 create table section (
-    class_id integer not null references class (id),
-    section_id  integer not null,
-    lead_ta_id  integer,
+    class_id   integer not null references class (id),
+    section_id integer not null,
+    lead_ta_id integer,
     primary key (class_id, section_id),
     foreign key (class_id, lead_ta_id)
         references assistant (class_id, student_id)
-);
+) without rowid;
 
 create table meeting (
     class_id    integer not null,
@@ -86,21 +86,21 @@ create table meeting (
     check (kind in ('lecture', 'discussion'))
     check (kind = 'lecture' and section_id is null or
            kind = 'discussion' and section_id is not null)
-);
+) without rowid;
 
 create table registration (
     student_id integer not null references student (id),
-    class_id integer not null,
+    class_id   integer not null,
     section_id integer not null,
-    status text not null default 'pending'
-        check (status in ('pending', 'approved', 'waitlist')),
+    status     text    not null default 'pending',
     waitlist_priority integer,
     primary key (student_id, class_id, section_id),
     foreign key (class_id, section_id)
         references section (class_id, section_id),
+    check (status in ('pending', 'approved', 'waitlist')),
     check (status = 'waitlist' and waitlist_priority is not null
            and waitlist_priority > 0 or
            status <> 'waitlist' and waitlist_priority is null)
-);
+) without rowid;
 
 commit;
