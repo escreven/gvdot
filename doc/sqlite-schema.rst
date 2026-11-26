@@ -146,46 +146,29 @@ table functions such ``pragram_table_xinfo()``.
                     pk=bool(pk), unique=(objname in unique_cols))
 
         #
-        # Load foreign keys.  Because pragma_foreign_key_list yields one row for
-        # every foreign key reference column, we sort and use break processing.
+        # Load foreign keys.
         #
-
-        def columns_for(table:Table, names:list[str]) -> tuple[Column,...]:
-            return tuple(table.columns[object_name(name)] for name in names)
 
         for table in schema.values():
 
-            fk_id        = None  # Group break column
-            fk_to_table  = ""    # Per-group
-            fk_from_cols = []    # Accumulated per row
-            fk_to_cols   = []    # Accumulated per row
-
-            def on_break():
-                nonlocal fk_from_cols, fk_to_cols
-                to_table  = schema[object_name(fk_to_table)]
-                from_cols = columns_for(table, fk_from_cols)
-                to_cols   = (None if fk_to_cols[0] is None else
-                             columns_for(to_table, fk_to_cols))
-                table.references.append(
-                    ForeignKey(from_table=table, to_table=to_table,
-                               from_cols=from_cols, to_cols=to_cols))
-                fk_from_cols.clear()
-                fk_to_cols.clear()
+            group:dict[int,list[tuple[str,str,str]]] = defaultdict(list)
 
             for id, to_table, from_col, to_col in query("""
                     select id, "table", "from", "to"
                     from pragma_foreign_key_list(:table_name)
-                    order by id, seq""", table_name=table.name):
-                if fk_id != id:
-                    if fk_id is not None:
-                        on_break()
-                    fk_to_table = to_table
-                    fk_id = id
-                fk_from_cols.append(from_col)
-                fk_to_cols.append(to_col)
+                    """, table_name=table.name):
+                group[id].append((to_table,from_col,to_col))
 
-            if fk_id is not None:
-                on_break()
+            for id, refs in group.items():
+                to_table  = schema[object_name(refs[0][0])]
+                table.references.append(
+                    ForeignKey(from_table=table, to_table=to_table,
+                            from_cols=tuple(
+                                table.columns[object_name(ref[1])]
+                                for ref in refs),
+                            to_cols=tuple(
+                                to_table.columns[object_name(ref[2])]
+                                for ref in refs)))
 
         return schema
 
