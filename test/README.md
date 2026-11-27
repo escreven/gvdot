@@ -26,8 +26,8 @@ Use option `-h` to see usage.
 | [identifiers.py](identifiers.py) | IDs and their forms, including Nonces
 | [impose_order.py](impose_order.py) | The impose_order() function
 | [internals.py](internals.py) | Aspects that are hard to test through the public API
-| [markup_base.py](html_labels.py) | Using the base Markup class in DOT labels
-| [markup_subc.py](html_labels.py) | Using the `gvdot.markup` Markup subclasses
+| [markup_base.py](markup_base.py) | Using the base Markup class in DOT labels
+| [markup_subc.py](markup_subc.py) | Using the `gvdot.markup` Markup subclasses
 | [multivalue.py](multivalue.py) | Using attribute value tuples for roles and otherwise
 | [probe.py](probe.py) | Probing Graphviz installations
 | [render.py](render.py) | Rendering to files, image bytes, and SVG
